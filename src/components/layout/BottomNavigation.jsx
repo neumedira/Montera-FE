@@ -8,7 +8,6 @@ import {
 
 import { useLocation, useNavigate } from "react-router-dom";
 
-
 const menus = [
   {
     label: "Beranda",
@@ -33,44 +32,28 @@ const menus = [
   {
     label: "Setelan",
     icon: Settings,
-    path: "/setelan",
+    path: "/settings", // ← ubah dari /setelan
   },
 ];
 
-
 export default function BottomNavigation() {
-
   const location = useLocation();
   const navigate = useNavigate();
 
-
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-[#292827] h-[82px] z-50">
-
       <div className="max-w-[1000px] mx-auto h-full flex items-center justify-around">
 
         {menus.map((menu) => {
-
           const Icon = menu.icon;
 
           // Cek halaman yang sedang aktif
           const isActive = location.pathname === menu.path;
 
-
           return (
             <button
               key={menu.label}
-              onClick={() => {
-
-                // Sementara hanya Dashboard dan Laporan
-                if (
-                  menu.path === "/" ||
-                  menu.path === "/laporan"
-                ) {
-                  navigate(menu.path);
-                }
-
-              }}
+              onClick={() => navigate(menu.path)}
               className={`
                 flex
                 flex-col
@@ -86,7 +69,6 @@ export default function BottomNavigation() {
                 }
               `}
             >
-
               <Icon
                 size={19}
                 strokeWidth={2}
@@ -95,13 +77,11 @@ export default function BottomNavigation() {
               <span className="text-[10px] font-medium">
                 {menu.label}
               </span>
-
             </button>
           );
         })}
 
       </div>
-
     </nav>
   );
 }

@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Laporan from "./pages/Laporan";
 
 import NewOrderModal from "./components/modal/NewOrderModal";
+import Settings from "./pages/Settings";
 
 function App() {
   const [showNewOrder, setShowNewOrder] = useState(false);
@@ -40,6 +41,12 @@ function App() {
         <Route
           path="/laporan"
           element={<Laporan />}
+        />
+
+        {/* Settings */}
+        <Route
+          path="/settings"
+          element={<Settings />}
         />
 
       </Routes>
