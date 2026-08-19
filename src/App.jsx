@@ -9,6 +9,7 @@ import Laporan from "./pages/Laporan";
 
 import NewOrderModal from "./components/modal/NewOrderModal";
 
+import KelolaMenu from './pages/KelolaMenu';
 function App() {
   const [showNewOrder, setShowNewOrder] = useState(false);
 
@@ -34,6 +35,12 @@ function App() {
         <Route
           path="/"
           element={<Dashboard />}
+        />
+
+{/* Kelola Menu */}
+        <Route
+          path="/menu"
+          element={<KelolaMenu />}
         />
 
         {/* Laporan */}

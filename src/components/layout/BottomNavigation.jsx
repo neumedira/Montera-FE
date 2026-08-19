@@ -65,7 +65,8 @@ export default function BottomNavigation() {
                 // Sementara hanya Dashboard dan Laporan
                 if (
                   menu.path === "/" ||
-                  menu.path === "/laporan"
+                  menu.path === "/laporan" ||
+                  menu.path === "/menu"
                 ) {
                   navigate(menu.path);
                 }
