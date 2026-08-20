@@ -38,7 +38,7 @@ const menus = [
   {
     label: "Setelan",
     icon: Settings,
-    path: "/setelan",
+    path: "/settings", // ← ubah dari /setelan
   },
 ];
 

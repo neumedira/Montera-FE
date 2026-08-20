@@ -10,6 +10,7 @@ import KelolaMenu from "./pages/KelolaMenu";
 import KelolaQR from "./pages/KelolaQR";
 
 import NewOrderModal from "./components/modal/NewOrderModal";
+import Settings from "./pages/Settings";
 
 function App() {
   const [showNewOrder, setShowNewOrder] = useState(false);
@@ -36,6 +37,11 @@ function App() {
 
         {/* Kelola QR */}
         <Route path="/qr" element={<KelolaQR />} />
+
+        {/* Settings */}
+        <Route path="/settings"
+          element={<Settings />}
+        />
 
         {/* Laporan */}
         <Route path="/laporan" element={<Laporan />} />
