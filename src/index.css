@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Anton&display=swap');
 
 @import "tailwindcss";
 
@@ -26,4 +26,49 @@ body {
 
 button {
   font-family: inherit;
+}
+
+/* =========================================
+   CUSTOMER
+   ========================================= */
+
+/* Hide scrollbar untuk horizontal scroll */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Checkerboard separator */
+.checkerboard {
+  background-color: #ffffff;
+  background-image:
+    conic-gradient(
+      #292826 25%,
+      transparent 0 50%,
+      #292826 0 75%,
+      transparent 0
+    );
+  background-size: 44px 44px;
+}
+
+/* Font heading Customer */
+.font-anton {
+  font-family: "Anton", sans-serif;
+}
+
+/* =========================================
+   CUSTOMER - MOBILE CONTAINER
+   ========================================= */
+
+@media (min-width: 768px) {
+  .customer-app {
+    width: 391px;
+    min-height: 100vh;
+    margin: 0 auto;
+    background: #fffcf4;
+  }
 }
