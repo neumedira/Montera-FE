@@ -64,7 +64,8 @@ export default function BottomNavigation() {
                   menu.path === "/" ||
                   menu.path === "/qr" ||
                   menu.path === "/menu" ||
-                  menu.path === "/laporan"
+                  menu.path === "/laporan" ||
+                  menu.path === "/settings"
                 ) {
                   navigate(menu.path);
                 }
