@@ -126,15 +126,15 @@ export default function KelolaQR() {
           {filteredQrList.map((item) => (
             <div
               key={item.id}
-              className={`bg-white p-3.5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between transition-all ${
-                !item.isTersedia ? 'opacity-60 bg-gray-50' : ''
+              className={`bg-[#FAF6EE] p-3.5 rounded-2xl border border-gray-200/60 shadow-sm flex items-center justify-between transition-all ${
+                !item.isTersedia ? 'opacity-60 bg-gray-200/50' : ''
               }`}
             >
               <div className="flex items-center space-x-3.5">
                 <img
                   src={item.qrUrl}
                   alt={item.nama}
-                  className="w-14 h-14 object-contain rounded-lg border border-gray-100 bg-white"
+                  className="w-14 h-14 object-contain rounded-lg border border-gray-200/60 bg-white"
                 />
                 <div>
                   <h3 className="font-bold text-base text-[#222222]">{item.nama}</h3>
@@ -202,4 +202,4 @@ export default function KelolaQR() {
       <BottomNavigation />
     </div>
   );
-}
+}   
