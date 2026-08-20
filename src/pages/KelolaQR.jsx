@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Check, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Check, Trash2, Search } from 'lucide-react';
 import Navbar from '../components/layout/Navbar';
 import BottomNavigation from '../components/layout/BottomNavigation';
 import ModalEditQR from '../components/kelola-qr/ModalEditQR';
@@ -7,6 +7,7 @@ import ModalDeleteQR from '../components/kelola-qr/ModalDeleteQR';
 
 export default function KelolaQR() {
   const [inputNama, setInputNama] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   
   const [qrList, setQrList] = useState(() => {
     const saved = localStorage.getItem('qrTableList');
@@ -16,7 +17,6 @@ export default function KelolaQR() {
   const [isModalEditOpen, setIsModalEditOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
 
-  // State Modal Hapus
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
   const [deletingItem, setDeletingItem] = useState(null);
 
@@ -55,13 +55,11 @@ export default function KelolaQR() {
     setIsModalEditOpen(false);
   };
 
-  // Triggers Modal Hapus
   const handleOpenDeleteModal = (item) => {
     setDeletingItem(item);
     setIsModalDeleteOpen(true);
   };
 
-  // Exec Hapus setelah konfirmasi
   const handleConfirmDelete = () => {
     if (deletingItem) {
       setQrList(qrList.filter((item) => item.id !== deletingItem.id));
@@ -70,14 +68,34 @@ export default function KelolaQR() {
     }
   };
 
+  // Filter list berdasarkan teks di Search Bar
+  const filteredQrList = qrList.filter((item) =>
+    item.nama.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="bg-[#FAF8F5] min-h-screen text-[#222222] font-sans relative">
       <Navbar />
 
       <main className="pt-[80px] pb-28 max-w-[1000px] mx-auto px-6">
-        <div className="py-4">
-          <h1 className="text-2xl font-bold">Kelola QR TABLE</h1>
-          <p className="text-sm text-gray-500 font-medium">{qrList.length} QR Code</p>
+        {/* Header Section dengan Search Bar */}
+        <div className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">Kelola QR TABLE</h1>
+            <p className="text-sm text-gray-500 font-medium">{qrList.length} QR Code</p>
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative flex items-center w-full sm:w-64">
+            <Search size={16} className="absolute left-3.5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Cari nomor meja..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-[#FAF6EE] border border-gray-200/80 rounded-full text-xs outline-none placeholder-gray-400 focus:border-black transition-colors"
+            />
+          </div>
         </div>
 
         {/* Form Tambah QR Meja */}
@@ -105,7 +123,7 @@ export default function KelolaQR() {
 
         {/* Daftar Kartu QR */}
         <div className="space-y-3">
-          {qrList.map((item) => (
+          {filteredQrList.map((item) => (
             <div
               key={item.id}
               className={`bg-white p-3.5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between transition-all ${
@@ -147,7 +165,6 @@ export default function KelolaQR() {
                   <Check size={15} strokeWidth={3} />
                 </div>
 
-                {/* Tombol Hapus memanggil Modal Konfirmasi */}
                 <button
                   onClick={() => handleOpenDeleteModal(item)}
                   className="p-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl transition-colors"
@@ -158,9 +175,9 @@ export default function KelolaQR() {
             </div>
           ))}
 
-          {qrList.length === 0 && (
+          {filteredQrList.length === 0 && (
             <div className="text-center py-12 text-gray-400 text-sm">
-              Belum ada QR Code meja yang dibuat.
+              {searchQuery ? 'Nomor meja tidak ditemukan.' : 'Belum ada QR Code meja yang dibuat.'}
             </div>
           )}
         </div>
