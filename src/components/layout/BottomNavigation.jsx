@@ -1,5 +1,6 @@
 import {
   Home,
+  QrCode,
   Utensils,
   ClipboardList,
   BarChart3,
@@ -13,6 +14,11 @@ const menus = [
     label: "Beranda",
     icon: Home,
     path: "/",
+  },
+  {
+    label: "QR",
+    icon: QrCode,
+    path: "/qr",
   },
   {
     label: "Menu",
@@ -43,7 +49,6 @@ export default function BottomNavigation() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-[#292827] h-[82px] z-50">
       <div className="max-w-[1000px] mx-auto h-full flex items-center justify-around">
-
         {menus.map((menu) => {
           const Icon = menu.icon;
 
@@ -53,14 +58,24 @@ export default function BottomNavigation() {
           return (
             <button
               key={menu.label}
-              onClick={() => navigate(menu.path)}
+              onClick={() => {
+                // Izinkan navigasi untuk Beranda, QR, Menu, dan Laporan
+                if (
+                  menu.path === "/" ||
+                  menu.path === "/qr" ||
+                  menu.path === "/menu" ||
+                  menu.path === "/laporan"
+                ) {
+                  navigate(menu.path);
+                }
+              }}
               className={`
                 flex
                 flex-col
                 items-center
                 justify-center
                 gap-1
-                min-w-[65px]
+                min-w-[55px]
                 transition-colors
                 ${
                   isActive
@@ -80,7 +95,6 @@ export default function BottomNavigation() {
             </button>
           );
         })}
-
       </div>
     </nav>
   );
