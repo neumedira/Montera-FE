@@ -8,9 +8,12 @@ import Dashboard from "./pages/Dashboard";
 import Laporan from "./pages/Laporan";
 import KelolaMenu from "./pages/KelolaMenu";
 import KelolaQR from "./pages/KelolaQR";
-
+import CartPage from "./pages/CartPage"; 
+import OrderDetailPage from "./pages/OrderDetailPage";
 import NewOrderModal from "./components/modal/NewOrderModal";
 import Settings from "./pages/Settings";
+import CashPaymentPage from "./pages/CashPaymentPage";
+import QrisPaymentPage from "./pages/QrisPaymentPage";
 
 function App() {
   const [showNewOrder, setShowNewOrder] = useState(false);
@@ -39,12 +42,19 @@ function App() {
         <Route path="/qr" element={<KelolaQR />} />
 
         {/* Settings */}
-        <Route path="/settings"
-          element={<Settings />}
-        />
+        <Route path="/settings" element={<Settings />} />
 
         {/* Laporan */}
         <Route path="/laporan" element={<Laporan />} />
+
+        {/* Cart / Order View */}
+        <Route path="/cart" element={<CartPage />} />
+
+              <Route path="/order-details" element={<OrderDetailPage />} />
+
+              <Route path="/cash-payment" element={<CashPaymentPage />} />
+
+              <Route path="/qris-payment" element={<QrisPaymentPage />} />
       </Routes>
 
       {/* Global New Order Notification */}
