@@ -19,7 +19,7 @@ export default function Login() {
     e.preventDefault();
 
     if (username && password) {
-      navigate("/");
+      navigate("/admin");
     }
   };
 
