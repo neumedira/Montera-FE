@@ -6,10 +6,11 @@ import "./App.css";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Laporan from "./pages/Laporan";
+import KelolaMenu from "./pages/KelolaMenu";
+import KelolaQR from "./pages/KelolaQR";
 
 import NewOrderModal from "./components/modal/NewOrderModal";
 
-import KelolaMenu from './pages/KelolaMenu';
 function App() {
   const [showNewOrder, setShowNewOrder] = useState(false);
 
@@ -24,31 +25,20 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* Login */}
-        <Route
-          path="/login"
-          element={<Login />}
-        />
+        <Route path="/login" element={<Login />} />
 
         {/* Dashboard */}
-        <Route
-          path="/"
-          element={<Dashboard />}
-        />
+        <Route path="/" element={<Dashboard />} />
 
-{/* Kelola Menu */}
-        <Route
-          path="/menu"
-          element={<KelolaMenu />}
-        />
+        {/* Kelola Menu */}
+        <Route path="/menu" element={<KelolaMenu />} />
+
+        {/* Kelola QR */}
+        <Route path="/qr" element={<KelolaQR />} />
 
         {/* Laporan */}
-        <Route
-          path="/laporan"
-          element={<Laporan />}
-        />
-
+        <Route path="/laporan" element={<Laporan />} />
       </Routes>
 
       {/* Global New Order Notification */}
@@ -57,7 +47,6 @@ function App() {
         onClose={() => setShowNewOrder(false)}
         orderId="MTR-1001"
       />
-
     </BrowserRouter>
   );
 }

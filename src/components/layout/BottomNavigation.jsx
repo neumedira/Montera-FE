@@ -1,5 +1,6 @@
 import {
   Home,
+  QrCode,
   Utensils,
   ClipboardList,
   BarChart3,
@@ -8,12 +9,16 @@ import {
 
 import { useLocation, useNavigate } from "react-router-dom";
 
-
 const menus = [
   {
     label: "Beranda",
     icon: Home,
     path: "/",
+  },
+  {
+    label: "QR",
+    icon: QrCode,
+    path: "/qr",
   },
   {
     label: "Menu",
@@ -37,40 +42,32 @@ const menus = [
   },
 ];
 
-
 export default function BottomNavigation() {
-
   const location = useLocation();
   const navigate = useNavigate();
 
-
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-[#292827] h-[82px] z-50">
-
       <div className="max-w-[1000px] mx-auto h-full flex items-center justify-around">
-
         {menus.map((menu) => {
-
           const Icon = menu.icon;
 
           // Cek halaman yang sedang aktif
           const isActive = location.pathname === menu.path;
 
-
           return (
             <button
               key={menu.label}
               onClick={() => {
-
-                // Sementara hanya Dashboard dan Laporan
+                // Izinkan navigasi untuk Beranda, QR, Menu, dan Laporan
                 if (
                   menu.path === "/" ||
-                  menu.path === "/laporan" ||
-                  menu.path === "/menu"
+                  menu.path === "/qr" ||
+                  menu.path === "/menu" ||
+                  menu.path === "/laporan"
                 ) {
                   navigate(menu.path);
                 }
-
               }}
               className={`
                 flex
@@ -78,7 +75,7 @@ export default function BottomNavigation() {
                 items-center
                 justify-center
                 gap-1
-                min-w-[65px]
+                min-w-[55px]
                 transition-colors
                 ${
                   isActive
@@ -87,7 +84,6 @@ export default function BottomNavigation() {
                 }
               `}
             >
-
               <Icon
                 size={19}
                 strokeWidth={2}
@@ -96,13 +92,10 @@ export default function BottomNavigation() {
               <span className="text-[10px] font-medium">
                 {menu.label}
               </span>
-
             </button>
           );
         })}
-
       </div>
-
     </nav>
   );
 }
