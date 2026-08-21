@@ -1,12 +1,19 @@
 import { useState } from "react";
-import { Bell, LogOut, Store } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import NotificationModal from "../modal/NotificationModal";
+import logoBlack from "../../assets/logoblack.png";
 
 export default function Navbar() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const navigate = useNavigate();
 
   // Sementara jumlah pesanan baru masih manual
   const newOrderCount = 2;
+
+  const handleLogout = () => {
+    navigate("/login");
+  };
 
   return (
     <>
@@ -14,8 +21,12 @@ export default function Navbar() {
 
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-md bg-[#fffdf7] flex items-center justify-center">
-            <Store size={17} color="#252423" strokeWidth={2.5} />
+          <div className="w-7 h-7 rounded-md bg-[#fffdf7] flex items-center justify-center overflow-hidden">
+            <img
+              src={logoBlack}
+              alt="Montera Logo"
+              className="w-[21px] h-[21px] object-contain"
+            />
           </div>
 
           <div className="flex items-center gap-2">
@@ -48,7 +59,10 @@ export default function Navbar() {
           </button>
 
           {/* Logout */}
-          <button className="flex items-center gap-2 text-[#a9a7a2] text-[13px] hover:text-white transition">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 text-[#a9a7a2] text-[13px] hover:text-white transition"
+          >
             <LogOut size={17} />
             <span>Keluar</span>
           </button>

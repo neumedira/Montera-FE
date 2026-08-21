@@ -13,7 +13,7 @@ const menus = [
   {
     label: "Beranda",
     icon: Home,
-    path: "/",
+    path: "/admin",
   },
   {
     label: "QR",
@@ -61,7 +61,7 @@ export default function BottomNavigation() {
               onClick={() => {
                 // Izinkan navigasi untuk Beranda, QR, Menu, dan Laporan
                 if (
-                  menu.path === "/" ||
+                  menu.path === "/admin" ||
                   menu.path === "/qr" ||
                   menu.path === "/menu" ||
                   menu.path === "/laporan" ||

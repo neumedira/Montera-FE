@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "./context/CartContext";
 
@@ -12,77 +11,40 @@ import Laporan from "./pages/Laporan";
 import OrderPage from "./components/orders/OrderPage";
 import KelolaMenu from "./pages/KelolaMenu";
 import KelolaQR from "./pages/KelolaQR";
-import CartPage from "./pages/CartPage"; 
+import CartPage from "./pages/CartPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
-import NewOrderModal from "./components/modal/NewOrderModal";
 import Settings from "./pages/Settings";
 import CashPaymentPage from "./pages/CashPaymentPage";
 import QrisPaymentPage from "./pages/QrisPaymentPage";
 
 function App() {
-  const [showNewOrder, setShowNewOrder] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowNewOrder(true);
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
   return (
     <BrowserRouter>
-    <CartProvider>
-      <Routes>
-        {/* Costumer */}
-        
-        {/* Menu */}
-        <Route path="/" element={<Menu />} />
-        <Route path="costumer/menu/:id" element={<MenuDetail />} />
+      <CartProvider>
+        <Routes>
 
-        {/* Admin */}
+          {/* Costumer */}
+          <Route path="/" element={<Menu />} />
+          <Route path="/scan/:token" element={<Menu />} />
+          <Route path="costumer/menu/:id" element={<MenuDetail />} />
 
-        {/* Login */}
-        <Route path="/admin/login" element={<Login />} />
+          {/* Admin */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/admin" element={<Dashboard />} />
+          <Route path="/menu" element={<KelolaMenu />} />
+          <Route path="/qr" element={<KelolaQR />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/pesanan" element={<OrderPage />} />
+          <Route path="/laporan" element={<Laporan />} />
 
-        {/* Dashboard */}
-        <Route path="/admin" element={<Dashboard />} />
+          {/* Cart / Order */}
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/order-details" element={<OrderDetailPage />} />
+          <Route path="/cash-payment" element={<CashPaymentPage />} />
+          <Route path="/qris-payment" element={<QrisPaymentPage />} />
 
-        {/* Kelola Menu */}
-        <Route path="/menu" element={<KelolaMenu />} />
-
-        {/* Kelola QR */}
-        <Route path="/qr" element={<KelolaQR />} />
-
-        {/* Settings */}
-        <Route path="/settings" element={<Settings />} />
-
-        {/* Pesanan */}
-        <Route
-          path="/pesanan"
-          element={<OrderPage />}
-        />
-
-        {/* Laporan */}
-        <Route path="/laporan" element={<Laporan />} />
-
-        {/* Cart / Order View */}
-        <Route path="/cart" element={<CartPage />} />
-
-              <Route path="/order-details" element={<OrderDetailPage />} />
-
-              <Route path="/cash-payment" element={<CashPaymentPage />} />
-
-              <Route path="/qris-payment" element={<QrisPaymentPage />} />
-      </Routes>
-
-      {/* Global New Order Notification */}
-      <NewOrderModal
-        isOpen={showNewOrder}
-        onClose={() => setShowNewOrder(false)}
-        orderId="MTR-1001"
-      />
-    </CartProvider>
+        </Routes>
+      </CartProvider>
     </BrowserRouter>
   );
 }
