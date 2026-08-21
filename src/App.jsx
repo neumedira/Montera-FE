@@ -9,6 +9,7 @@ import MenuDetail from "./pages/costumer/menu/MenuDetail";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Laporan from "./pages/Laporan";
+import OrderPage from "./components/orders/OrderPage";
 import KelolaMenu from "./pages/KelolaMenu";
 import KelolaQR from "./pages/KelolaQR";
 
@@ -52,6 +53,12 @@ function App() {
 
         {/* Settings */}
         <Route path="/settings" element={<Settings />} />
+
+        {/* Pesanan */}
+        <Route
+          path="/pesanan"
+          element={<OrderPage />}
+        />
 
         {/* Laporan */}
         <Route path="/laporan" element={<Laporan />} />
