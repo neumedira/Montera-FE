@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { CartProvider } from "./context/CartContext";
 
 import "./App.css";
 
+import Menu from "./pages/costumer/menu/Menu";
+import MenuDetail from "./pages/costumer/menu/MenuDetail";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Laporan from "./pages/Laporan";
 import OrderPage from "./components/orders/OrderPage";
+import KelolaMenu from "./pages/KelolaMenu";
+import KelolaQR from "./pages/KelolaQR";
 
 import NewOrderModal from "./components/modal/NewOrderModal";
+import Settings from "./pages/Settings";
 
 function App() {
   const [showNewOrder, setShowNewOrder] = useState(false);
@@ -23,19 +29,30 @@ function App() {
 
   return (
     <BrowserRouter>
+    <CartProvider>
       <Routes>
+        {/* Costumer */}
+        
+        {/* Menu */}
+        <Route path="/" element={<Menu />} />
+        <Route path="costumer/menu/:id" element={<MenuDetail />} />
+
+        {/* Admin */}
 
         {/* Login */}
-        <Route
-          path="/login"
-          element={<Login />}
-        />
+        <Route path="/admin/login" element={<Login />} />
 
         {/* Dashboard */}
-        <Route
-          path="/"
-          element={<Dashboard />}
-        />
+        <Route path="/admin" element={<Dashboard />} />
+
+        {/* Kelola Menu */}
+        <Route path="/menu" element={<KelolaMenu />} />
+
+        {/* Kelola QR */}
+        <Route path="/qr" element={<KelolaQR />} />
+
+        {/* Settings */}
+        <Route path="/settings" element={<Settings />} />
 
         {/* Pesanan */}
         <Route
@@ -44,11 +61,7 @@ function App() {
         />
 
         {/* Laporan */}
-        <Route
-          path="/laporan"
-          element={<Laporan />}
-        />
-
+        <Route path="/laporan" element={<Laporan />} />
       </Routes>
 
       {/* Global New Order Notification */}
@@ -57,7 +70,7 @@ function App() {
         onClose={() => setShowNewOrder(false)}
         orderId="MTR-1001"
       />
-
+    </CartProvider>
     </BrowserRouter>
   );
 }

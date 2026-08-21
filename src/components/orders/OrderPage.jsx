@@ -12,19 +12,36 @@ export default function OrderPage() {
   const [date, setDate] = useState("");
   const [openOrder, setOpenOrder] = useState(null);
 
+  // ==========================================
+  // FILTER PESANAN
+  // ==========================================
   const filteredOrders = useMemo(() => {
     let result = [...orders];
 
-    // Filter Dine-In / Take Away
+    // ------------------------------------------
+    // FILTER BERDASARKAN JENIS PESANAN
+    // ------------------------------------------
     if (activeFilter !== "Semua") {
       result = result.filter(
         (order) => order.type === activeFilter
       );
     }
 
-    return result;
-  }, [activeFilter]);
+    // ------------------------------------------
+    // FILTER BERDASARKAN TANGGAL
+    // ------------------------------------------
+    if (date) {
+      result = result.filter(
+        (order) => order.dateValue === date
+      );
+    }
 
+    return result;
+  }, [activeFilter, date]);
+
+  // ==========================================
+  // BUKA / TUTUP DETAIL PESANAN
+  // ==========================================
   const toggleOrder = (id) => {
     setOpenOrder((prev) =>
       prev === id ? null : id
@@ -34,14 +51,20 @@ export default function OrderPage() {
   return (
     <div className="min-h-screen bg-[#F6F3ED]">
 
-      {/* ================= NAVBAR / HEADER ================= */}
+      {/* ===================================== */}
+      {/* NAVBAR */}
+      {/* ===================================== */}
       <Navbar />
 
-      {/* ================= CONTENT PESANAN ================= */}
+      {/* ===================================== */}
+      {/* CONTENT PESANAN */}
+      {/* ===================================== */}
       <main className="px-5 pb-28 pt-7 md:px-8 lg:px-10">
         <div className="mx-auto max-w-[1100px]">
 
-          {/* Title */}
+          {/* ================================= */}
+          {/* TITLE */}
+          {/* ================================= */}
           <div className="mb-4">
             <h1 className="text-[27px] font-extrabold tracking-[-0.03em] text-[#292825]">
               Pesanan
@@ -52,7 +75,9 @@ export default function OrderPage() {
             </p>
           </div>
 
-          {/* Filter */}
+          {/* ================================= */}
+          {/* FILTER */}
+          {/* ================================= */}
           <div className="mb-4">
             <OrderFilters
               activeFilter={activeFilter}
@@ -62,8 +87,11 @@ export default function OrderPage() {
             />
           </div>
 
-          {/* Order Cards */}
+          {/* ================================= */}
+          {/* LIST PESANAN */}
+          {/* ================================= */}
           <div className="space-y-3">
+
             {filteredOrders.length > 0 ? (
               filteredOrders.map((order) => (
                 <OrderCard
@@ -74,22 +102,33 @@ export default function OrderPage() {
                 />
               ))
             ) : (
-              <div className="rounded-2xl border border-[#E7E1D5] bg-[#FFFCF4] p-10 text-center">
+              <div
+                className="
+                  rounded-2xl
+                  border border-[#E7E1D5]
+                  bg-[#FFFCF4]
+                  p-10
+                  text-center
+                "
+              >
                 <p className="text-sm font-semibold text-[#57544F]">
                   Tidak ada pesanan
                 </p>
 
                 <p className="mt-1 text-xs text-[#AAA69F]">
-                  Belum ada pesanan untuk filter yang dipilih.
+                  Belum ada pesanan yang sesuai dengan filter.
                 </p>
               </div>
             )}
+
           </div>
 
         </div>
       </main>
 
-      {/* ================= BOTTOM NAVIGATION ================= */}
+      {/* ===================================== */}
+      {/* BOTTOM NAVIGATION */}
+      {/* ===================================== */}
       <BottomNavigation />
 
     </div>
