@@ -44,9 +44,7 @@ export default function KelolaQR() {
 
     const d = new Date(date);
 
-    return `${d.getDate()} - ${
-      months[d.getMonth()]
-    } - ${d.getFullYear()}`;
+    return `${d.getDate()} - ${months[d.getMonth()]} - ${d.getFullYear()}`;
   };
 
   const handleAddQR = (e) => {
@@ -55,32 +53,40 @@ export default function KelolaQR() {
     if (!inputNama.trim()) return;
 
     /*
-     * Sementara contoh URL dari BE.
-     * Nanti bagian ini diganti dengan response API BE.
+     * URL FE untuk testing menggunakan Wi-Fi.
+     *
+     * GANTI 192.168.1.28 dengan IP LAPTOP KAMU.
+     *
+     * Contoh:
+     * http://192.168.1.28:5173/scan/ABC123
      */
-    const qrText =
-      "https://montera.cafe/scan/549qVHF3tmJNZfV8GeEXSimmlxdhEFLOZi0vRVzF29IG4W5AzfhhaaRskuZwAdm6";
+
+    const token =
+      "549qVHF3tmJNZfV8GeEXSimmlxdhEFLOZi0vRVzF29IG4W5AzfhhaaRskuZwAdm6";
+
+    const qrText = `http://192.168.1.29:5173/scan/${token}`;
 
     const newQR = {
       id: Date.now(),
-      nama: inputNama,
+      nama: inputNama.trim(),
       tanggal: formatTanggal(new Date()),
       qrText: qrText,
       isTersedia: true,
     };
 
-    setQrList([newQR, ...qrList]);
+    setQrList((prev) => [newQR, ...prev]);
     setInputNama("");
   };
 
   const handleSaveEdit = (updatedData) => {
-    setQrList(
-      qrList.map((item) =>
+    setQrList((prev) =>
+      prev.map((item) =>
         item.id === updatedData.id ? updatedData : item
       )
     );
 
     setIsModalEditOpen(false);
+    setEditingItem(null);
   };
 
   const handleOpenDeleteModal = (item) => {
@@ -90,8 +96,8 @@ export default function KelolaQR() {
 
   const handleConfirmDelete = () => {
     if (deletingItem) {
-      setQrList(
-        qrList.filter((item) => item.id !== deletingItem.id)
+      setQrList((prev) =>
+        prev.filter((item) => item.id !== deletingItem.id)
       );
 
       setIsModalDeleteOpen(false);
@@ -194,6 +200,7 @@ export default function KelolaQR() {
               }`}
             >
 
+              {/* QR + Info */}
               <div className="flex items-center space-x-3.5">
 
                 {/* QR CODE */}
@@ -209,6 +216,7 @@ export default function KelolaQR() {
 
                 </div>
 
+                {/* Info Meja */}
                 <div>
 
                   <h3 className="font-bold text-base text-[#222222]">
@@ -226,6 +234,7 @@ export default function KelolaQR() {
               {/* Action */}
               <div className="flex flex-col space-y-1.5 items-center">
 
+                {/* Edit */}
                 <button
                   onClick={() => {
                     setEditingItem(item);
@@ -236,6 +245,7 @@ export default function KelolaQR() {
                   <Edit2 size={15} />
                 </button>
 
+                {/* Status */}
                 <div
                   className={`p-1.5 rounded-xl flex items-center justify-center transition-colors ${
                     item.isTersedia
@@ -249,6 +259,7 @@ export default function KelolaQR() {
                   />
                 </div>
 
+                {/* Delete */}
                 <button
                   onClick={() =>
                     handleOpenDeleteModal(item)
@@ -264,6 +275,7 @@ export default function KelolaQR() {
 
           ))}
 
+          {/* Empty State */}
           {filteredQrList.length === 0 && (
             <div className="text-center py-12 text-gray-400 text-sm">
               {searchQuery
@@ -279,9 +291,10 @@ export default function KelolaQR() {
       {/* Modal Edit */}
       <ModalEditQR
         isOpen={isModalEditOpen}
-        onClose={() =>
-          setIsModalEditOpen(false)
-        }
+        onClose={() => {
+          setIsModalEditOpen(false);
+          setEditingItem(null);
+        }}
         onSave={handleSaveEdit}
         editingItem={editingItem}
       />
@@ -289,9 +302,10 @@ export default function KelolaQR() {
       {/* Modal Delete */}
       <ModalDeleteQR
         isOpen={isModalDeleteOpen}
-        onClose={() =>
-          setIsModalDeleteOpen(false)
-        }
+        onClose={() => {
+          setIsModalDeleteOpen(false);
+          setDeletingItem(null);
+        }}
         onConfirm={handleConfirmDelete}
         itemName={deletingItem?.nama}
       />
