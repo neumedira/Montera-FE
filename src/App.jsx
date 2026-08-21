@@ -4,17 +4,22 @@ import { CartProvider } from "./context/CartContext";
 
 import "./App.css";
 
+// Customer
+import Pilihan from "./components/pilihan/Pilihan";
 import Menu from "./pages/costumer/menu/Menu";
 import MenuDetail from "./pages/costumer/menu/MenuDetail";
+
+// Admin
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import Laporan from "./pages/Laporan";
-import OrderPage from "./components/orders/OrderPage";
 import KelolaMenu from "./pages/KelolaMenu";
 import KelolaQR from "./pages/KelolaQR";
-
-import NewOrderModal from "./components/modal/NewOrderModal";
 import Settings from "./pages/Settings";
+import OrderPage from "./components/orders/OrderPage";
+import Laporan from "./pages/Laporan";
+
+// Modal
+import NewOrderModal from "./components/modal/NewOrderModal";
 
 function App() {
   const [showNewOrder, setShowNewOrder] = useState(false);
@@ -29,48 +34,86 @@ function App() {
 
   return (
     <BrowserRouter>
-    <CartProvider>
-      <Routes>
-        {/* Costumer */}
-        
-        {/* Menu */}
-        <Route path="/" element={<Menu />} />
-        <Route path="costumer/menu/:id" element={<MenuDetail />} />
+      <CartProvider>
+        <Routes>
 
-        {/* Admin */}
+          {/* =================================
+              CUSTOMER
+          ================================= */}
 
-        {/* Login */}
-        <Route path="/admin/login" element={<Login />} />
+          {/* Pilihan Dine In / Take Away */}
+          <Route path="/" element={<Pilihan />} />
 
-        {/* Dashboard */}
-        <Route path="/admin" element={<Dashboard />} />
+          {/* Menu Customer */}
+          <Route
+            path="/costumer/menu"
+            element={<Menu />}
+          />
 
-        {/* Kelola Menu */}
-        <Route path="/menu" element={<KelolaMenu />} />
+          {/* Detail Menu Customer */}
+          <Route
+            path="/costumer/menu/:id"
+            element={<MenuDetail />}
+          />
 
-        {/* Kelola QR */}
-        <Route path="/qr" element={<KelolaQR />} />
+          {/* =================================
+              ADMIN
+          ================================= */}
 
-        {/* Settings */}
-        <Route path="/settings" element={<Settings />} />
+          {/* Login Admin */}
+          <Route
+            path="/admin/login"
+            element={<Login />}
+          />
 
-        {/* Pesanan */}
-        <Route
-          path="/pesanan"
-          element={<OrderPage />}
+          {/* Dashboard Admin */}
+          <Route
+            path="/admin"
+            element={<Dashboard />}
+          />
+
+          {/* Kelola Menu */}
+          <Route
+            path="/menu"
+            element={<KelolaMenu />}
+          />
+
+          {/* Kelola QR */}
+          <Route
+            path="/qr"
+            element={<KelolaQR />}
+          />
+
+          {/* Settings */}
+          <Route
+            path="/settings"
+            element={<Settings />}
+          />
+
+          {/* Pesanan */}
+          <Route
+            path="/pesanan"
+            element={<OrderPage />}
+          />
+
+          {/* Laporan */}
+          <Route
+            path="/laporan"
+            element={<Laporan />}
+          />
+
+        </Routes>
+
+        {/* =================================
+            GLOBAL NEW ORDER NOTIFICATION
+        ================================= */}
+        <NewOrderModal
+          isOpen={showNewOrder}
+          onClose={() => setShowNewOrder(false)}
+          orderId="MTR-1001"
         />
 
-        {/* Laporan */}
-        <Route path="/laporan" element={<Laporan />} />
-      </Routes>
-
-      {/* Global New Order Notification */}
-      <NewOrderModal
-        isOpen={showNewOrder}
-        onClose={() => setShowNewOrder(false)}
-        orderId="MTR-1001"
-      />
-    </CartProvider>
+      </CartProvider>
     </BrowserRouter>
   );
 }
