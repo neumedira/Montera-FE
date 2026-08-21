@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { CartProvider } from "./context/CartContext";
 
 import "./App.css";
 
+import Menu from "./pages/costumer/menu/Menu";
+import MenuDetail from "./pages/costumer/menu/MenuDetail";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Laporan from "./pages/Laporan";
@@ -28,12 +31,21 @@ function App() {
 
   return (
     <BrowserRouter>
+    <CartProvider>
       <Routes>
+        {/* Costumer */}
+        
+        {/* Menu */}
+        <Route path="/" element={<Menu />} />
+        <Route path="costumer/menu/:id" element={<MenuDetail />} />
+
+        {/* Admin */}
+
         {/* Login */}
-        <Route path="/login" element={<Login />} />
+        <Route path="/admin/login" element={<Login />} />
 
         {/* Dashboard */}
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/admin" element={<Dashboard />} />
 
         {/* Kelola Menu */}
         <Route path="/menu" element={<KelolaMenu />} />
@@ -63,6 +75,7 @@ function App() {
         onClose={() => setShowNewOrder(false)}
         orderId="MTR-1001"
       />
+    </CartProvider>
     </BrowserRouter>
   );
 }
