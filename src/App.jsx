@@ -61,15 +61,15 @@ function App() {
             element={<Pilihan />}
           />
 
+          {/* QR Meja */}
+          <Route
+            path="/scan/:token"
+            element={<Pilihan />}
+          />
+
           {/* Menu Customer */}
           <Route
             path="/costumer/menu"
-            element={<Menu />}
-          />
-
-          {/* Menu dari QR / Scan */}
-          <Route
-            path="/scan/:token"
             element={<Menu />}
           />
 

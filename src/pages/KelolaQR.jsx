@@ -11,6 +11,7 @@ export default function KelolaQR() {
   const [inputNama, setInputNama] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Ambil data QR yang tersimpan
   const [qrList, setQrList] = useState(() => {
     const saved = localStorage.getItem("qrTableList");
     return saved ? JSON.parse(saved) : [];
@@ -22,10 +23,12 @@ export default function KelolaQR() {
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
   const [deletingItem, setDeletingItem] = useState(null);
 
+  // Simpan data QR ke localStorage
   useEffect(() => {
     localStorage.setItem("qrTableList", JSON.stringify(qrList));
   }, [qrList]);
 
+  // Format tanggal
   const formatTanggal = (date) => {
     const months = [
       "Januari",
@@ -44,27 +47,34 @@ export default function KelolaQR() {
 
     const d = new Date(date);
 
-    return `${d.getDate()} - ${months[d.getMonth()]} - ${d.getFullYear()}`;
+    return `${d.getDate()} - ${
+      months[d.getMonth()]
+    } - ${d.getFullYear()}`;
   };
 
+  // ==============================
+  // TAMBAH QR
+  // ==============================
   const handleAddQR = (e) => {
     e.preventDefault();
 
     if (!inputNama.trim()) return;
 
     /*
-     * URL FE untuk testing menggunakan Wi-Fi.
+     * URL CUSTOMER UNTUK TESTING WIFI
      *
-     * GANTI 192.168.1.28 dengan IP LAPTOP KAMU.
+     * IP laptop:
+     * 192.168.1.29
      *
-     * Contoh:
-     * http://192.168.1.28:5173/scan/ABC123
+     * Route:
+     * /scan/:token
      */
 
     const token =
       "549qVHF3tmJNZfV8GeEXSimmlxdhEFLOZi0vRVzF29IG4W5AzfhhaaRskuZwAdm6";
 
-    const qrText = `http://192.168.1.29:5173/scan/${token}`;
+    const qrText =
+      `http://192.168.1.29:5173/scan/${token}`;
 
     const newQR = {
       id: Date.now(),
@@ -75,13 +85,19 @@ export default function KelolaQR() {
     };
 
     setQrList((prev) => [newQR, ...prev]);
+
     setInputNama("");
   };
 
+  // ==============================
+  // EDIT QR
+  // ==============================
   const handleSaveEdit = (updatedData) => {
     setQrList((prev) =>
       prev.map((item) =>
-        item.id === updatedData.id ? updatedData : item
+        item.id === updatedData.id
+          ? updatedData
+          : item
       )
     );
 
@@ -89,22 +105,33 @@ export default function KelolaQR() {
     setEditingItem(null);
   };
 
+  // ==============================
+  // BUKA MODAL DELETE
+  // ==============================
   const handleOpenDeleteModal = (item) => {
     setDeletingItem(item);
     setIsModalDeleteOpen(true);
   };
 
+  // ==============================
+  // DELETE QR
+  // ==============================
   const handleConfirmDelete = () => {
-    if (deletingItem) {
-      setQrList((prev) =>
-        prev.filter((item) => item.id !== deletingItem.id)
-      );
+    if (!deletingItem) return;
 
-      setIsModalDeleteOpen(false);
-      setDeletingItem(null);
-    }
+    setQrList((prev) =>
+      prev.filter(
+        (item) => item.id !== deletingItem.id
+      )
+    );
+
+    setIsModalDeleteOpen(false);
+    setDeletingItem(null);
   };
 
+  // ==============================
+  // SEARCH
+  // ==============================
   const filteredQrList = qrList.filter((item) =>
     item.nama
       .toLowerCase()
@@ -113,11 +140,14 @@ export default function KelolaQR() {
 
   return (
     <div className="bg-[#FAF8F5] min-h-screen text-[#222222] font-sans relative">
+
       <Navbar />
 
       <main className="pt-[80px] pb-28 max-w-[1000px] mx-auto px-6">
 
-        {/* Header */}
+        {/* ==============================
+            HEADER
+        ============================== */}
         <div className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 
           <div>
@@ -152,7 +182,9 @@ export default function KelolaQR() {
 
         </div>
 
-        {/* Form Tambah QR */}
+        {/* ==============================
+            FORM TAMBAH QR
+        ============================== */}
         <div className="bg-[#FAF6EE] p-4 rounded-2xl border border-gray-200/60 mb-6">
 
           <label className="text-xs font-bold text-[#222222] block mb-2">
@@ -186,7 +218,9 @@ export default function KelolaQR() {
 
         </div>
 
-        {/* Daftar QR */}
+        {/* ==============================
+            DAFTAR QR
+        ============================== */}
         <div className="space-y-3">
 
           {filteredQrList.map((item) => (
@@ -200,7 +234,7 @@ export default function KelolaQR() {
               }`}
             >
 
-              {/* QR + Info */}
+              {/* QR + INFO */}
               <div className="flex items-center space-x-3.5">
 
                 {/* QR CODE */}
@@ -216,7 +250,7 @@ export default function KelolaQR() {
 
                 </div>
 
-                {/* Info Meja */}
+                {/* INFO MEJA */}
                 <div>
 
                   <h3 className="font-bold text-base text-[#222222]">
@@ -231,10 +265,12 @@ export default function KelolaQR() {
 
               </div>
 
-              {/* Action */}
+              {/* ==============================
+                  ACTION
+              ============================== */}
               <div className="flex flex-col space-y-1.5 items-center">
 
-                {/* Edit */}
+                {/* EDIT */}
                 <button
                   onClick={() => {
                     setEditingItem(item);
@@ -245,7 +281,7 @@ export default function KelolaQR() {
                   <Edit2 size={15} />
                 </button>
 
-                {/* Status */}
+                {/* STATUS */}
                 <div
                   className={`p-1.5 rounded-xl flex items-center justify-center transition-colors ${
                     item.isTersedia
@@ -259,7 +295,7 @@ export default function KelolaQR() {
                   />
                 </div>
 
-                {/* Delete */}
+                {/* DELETE */}
                 <button
                   onClick={() =>
                     handleOpenDeleteModal(item)
@@ -275,7 +311,7 @@ export default function KelolaQR() {
 
           ))}
 
-          {/* Empty State */}
+          {/* EMPTY STATE */}
           {filteredQrList.length === 0 && (
             <div className="text-center py-12 text-gray-400 text-sm">
               {searchQuery
@@ -288,7 +324,9 @@ export default function KelolaQR() {
 
       </main>
 
-      {/* Modal Edit */}
+      {/* ==============================
+          MODAL EDIT
+      ============================== */}
       <ModalEditQR
         isOpen={isModalEditOpen}
         onClose={() => {
@@ -299,7 +337,9 @@ export default function KelolaQR() {
         editingItem={editingItem}
       />
 
-      {/* Modal Delete */}
+      {/* ==============================
+          MODAL DELETE
+      ============================== */}
       <ModalDeleteQR
         isOpen={isModalDeleteOpen}
         onClose={() => {
