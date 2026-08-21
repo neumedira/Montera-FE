@@ -4,12 +4,16 @@ import { CartProvider } from "./context/CartContext";
 
 import "./App.css";
 
-// Customer
+// ==============================
+// CUSTOMER
+// ==============================
 import Pilihan from "./components/pilihan/Pilihan";
 import Menu from "./pages/costumer/menu/Menu";
 import MenuDetail from "./pages/costumer/menu/MenuDetail";
 
-// Admin
+// ==============================
+// ADMIN
+// ==============================
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import KelolaMenu from "./pages/KelolaMenu";
@@ -18,7 +22,17 @@ import Settings from "./pages/Settings";
 import OrderPage from "./components/orders/OrderPage";
 import Laporan from "./pages/Laporan";
 
-// Modal
+// ==============================
+// CART / ORDER / PAYMENT
+// ==============================
+import CartPage from "./pages/CartPage";
+import OrderDetailPage from "./pages/OrderDetailPage";
+import CashPaymentPage from "./pages/CashPaymentPage";
+import QrisPaymentPage from "./pages/QrisPaymentPage";
+
+// ==============================
+// MODAL
+// ==============================
 import NewOrderModal from "./components/modal/NewOrderModal";
 
 function App() {
@@ -36,13 +50,15 @@ function App() {
     <BrowserRouter>
       <CartProvider>
         <Routes>
-
           {/* =================================
               CUSTOMER
           ================================= */}
 
           {/* Pilihan Dine In / Take Away */}
-          <Route path="/" element={<Pilihan />} />
+          <Route
+            path="/"
+            element={<Pilihan />}
+          />
 
           {/* Menu Customer */}
           <Route
@@ -102,6 +118,33 @@ function App() {
             element={<Laporan />}
           />
 
+          {/* =================================
+              CART / ORDER / PAYMENT
+          ================================= */}
+
+          {/* Cart */}
+          <Route
+            path="/cart"
+            element={<CartPage />}
+          />
+
+          {/* Order Detail */}
+          <Route
+            path="/order-details"
+            element={<OrderDetailPage />}
+          />
+
+          {/* Cash Payment */}
+          <Route
+            path="/cash-payment"
+            element={<CashPaymentPage />}
+          />
+
+          {/* QRIS Payment */}
+          <Route
+            path="/qris-payment"
+            element={<QrisPaymentPage />}
+          />
         </Routes>
 
         {/* =================================
@@ -112,7 +155,6 @@ function App() {
           onClose={() => setShowNewOrder(false)}
           orderId="MTR-1001"
         />
-
       </CartProvider>
     </BrowserRouter>
   );

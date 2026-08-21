@@ -7,6 +7,7 @@ import {
   ChefHat,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { loginAdmin } from "../api/admin";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -14,12 +15,35 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
-    if (username && password) {
+    if (!username || !password) {
+      setError("Username dan password wajib diisi.");
+      return;
+    }
+
+    setError("");
+    setLoading(true);
+
+    try {
+      const data = await loginAdmin(username, password);
+
+      console.log("Login berhasil:", data);
+
       navigate("/admin");
+    } catch (error) {
+      console.error("Login gagal:", error);
+
+      setError(
+        error.response?.data?.message ||
+          "Username atau password salah."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -75,6 +99,7 @@ export default function Login() {
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Username / Email"
               className="w-full ml-4 bg-transparent outline-none text-[16px] text-[#FFFDF5] placeholder:text-[#777572]"
+              disabled={loading}
             />
 
           </div>
@@ -94,12 +119,14 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
               className="w-full ml-4 bg-transparent outline-none text-[16px] text-[#FFFDF5] placeholder:text-[#777572]"
+              disabled={loading}
             />
 
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="text-[#8B8983] hover:text-[#FFFDF5] transition"
+              disabled={loading}
             >
               {showPassword ? (
                 <EyeOff size={21} />
@@ -110,12 +137,20 @@ export default function Login() {
 
           </div>
 
+          {/* Error */}
+          {error && (
+            <p className="mt-3 text-sm text-red-400">
+              {error}
+            </p>
+          )}
+
           {/* Button */}
           <button
             type="submit"
-            className="w-full h-[70px] mt-5 rounded-[15px] bg-[#FFFDF5] text-[#292825] text-[20px] font-extrabold hover:bg-[#F5F1E8] transition"
+            disabled={loading}
+            className="w-full h-[70px] mt-5 rounded-[15px] bg-[#FFFDF5] text-[#292825] text-[20px] font-extrabold hover:bg-[#F5F1E8] transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Masuk
+            {loading ? "Memproses..." : "Masuk"}
           </button>
 
         </form>
