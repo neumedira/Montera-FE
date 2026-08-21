@@ -50,6 +50,7 @@ function App() {
     <BrowserRouter>
       <CartProvider>
         <Routes>
+
           {/* =================================
               CUSTOMER
           ================================= */}
@@ -63,6 +64,12 @@ function App() {
           {/* Menu Customer */}
           <Route
             path="/costumer/menu"
+            element={<Menu />}
+          />
+
+          {/* Menu dari QR / Scan */}
+          <Route
+            path="/scan/:token"
             element={<Menu />}
           />
 
@@ -82,7 +89,13 @@ function App() {
             element={<Login />}
           />
 
-          {/* Dashboard Admin */}
+          {/* Login alternatif */}
+          <Route
+            path="/login"
+            element={<Login />}
+          />
+
+          {/* Dashboard */}
           <Route
             path="/admin"
             element={<Dashboard />}
@@ -145,6 +158,7 @@ function App() {
             path="/qris-payment"
             element={<QrisPaymentPage />}
           />
+
         </Routes>
 
         {/* =================================
@@ -155,6 +169,7 @@ function App() {
           onClose={() => setShowNewOrder(false)}
           orderId="MTR-1001"
         />
+
       </CartProvider>
     </BrowserRouter>
   );

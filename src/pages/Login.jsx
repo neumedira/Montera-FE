@@ -4,10 +4,10 @@ import {
   LockKeyhole,
   Eye,
   EyeOff,
-  ChefHat,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { loginAdmin } from "../api/admin";
+import logoBlack from "../assets/logoBlack.png";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -60,10 +60,10 @@ export default function Login() {
 
           {/* Logo */}
           <div className="relative w-[88px] h-[88px] rounded-[24px] bg-[#FFFDF5] flex items-center justify-center">
-            <ChefHat
-              size={28}
-              strokeWidth={2.5}
-              className="text-[#302F2C]"
+            <img
+              src={logoBlack}
+              alt="Montera Logo"
+              className="w-[52px] h-[52px] object-contain"
             />
           </div>
 
@@ -157,7 +157,7 @@ export default function Login() {
 
         {/* Footer */}
         <p className="mt-10 text-[15px] text-[#55534F]">
-          Hanya untuk admin Montera Cafe
+          Hanya untuk admin Montera Burger
         </p>
 
       </div>
