@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 
 export default function OrderDetailPage() {
   const navigate = useNavigate();
-  const [customerName, setCustomerName] = useState('Nazriel');
+  // Diubah menjadi '' agar input kosong dan menampilkan placeholder "Enter name"
+  const [customerName, setCustomerName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
 
   const orderItems = [
@@ -32,13 +33,13 @@ export default function OrderDetailPage() {
 
   const grandTotal = 166000;
 
-const handleProceed = () => {
-  if (paymentMethod === 'cash') {
-    navigate('/cash-payment');
-  } else if (paymentMethod === 'qris') {
-    navigate('/qris-payment');
-  }
-};
+  const handleProceed = () => {
+    if (paymentMethod === 'cash') {
+      navigate('/cash-payment');
+    } else if (paymentMethod === 'qris') {
+      navigate('/qris-payment');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] max-w-md mx-auto p-4 flex flex-col justify-between">
