@@ -6,6 +6,7 @@ import "./App.css";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Laporan from "./pages/Laporan";
+import OrderPage from "./components/orders/OrderPage";
 
 import NewOrderModal from "./components/modal/NewOrderModal";
 
@@ -34,6 +35,12 @@ function App() {
         <Route
           path="/"
           element={<Dashboard />}
+        />
+
+        {/* Pesanan */}
+        <Route
+          path="/pesanan"
+          element={<OrderPage />}
         />
 
         {/* Laporan */}

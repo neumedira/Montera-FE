@@ -62,10 +62,11 @@ export default function BottomNavigation() {
               key={menu.label}
               onClick={() => {
 
-                // Sementara hanya Dashboard dan Laporan
+                // Sementara hanya Dashboard, Laporan, dan Pesanan
                 if (
                   menu.path === "/" ||
-                  menu.path === "/laporan"
+                  menu.path === "/laporan" ||
+                  menu.path === "/pesanan"
                 ) {
                   navigate(menu.path);
                 }
