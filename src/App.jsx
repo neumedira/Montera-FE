@@ -19,7 +19,7 @@ import Dashboard from "./pages/Dashboard";
 import KelolaMenu from "./pages/KelolaMenu";
 import KelolaQR from "./pages/KelolaQR";
 import Settings from "./pages/Settings";
-import OrderPage from "./components/orders/OrderPage";
+import OrderPage from "./pages/OrderPage";
 import Laporan from "./pages/Laporan";
 
 // ==============================
