@@ -13,7 +13,13 @@ function formatRupiah(value) {
   }).format(value);
 }
 
-export default function OrderCard({ order, open, onToggle }) {
+export default function OrderCard({
+  order,
+  open,
+  onToggle,
+  onDone,
+  isDone,
+}) {
   const isTakeAway = order.type === "Take Away";
   const isCash = order.payment === "Cash";
 
@@ -28,6 +34,7 @@ export default function OrderCard({ order, open, onToggle }) {
     >
       {/* Header */}
       <button
+        type="button"
         onClick={onToggle}
         className="
           flex w-full items-center justify-between
@@ -37,7 +44,8 @@ export default function OrderCard({ order, open, onToggle }) {
       >
         {/* Left */}
         <div className="flex min-w-0 items-center gap-3">
-          {/* Table Number */}
+
+          {/* Table */}
           <div
             className="
               flex h-10 w-10 shrink-0 items-center justify-center
@@ -45,10 +53,12 @@ export default function OrderCard({ order, open, onToggle }) {
               text-[10px] font-bold text-white
             "
           >
-            1001
+            {order.table}
           </div>
 
           <div className="min-w-0">
+
+            {/* Customer + Type */}
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-[15px] font-bold text-[#292825]">
                 {order.customer}
@@ -69,23 +79,35 @@ export default function OrderCard({ order, open, onToggle }) {
               </span>
             </div>
 
+            {/* Info */}
             <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-[#B1ADA6]">
               <span>{order.orderId}</span>
+
               <span>•</span>
+
               <span>
                 {order.date}, {order.time}
               </span>
+
               <span>•</span>
 
               <span
                 className={`flex items-center gap-1 font-semibold ${
-                  isCash ? "text-[#F3A34E]" : "text-[#7D7B76]"
+                  isCash
+                    ? "text-[#F3A34E]"
+                    : "text-[#7D7B76]"
                 }`}
               >
                 {isCash ? (
-                  <CreditCard size={12} strokeWidth={1.8} />
+                  <CreditCard
+                    size={12}
+                    strokeWidth={1.8}
+                  />
                 ) : (
-                  <Smartphone size={12} strokeWidth={1.8} />
+                  <Smartphone
+                    size={12}
+                    strokeWidth={1.8}
+                  />
                 )}
 
                 {order.payment}
@@ -96,11 +118,9 @@ export default function OrderCard({ order, open, onToggle }) {
 
         {/* Right */}
         <div className="ml-4 flex shrink-0 items-center gap-4">
-          <div className="text-right">
-            <p className="text-[15px] font-bold text-[#292825]">
-              {formatRupiah(order.total)}
-            </p>
-          </div>
+          <p className="text-[15px] font-bold text-[#292825]">
+            {formatRupiah(order.total)}
+          </p>
 
           {open ? (
             <ChevronUp
@@ -122,6 +142,7 @@ export default function OrderCard({ order, open, onToggle }) {
       {open && (
         <div className="border-t border-[#E9E4D9]">
           <div className="px-4 py-4">
+
             <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.12em] text-[#A7A39B]">
               Detail Pesanan
             </p>
@@ -160,20 +181,65 @@ export default function OrderCard({ order, open, onToggle }) {
                 </p>
               </div>
 
-              <span
-                className={`
-                  rounded-full px-4 py-1.5
-                  text-[11px] font-bold
-                  ${
-                    isCash
-                      ? "bg-[#F6A257] text-[#282621]"
-                      : "bg-[#45433F] text-white"
-                  }
-                `}
-              >
-                {order.paymentProvider}
-              </span>
+              {/* ================================= */}
+              {/* CASH = DONE BUTTON */}
+              {/* ================================= */}
+              {isCash ? (
+                isDone ? (
+                  <span
+                    className="
+                      rounded-full
+                      bg-[#F6A257]
+                      px-4
+                      py-1.5
+                      text-[11px]
+                      font-bold
+                      text-[#282621]
+                    "
+                  >
+                    Done
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDone(order.id);
+                    }}
+                    className="
+                      rounded-full
+                      bg-[#F6A257]
+                      px-4
+                      py-1.5
+                      text-[11px]
+                      font-bold
+                      text-[#282621]
+                      transition
+                      hover:bg-[#F7AE68]
+                      active:scale-95
+                    "
+                  >
+                    Done
+                  </button>
+                )
+              ) : (
+                /* QRIS tetap tampil QRIS BNI */
+                <span
+                  className="
+                    rounded-full
+                    bg-[#45433F]
+                    px-4
+                    py-1.5
+                    text-[11px]
+                    font-bold
+                    text-white
+                  "
+                >
+                  {order.paymentProvider}
+                </span>
+              )}
             </div>
+
           </div>
         </div>
       )}
