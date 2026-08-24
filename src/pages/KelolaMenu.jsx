@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Utensils, Package, PlusCircle } from 'lucide-react';
+import { Plus, Utensils, Package, PlusCircle, Search } from 'lucide-react';
 import TabMenu from '../components/kelola-menu/TabMenu';
 import TabBundle from '../components/kelola-menu/TabBundle';
 import TabAddon from '../components/kelola-menu/TabAddon';
@@ -11,8 +11,9 @@ import BottomNavigation from '../components/layout/BottomNavigation';
 
 export default function KelolaMenu() {
   const [activeTab, setActiveTab] = useState('menu');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // 1. Inisialisasi state dari localStorage agar data tidak hilang saat pindah halaman
+  // 1. Inisialisasi state dari localStorage
   const [menuItems, setMenuItems] = useState(() => {
     const saved = localStorage.getItem('menuItems');
     return saved ? JSON.parse(saved) : [];
@@ -33,7 +34,7 @@ export default function KelolaMenu() {
   const [isBundleModalOpen, setIsBundleModalOpen] = useState(false);
   const [editingBundleItem, setEditingBundleItem] = useState(null);
 
-  // 2. Simpan otomatis ke localStorage setiap kali ada perubahan data
+  // 2. Simpan otomatis ke localStorage
   useEffect(() => {
     localStorage.setItem('menuItems', JSON.stringify(menuItems));
   }, [menuItems]);
@@ -74,17 +75,50 @@ export default function KelolaMenu() {
     setIsBundleModalOpen(false);
   };
 
+  // Filter Data berdasarkan Search Query secara Real-time
+  const filteredMenuItems = menuItems.filter((item) =>
+    item.nama?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredBundleItems = bundleItems.filter((item) =>
+    item.nama?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredAddonItems = addonItems.filter((item) =>
+    item.nama?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="bg-[#FAF8F5] min-h-screen text-[#222222] font-sans relative">
       <Navbar />
 
-      <main className="pt-[80px] pb-28 max-w-[1000px] mx-auto">
-        <div className="p-6 pb-2">
-          <h1 className="text-2xl font-bold">Kelola Menu</h1>
-          <p className="text-sm text-gray-500">
-            {menuItems.length} item · {bundleItems.length} bundle
-          </p>
+      <main className="pt-6 pb-28 max-w-[1000px] mx-auto px-6">
+        {/* Header Section dengan Search Bar */}
+        <div className="pt-0 pb-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-extrabold tracking-tight text-[#222222]">
+                Kelola Menu
+              </h1>
+              <p className="text-xs text-gray-400 font-medium mt-1">
+                {menuItems.length} item · {bundleItems.length} bundle
+              </p>
+            </div>
 
+            {/* Search Bar Input */}
+            <div className="relative flex items-center w-full sm:w-64">
+              <Search size={16} className="absolute left-3.5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Cari menu, paket, add-on..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-[#FAF6EE] border border-gray-200/80 rounded-full text-xs outline-none placeholder-gray-400 focus:border-black transition-colors"
+              />
+            </div>
+          </div>
+
+          {/* Navigation Tabs & Action Button */}
           <div className="flex items-center justify-between mt-4">
             <div className="flex items-center space-x-2 bg-gray-200/60 p-1 rounded-full">
               <button
@@ -145,10 +179,11 @@ export default function KelolaMenu() {
           </div>
         </div>
 
-        <div className="p-6 pt-2">
+        {/* Tab Content dengan Data Ter-filter */}
+        <div className="pt-2">
           {activeTab === 'menu' && (
             <TabMenu
-              items={menuItems}
+              items={filteredMenuItems}
               onEdit={(item) => {
                 setEditingMenuItem(item);
                 setIsMenuModalOpen(true);
@@ -160,8 +195,8 @@ export default function KelolaMenu() {
           )}
           {activeTab === 'bundle' && (
             <TabBundle
-              items={bundleItems}
-              menuItems={menuItems} /* Prop menuItems dikirimkan di sini */
+              items={filteredBundleItems}
+              menuItems={menuItems}
               onEdit={(item) => {
                 setEditingBundleItem(item);
                 setIsBundleModalOpen(true);
@@ -173,7 +208,7 @@ export default function KelolaMenu() {
           )}
           {activeTab === 'addon' && (
             <TabAddon
-              items={addonItems}
+              items={filteredAddonItems}
               onAdd={(data) =>
                 setAddonItems([...addonItems, { ...data, id: Date.now() }])
               }

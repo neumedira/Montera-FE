@@ -143,7 +143,7 @@ export default function KelolaQR() {
 
       <Navbar />
 
-      <main className="pt-[80px] pb-28 max-w-[1000px] mx-auto px-6">
+      <main className="pt-6 pb-28 max-w-[1000px] mx-auto px-6">
 
         {/* ==============================
             HEADER
@@ -151,9 +151,9 @@ export default function KelolaQR() {
         <div className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 
           <div>
-            <h1 className="text-2xl font-bold">
-              Kelola QR TABLE
-            </h1>
+            <h1 className="text-2xl font-extrabold tracking-tight text-[#222222]">
+                Kelola QR TABLE
+              </h1>
 
             <p className="text-sm text-gray-500 font-medium">
               {qrList.length} QR Code
