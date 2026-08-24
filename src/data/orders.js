@@ -15,6 +15,7 @@ export const orders = [
 
     payment: "QRIS",
     paymentProvider: "QRIS BNI",
+
     total: 85000,
 
     items: [
@@ -40,10 +41,7 @@ export const orders = [
     id: 2,
     table: "1001",
     customer: "haji",
-
-    // Harus sama persis dengan value filter
     type: "Dine-In",
-
     orderId: "MTR-1001",
 
     // Untuk filter kalender
@@ -55,6 +53,7 @@ export const orders = [
 
     payment: "Cash",
     paymentProvider: "Cash",
+
     total: 165000,
 
     items: [

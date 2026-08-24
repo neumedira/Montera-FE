@@ -14,6 +14,10 @@ const tabs = [
     label: "Take Away",
     value: "Take Away",
   },
+  {
+    label: "Done",
+    value: "Done",
+  },
 ];
 
 export default function OrderFilters({
@@ -79,7 +83,6 @@ export default function OrderFilters({
         </div>
 
       </div>
-
 
       {/* ================= DATE RANGE ================= */}
       <DatePicker

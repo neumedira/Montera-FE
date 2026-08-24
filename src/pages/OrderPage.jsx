@@ -5,24 +5,32 @@ import BottomNavigation from "../components/layout/BottomNavigation";
 
 import OrderCard from "../components/orders/OrderCard";
 import OrderFilters from "../components/orders/OrderFilters";
+
 import { orders } from "../data/orders";
 
 export default function OrderPage() {
-  const [activeFilter, setActiveFilter] =
-    useState("Semua");
+  // ==========================================
+  // FILTER
+  // ==========================================
+  const [activeFilter, setActiveFilter] = useState("Semua");
 
-  // ==============================
-  // DATE RANGE
-  // ==============================
-  const [startDate, setStartDate] =
-    useState("");
+  // DatePicker range
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
-  const [endDate, setEndDate] =
-    useState("");
+  // Pesanan yang sedang dibuka
+  const [openOrder, setOpenOrder] = useState(null);
 
-  const [openOrder, setOpenOrder] =
-    useState(null);
+  // ID pesanan Cash yang sudah Done
+  const [doneOrders, setDoneOrders] = useState([]);
 
+  // ==========================================
+  // SET DATE RANGE
+  // ==========================================
+  const setDateRange = (start, end) => {
+    setStartDate(start);
+    setEndDate(end);
+  };
 
   // ==========================================
   // FILTER PESANAN
@@ -30,70 +38,87 @@ export default function OrderPage() {
   const filteredOrders = useMemo(() => {
     let result = [...orders];
 
-
     // ------------------------------------------
-    // FILTER JENIS PESANAN
+    // FILTER DONE
     // ------------------------------------------
-    if (activeFilter !== "Semua") {
-      result = result.filter(
-        (order) =>
-          order.type === activeFilter
+    if (activeFilter === "Done") {
+      result = result.filter((order) =>
+        doneOrders.includes(order.id)
       );
     }
 
-
     // ------------------------------------------
-    // FILTER TANGGAL
+    // FILTER DINE-IN
     // ------------------------------------------
-
-    // Kalau tanggal awal + akhir dipilih
-    if (startDate && endDate) {
+    else if (activeFilter === "Dine-In") {
       result = result.filter(
         (order) =>
-          order.dateValue >= startDate &&
-          order.dateValue <= endDate
+          order.type === "Dine-In" &&
+          !doneOrders.includes(order.id)
       );
     }
 
-    // Kalau baru tanggal awal
-    else if (startDate) {
+    // ------------------------------------------
+    // FILTER TAKE AWAY
+    // ------------------------------------------
+    else if (activeFilter === "Take Away") {
       result = result.filter(
         (order) =>
-          order.dateValue === startDate
+          order.type === "Take Away" &&
+          !doneOrders.includes(order.id)
       );
     }
 
+    // ------------------------------------------
+    // FILTER SEMUA
+    // ------------------------------------------
+    else if (activeFilter === "Semua") {
+      result = result.filter(
+        (order) => !doneOrders.includes(order.id)
+      );
+    }
+
+    // ------------------------------------------
+    // FILTER RANGE TANGGAL
+    // ------------------------------------------
+    if (startDate || endDate) {
+      result = result.filter((order) => {
+        if (!order.dateValue) {
+          return false;
+        }
+
+        // Hanya tanggal mulai
+        if (startDate && !endDate) {
+          return order.dateValue >= startDate;
+        }
+
+        // Hanya tanggal akhir
+        if (!startDate && endDate) {
+          return order.dateValue <= endDate;
+        }
+
+        // Range tanggal lengkap
+        if (startDate && endDate) {
+          return (
+            order.dateValue >= startDate &&
+            order.dateValue <= endDate
+          );
+        }
+
+        return true;
+      });
+    }
 
     return result;
-
   }, [
     activeFilter,
     startDate,
     endDate,
+    doneOrders,
   ]);
 
-
   // ==========================================
-  // HANDLE DATE RANGE
-  // ==========================================
-  const handleDateRangeChange = (
-    start,
-    end
-  ) => {
-    setStartDate(start);
-    setEndDate(end);
-
-    // Kalau memilih tanggal,
-    // filter kategori tetap bisa dipakai.
-    //
-    // Jadi misalnya:
-    // Dine-In + 18-20 Agustus
-    // tetap bisa digunakan.
-  };
-
-
-  // ==========================================
-  // BUKA / TUTUP DETAIL PESANAN
+  // BUKA / TUTUP DETAIL
   // ==========================================
   const toggleOrder = (id) => {
     setOpenOrder((prev) =>
@@ -101,6 +126,27 @@ export default function OrderPage() {
     );
   };
 
+  // ==========================================
+  // SELESAIKAN PESANAN CASH
+  // ==========================================
+  const handleDoneOrder = (id) => {
+    setDoneOrders((prev) => {
+      if (prev.includes(id)) {
+        return prev;
+      }
+
+      return [...prev, id];
+    });
+
+    // Tutup detail
+    setOpenOrder(null);
+
+    // Otomatis pindah ke filter Done
+    setActiveFilter("Done");
+
+    // Reset filter tanggal
+    setDateRange("", "");
+  };
 
   return (
     <div className="min-h-screen bg-[#F6F3ED]">
@@ -110,19 +156,14 @@ export default function OrderPage() {
       {/* ===================================== */}
       <Navbar />
 
-
       {/* ===================================== */}
       {/* CONTENT PESANAN */}
       {/* ===================================== */}
       <main className="px-5 pb-28 pt-7 md:px-8 lg:px-10">
-
         <div className="mx-auto max-w-[1100px]">
 
-          {/* ================================= */}
           {/* TITLE */}
-          {/* ================================= */}
           <div className="mb-4">
-
             <h1
               className="
                 text-[27px]
@@ -134,107 +175,58 @@ export default function OrderPage() {
               Pesanan
             </h1>
 
-            <p
-              className="
-                mt-0.5
-                text-[14px]
-                text-[#A3A09A]
-              "
-            >
+            <p className="mt-0.5 text-[14px] text-[#A3A09A]">
               {filteredOrders.length} pesanan ditemukan
             </p>
-
           </div>
 
-
-          {/* ================================= */}
           {/* FILTER */}
-          {/* ================================= */}
           <div className="mb-4">
-
             <OrderFilters
               activeFilter={activeFilter}
-              setActiveFilter={
-                setActiveFilter
-              }
-
+              setActiveFilter={setActiveFilter}
               startDate={startDate}
               endDate={endDate}
-
-              setDateRange={
-                handleDateRangeChange
-              }
+              setDateRange={setDateRange}
             />
-
           </div>
 
-
-          {/* ================================= */}
           {/* LIST PESANAN */}
-          {/* ================================= */}
           <div className="space-y-3">
-
             {filteredOrders.length > 0 ? (
-
               filteredOrders.map((order) => (
-
                 <OrderCard
                   key={order.id}
                   order={order}
-                  open={
-                    openOrder === order.id
-                  }
-                  onToggle={() =>
-                    toggleOrder(order.id)
-                  }
+                  open={openOrder === order.id}
+                  onToggle={() => toggleOrder(order.id)}
+                  onDone={handleDoneOrder}
+                  isDone={doneOrders.includes(order.id)}
                 />
-
               ))
-
             ) : (
-
               <div
                 className="
                   rounded-2xl
-                  border
-                  border-[#E7E1D5]
+                  border border-[#E7E1D5]
                   bg-[#FFFCF4]
                   p-10
                   text-center
                 "
               >
-
-                <p
-                  className="
-                    text-sm
-                    font-semibold
-                    text-[#57544F]
-                  "
-                >
+                <p className="text-sm font-semibold text-[#57544F]">
                   Tidak ada pesanan
                 </p>
 
-                <p
-                  className="
-                    mt-1
-                    text-xs
-                    text-[#AAA69F]
-                  "
-                >
-                  Belum ada pesanan yang
-                  sesuai dengan filter.
+                <p className="mt-1 text-xs text-[#AAA69F]">
+                  Belum ada pesanan yang sesuai dengan filter.
                 </p>
-
               </div>
-
             )}
-
           </div>
 
         </div>
-
       </main>
-
 
       {/* ===================================== */}
       {/* BOTTOM NAVIGATION */}
