@@ -1,4 +1,5 @@
-import { CalendarDays, SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
+import DatePicker from "../common/DatePicker";
 
 const tabs = [
   {
@@ -18,11 +19,12 @@ const tabs = [
 export default function OrderFilters({
   activeFilter,
   setActiveFilter,
-  date,
-  setDate,
+  startDate,
+  endDate,
+  setDateRange,
 }) {
-  const handleClearDate = () => {
-    setDate("");
+  const handleDateChange = (start, end) => {
+    setDateRange(start, end);
   };
 
   return (
@@ -30,6 +32,7 @@ export default function OrderFilters({
 
       {/* ================= CATEGORY FILTER ================= */}
       <div className="flex items-center gap-2">
+
         <SlidersHorizontal
           size={18}
           strokeWidth={1.6}
@@ -37,17 +40,30 @@ export default function OrderFilters({
         />
 
         <div className="flex flex-wrap gap-2">
+
           {tabs.map((tab) => {
-            const active = activeFilter === tab.value;
+            const active =
+              activeFilter === tab.value &&
+              !startDate &&
+              !endDate;
 
             return (
               <button
                 key={tab.value}
                 type="button"
-                onClick={() => setActiveFilter(tab.value)}
+                onClick={() => {
+                  setActiveFilter(tab.value);
+                  setDateRange("", "");
+                }}
                 className={`
-                  rounded-full px-5 py-2 text-sm font-semibold
-                  transition-all duration-200
+                  rounded-full
+                  px-5
+                  py-2
+                  text-sm
+                  font-semibold
+                  transition-all
+                  duration-200
+
                   ${
                     active
                       ? "bg-[#272624] text-white shadow-sm"
@@ -59,56 +75,19 @@ export default function OrderFilters({
               </button>
             );
           })}
+
         </div>
+
       </div>
 
-      {/* ================= DATE FILTER ================= */}
-      <div
-        className="
-          relative flex h-[44px] items-center
-          rounded-xl border border-[#E7E1D5]
-          bg-[#FFFCF4] px-3 shadow-sm
-        "
-      >
-        <CalendarDays
-          size={17}
-          strokeWidth={1.6}
-          className="shrink-0 text-[#8D8A83]"
-        />
 
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="
-            ml-3 w-full
-            border-none bg-transparent
-            text-sm text-[#8D8A83]
-            outline-none
-            [color-scheme:light]
-          "
-        />
-
-        {/* Clear button */}
-        {date && (
-          <button
-            type="button"
-            onClick={handleClearDate}
-            className="
-              ml-2 flex h-7 w-7 shrink-0
-              items-center justify-center
-              rounded-full
-              text-[#9B9891]
-              transition
-              hover:bg-[#EDE9E0]
-              hover:text-[#292825]
-            "
-            title="Hapus tanggal"
-          >
-            <X size={15} />
-          </button>
-        )}
-      </div>
+      {/* ================= DATE RANGE ================= */}
+      <DatePicker
+        mode="range"
+        startDate={startDate}
+        endDate={endDate}
+        onChange={handleDateChange}
+      />
 
     </div>
   );
