@@ -530,12 +530,6 @@ export default function Laporan() {
         <div className="mb-5">
 
           <div className="flex items-center gap-2">
-
-            <BarChart3
-              size={20}
-              strokeWidth={2}
-            />
-
             <h1 className="text-[24px] font-extrabold">
               Laporan
             </h1>

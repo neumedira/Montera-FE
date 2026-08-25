@@ -17,8 +17,9 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="h-[66px] bg-[#252423] px-5 md:px-8 flex items-center justify-between text-white">
-
+      {/* Navbar */}
+      <header className="fixed top-0 left-0 right-0 z-50 h-[66px] bg-[#252423] px-5 md:px-8 flex items-center justify-between text-white">
+        
         {/* Logo */}
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-md bg-[#fffdf7] flex items-center justify-center overflow-hidden">
@@ -68,8 +69,10 @@ export default function Navbar() {
           </button>
 
         </div>
-
       </header>
+
+      {/* Spacer agar isi halaman tidak tertutup navbar */}
+      <div className="h-[66px]" />
 
       {/* Notification Modal */}
       <NotificationModal
