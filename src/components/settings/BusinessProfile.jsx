@@ -20,7 +20,7 @@ export default function BusinessProfile({ data, setData }) {
       iconClass="bg-[#252423]"
     >
       <div className="space-y-3">
-        
+
         {/* Nama */}
         <div>
           <label className="block mb-1.5 text-[9px] font-extrabold tracking-[1px] text-[#858078]">
@@ -57,11 +57,59 @@ export default function BusinessProfile({ data, setData }) {
           <input
             value={data.business.whatsapp}
             onChange={(e) => update("whatsapp", e.target.value)}
-            className="w-full h-[40px] px-3.5 rounded-[11px] border border-[#dcd7cd] bg-[#fffdf7] outline-none text-[12px] font-medium text-[#302e2b] focus:border-[#aaa39a]"
+            placeholder="08xxxxxxxxxx"
+            className="w-full h-[40px] px-3.5 rounded-[11px] border border-[#dcd7cd] bg-[#fffdf7] outline-none text-[12px] font-medium text-[#302e2b] placeholder:text-[#c7c3bb] focus:border-[#aaa39a]"
           />
         </div>
 
+        {/* Instagram */}
+        <div>
+          <label className="block mb-1.5 text-[9px] font-extrabold tracking-[1px] text-[#858078]">
+            INSTAGRAM
+          </label>
+
+          <div className="space-y-2">
+            <input
+              value={data.business.instagramName}
+              onChange={(e) => update("instagramName", e.target.value)}
+              placeholder="@username"
+              className="w-full h-[40px] px-3.5 rounded-[11px] border border-[#dcd7cd] bg-[#fffdf7] outline-none text-[12px] font-medium text-[#302e2b] placeholder:text-[#c7c3bb] focus:border-[#aaa39a]"
+            />
+
+            <input
+              value={data.business.instagramUrl}
+              onChange={(e) => update("instagramUrl", e.target.value)}
+              placeholder="https://instagram.com/username"
+              className="w-full h-[40px] px-3.5 rounded-[11px] border border-[#dcd7cd] bg-[#fffdf7] outline-none text-[12px] font-medium text-[#302e2b] placeholder:text-[#c7c3bb] focus:border-[#aaa39a]"
+            />
+          </div>
+        </div>
+
+        {/* TikTok */}
+        <div>
+          <label className="block mb-1.5 text-[9px] font-extrabold tracking-[1px] text-[#858078]">
+            TIKTOK
+          </label>
+
+          <div className="space-y-2">
+            <input
+              value={data.business.tiktokName}
+              onChange={(e) => update("tiktokName", e.target.value)}
+              placeholder="@username"
+              className="w-full h-[40px] px-3.5 rounded-[11px] border border-[#dcd7cd] bg-[#fffdf7] outline-none text-[12px] font-medium text-[#302e2b] placeholder:text-[#c7c3bb] focus:border-[#aaa39a]"
+            />
+
+            <input
+              value={data.business.tiktokUrl}
+              onChange={(e) => update("tiktokUrl", e.target.value)}
+              placeholder="https://tiktok.com/@username"
+              className="w-full h-[40px] px-3.5 rounded-[11px] border border-[#dcd7cd] bg-[#fffdf7] outline-none text-[12px] font-medium text-[#302e2b] placeholder:text-[#c7c3bb] focus:border-[#aaa39a]"
+            />
+          </div>
+        </div>
+
         <SaveButton />
+
       </div>
     </SettingSection>
   );

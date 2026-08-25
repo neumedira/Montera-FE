@@ -1,25 +1,28 @@
 export const mockSettings = {
   business: {
-    cafeName: "Montera Cafe",
-    address: "",
-    whatsapp: "+62 812-xxxx-xxxx",
-  },
-
-  tax: {
-    regionalTax: 0,
-    serviceCharge: 0,
-  },
-
-  paymentMethods: {
-    qrisBni: true,
-    cash: true,
-  },
-
-  receipt: {
-    greeting: "Terima kasih telah berkunjung!",
-    cafeName: "MONTERA CAFE",
+    cafeName: "Montera Burger",
     address: "Jl. Contoh No. 1, Kota Anda",
-    whatsapp: "+62 812-xxx-xxxx",
-    footer: "Sampai jumpa kembali 🙏",
+    whatsapp: "081234567890",
+    instagramName: "@monteraburger",
+    instagramUrl: "https://instagram.com/monteraburger",
+    tiktokName: "@monteraburger",
+    tiktokUrl: "https://tiktok.com/@monteraburger",
   },
+
+  paymentMethods: [
+    {
+      id: 1,
+      name: "QRIS BNI",
+      description: "Pembayaran cashless via scan QR",
+      enabled: true,
+    },
+    {
+      id: 2,
+      name: "Tunai (Cash)",
+      description: "Pembayaran tunai di kasir",
+      enabled: true,
+    },
+  ],
+
+  // bagian lainnya tetap
 };

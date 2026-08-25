@@ -7,7 +7,7 @@ export default function TaxSettings({ data, setData }) {
     setData((prev) => ({
       ...prev,
       tax: {
-        ...prev.tax,
+        ...(prev.tax || {}),
         [field]: value,
       },
     }));
@@ -20,7 +20,6 @@ export default function TaxSettings({ data, setData }) {
       iconClass="bg-[#f4a261]"
     >
       <div className="space-y-3">
-
         {/* Pajak */}
         <div>
           <label className="block mb-1.5 text-[9px] font-extrabold tracking-[1px] text-[#858078]">
@@ -30,7 +29,7 @@ export default function TaxSettings({ data, setData }) {
           <div className="relative">
             <input
               type="number"
-              value={data.tax.regionalTax}
+              value={data?.tax?.regionalTax ?? ""}
               onChange={(e) =>
                 update("regionalTax", e.target.value)
               }
@@ -56,7 +55,7 @@ export default function TaxSettings({ data, setData }) {
           <div className="relative">
             <input
               type="number"
-              value={data.tax.serviceCharge}
+              value={data?.tax?.serviceCharge ?? ""}
               onChange={(e) =>
                 update("serviceCharge", e.target.value)
               }
@@ -69,7 +68,8 @@ export default function TaxSettings({ data, setData }) {
           </div>
 
           <p className="mt-1.5 text-[9px] text-[#b5b0a8]">
-            Biaya layanan yang ditambahkan ke subtotal. 0% = tidak ada service charge.
+            Biaya layanan yang ditambahkan ke subtotal. 0% = tidak ada
+            service charge.
           </p>
         </div>
 

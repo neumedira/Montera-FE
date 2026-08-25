@@ -1,33 +1,42 @@
-export default function SettingsSection({
-  icon,
+export default function SettingSection({
   title,
-  iconClass = "",
+  icon,
+  iconClass = "bg-[#292725]",
+  action,
   children,
-  headerRight,
 }) {
   return (
-    <section className="bg-[#fffdf7] border border-[#e5e0d5] rounded-[15px] overflow-hidden">
-      
-      {/* Header */}
-      <div className="min-h-[50px] px-4 md:px-[14px] py-3 bg-[#faf7ef] border-b border-[#e5e0d5] flex items-center justify-between gap-3">
-        
-        <div className="flex items-center gap-2">
+    <section className="rounded-[18px] bg-[#fffdf8] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.03)] md:p-5">
+
+      {/* HEADER */}
+      <div className="mb-4 flex items-center justify-between">
+
+        {/* LEFT */}
+        <div className="flex items-center gap-2.5">
+
           <div
-            className={`w-[25px] h-[25px] rounded-[7px] flex items-center justify-center ${iconClass}`}
+            className={`flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[8px] ${iconClass}`}
           >
             {icon}
           </div>
 
-          <h2 className="text-[13px] font-extrabold tracking-wide text-[#292725]">
+          <h2 className="text-[11px] font-extrabold tracking-[0.5px] text-[#292725]">
             {title}
           </h2>
+
         </div>
 
-        {headerRight}
+        {/* RIGHT ACTION */}
+        {action && (
+          <div className="shrink-0">
+            {action}
+          </div>
+        )}
+
       </div>
 
-      {/* Content */}
-      <div className="p-[14px]">
+      {/* CONTENT */}
+      <div>
         {children}
       </div>
 
