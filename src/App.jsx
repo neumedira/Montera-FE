@@ -145,7 +145,7 @@ function App() {
           />
 
           <Route
-            path="/menu-admin"
+            path="/menu"
             element={<KelolaMenu />}
           />
 

@@ -2,8 +2,8 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import SearchBar from "../../../components/costumer/menu/SearchBar";
-import SectionTitle from "../../../components/costumer/menu/SectionTitle";
 import ProductCard from "../../../components/costumer/menu/ProductCard";
+import ProductListItem from "../../../components/costumer/menu/ProductListItem";
 import CartBar from "../../../components/costumer/menu/CartBar";
 
 import { categories, menuItems } from "../../../data/menuData";
@@ -81,6 +81,14 @@ export default function MenuPage() {
   };
 
   /* =========================================
+     PRODUCT DETAIL
+  ========================================= */
+
+  const handleProductClick = (product) => {
+    navigate(`/menu/${product.id}`);
+  };
+
+  /* =========================================
      CHANGE CATEGORY
   ========================================= */
 
@@ -135,16 +143,23 @@ export default function MenuPage() {
 
       {/* =====================================
           COMBO
+
+          HORIZONTAL CARD
       ===================================== */}
 
       {(activeCategory === "all" ||
         activeCategory === "combo") &&
         comboItems.length > 0 && (
           <section className="mt-[18px]">
-            <SectionTitle>
-              COMBO
-            </SectionTitle>
 
+            {/* CATEGORY TITLE */}
+            <div className="px-4">
+              <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111]">
+                COMBO
+              </h2>
+            </div>
+
+            {/* COMBO LIST */}
             <div className="mt-[14px] overflow-x-auto px-4 scrollbar-hide">
               <div className="flex w-max gap-4">
                 {comboItems.map((product) => (
@@ -155,105 +170,118 @@ export default function MenuPage() {
                       handleAddToCart(product)
                     }
                     onClick={() =>
-                      navigate(`/menu/${product.id}`)
+                      handleProductClick(product)
                     }
                   />
                 ))}
               </div>
             </div>
+
           </section>
         )}
 
       {/* =====================================
           BURGER
+
+          VERTICAL LIST
       ===================================== */}
 
       {(activeCategory === "all" ||
         activeCategory === "burger") &&
         burgerItems.length > 0 && (
           <section className="mt-[28px]">
-            <SectionTitle>
-              BURGER
-            </SectionTitle>
 
-            <div className="mt-[14px] overflow-x-auto px-4 scrollbar-hide">
-              <div className="flex w-max gap-4">
-                {burgerItems.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onAdd={() =>
-                      handleAddToCart(product)
-                    }
-                    onClick={() =>
-                      navigate(`/menu/${product.id}`)
-                    }
-                  />
-                ))}
-              </div>
+            {/* CATEGORY TITLE */}
+            <div className="px-4">
+              <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111]">
+                BURGER
+              </h2>
             </div>
+
+            {/* PRODUCT LIST */}
+            <div className="mt-[6px] px-4">
+              {burgerItems.map((product) => (
+                <ProductListItem
+                  key={product.id}
+                  product={product}
+                  onAdd={handleAddToCart}
+                  onClick={() =>
+                    handleProductClick(product)
+                  }
+                />
+              ))}
+            </div>
+
           </section>
         )}
 
       {/* =====================================
           DRINK
+
+          VERTICAL LIST
       ===================================== */}
 
       {(activeCategory === "all" ||
         activeCategory === "drink") &&
         drinkItems.length > 0 && (
           <section className="mt-[28px]">
-            <SectionTitle>
-              DRINK
-            </SectionTitle>
 
-            <div className="mt-[14px] overflow-x-auto px-4 scrollbar-hide">
-              <div className="flex w-max gap-4">
-                {drinkItems.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onAdd={() =>
-                      handleAddToCart(product)
-                    }
-                    onClick={() =>
-                      navigate(`/menu/${product.id}`)
-                    }
-                  />
-                ))}
-              </div>
+            {/* CATEGORY TITLE */}
+            <div className="px-4">
+              <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111]">
+                DRINK
+              </h2>
             </div>
+
+            {/* PRODUCT LIST */}
+            <div className="mt-[6px] px-4">
+              {drinkItems.map((product) => (
+                <ProductListItem
+                  key={product.id}
+                  product={product}
+                  onAdd={handleAddToCart}
+                  onClick={() =>
+                    handleProductClick(product)
+                  }
+                />
+              ))}
+            </div>
+
           </section>
         )}
 
       {/* =====================================
           SNACK
+
+          VERTICAL LIST
       ===================================== */}
 
       {(activeCategory === "all" ||
         activeCategory === "snack") &&
         snackItems.length > 0 && (
           <section className="mt-[28px]">
-            <SectionTitle>
-              SNACK
-            </SectionTitle>
 
-            <div className="mt-[14px] overflow-x-auto px-4 scrollbar-hide">
-              <div className="flex w-max gap-4">
-                {snackItems.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onAdd={() =>
-                      handleAddToCart(product)
-                    }
-                    onClick={() =>
-                      navigate(`/menu/${product.id}`)
-                    }
-                  />
-                ))}
-              </div>
+            {/* CATEGORY TITLE */}
+            <div className="px-4">
+              <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111]">
+                SNACK
+              </h2>
             </div>
+
+            {/* PRODUCT LIST */}
+            <div className="mt-[6px] px-4">
+              {snackItems.map((product) => (
+                <ProductListItem
+                  key={product.id}
+                  product={product}
+                  onAdd={handleAddToCart}
+                  onClick={() =>
+                    handleProductClick(product)
+                  }
+                />
+              ))}
+            </div>
+
           </section>
         )}
 
