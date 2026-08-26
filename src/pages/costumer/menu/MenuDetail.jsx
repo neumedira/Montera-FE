@@ -13,11 +13,19 @@ export default function MenuDetail() {
 
   const { addToCart } = useCart();
 
+  // =========================================================
+  // FIND PRODUCT
+  // =========================================================
+
   const product = useMemo(() => {
     return menuItems.find(
       (item) => item.id === Number(id)
     );
   }, [id]);
+
+  // =========================================================
+  // STATE
+  // =========================================================
 
   const [costumizations, setCostumizations] = useState({
     cheese: false,
@@ -26,9 +34,13 @@ export default function MenuDetail() {
 
   const [notes, setNotes] = useState("");
 
+  // =========================================================
+  // PRODUCT NOT FOUND
+  // =========================================================
+
   if (!product) {
     return (
-      <main className="min-h-screen bg-[#fffcf4] flex items-center justify-center">
+      <main className="flex min-h-screen items-center justify-center bg-[#fffcf4]">
         <p className="font-semibold">
           Menu tidak ditemukan.
         </p>
@@ -36,7 +48,9 @@ export default function MenuDetail() {
     );
   }
 
-  // ================= CUSTOMIZATION PRICE =================
+  // =========================================================
+  // CUSTOMIZATION PRICE
+  // =========================================================
 
   const extraPrice =
     (costumizations.cheese ? 5000 : 0) +
@@ -45,7 +59,9 @@ export default function MenuDetail() {
   const totalPrice =
     product.price + extraPrice;
 
-  // ================= TOGGLE CUSTOMIZATION =================
+  // =========================================================
+  // TOGGLE CUSTOMIZATION
+  // =========================================================
 
   const toggleCostumization = (name) => {
     setCostumizations((current) => ({
@@ -54,7 +70,9 @@ export default function MenuDetail() {
     }));
   };
 
-  // ================= ADD TO CART =================
+  // =========================================================
+  // ADD TO CART
+  // =========================================================
 
   const handleAddToCart = () => {
     const cartItem = {
@@ -70,24 +88,53 @@ export default function MenuDetail() {
       price: totalPrice,
     };
 
-    // Masukkan ke CartContext
+    // Tambahkan ke keranjang
     addToCart(cartItem);
 
-    // Kembali ke halaman customer menu
-    navigate("/");
+    // Kembali ke menu TANPA loading
+    navigate("/", {
+      state: {
+        skipLoading: true,
+      },
+    });
   };
+
+  // =========================================================
+  // RENDER
+  // =========================================================
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#fffcf4]">
 
-      {/* ================= PRODUCT IMAGE ================= */}
+      {/* =====================================================
+          PRODUCT IMAGE
+      ===================================================== */}
 
       <section className="relative h-[458px] overflow-hidden bg-[#fffcf4]">
 
-        {/* Back Button */}
+        {/* BACK BUTTON */}
+
         <button
+          type="button"
           onClick={() => navigate(-1)}
-          className="absolute left-[28px] top-[78px] z-30 flex h-[46px] w-[46px] items-center justify-center rounded-full border border-[#e8e5df] bg-white"
+          aria-label="Kembali"
+          className="
+            absolute
+            left-[28px]
+            top-[78px]
+            z-30
+            flex
+            h-[46px]
+            w-[46px]
+            items-center
+            justify-center
+            rounded-full
+            border
+            border-[#e8e5df]
+            bg-white
+            transition
+            active:scale-95
+          "
         >
           <ArrowLeft
             size={25}
@@ -95,47 +142,116 @@ export default function MenuDetail() {
           />
         </button>
 
-        {/* Product Image Only */}
-        <div className="absolute inset-0 flex items-center justify-center pt-[45px]">
+
+        {/* PRODUCT IMAGE */}
+
+        <div
+          className="
+            absolute
+            inset-0
+            flex
+            items-center
+            justify-center
+            pt-[45px]
+          "
+        >
           <img
             src={product.image}
             alt={product.name}
-            className="h-[320px] w-[360px] object-contain"
+            className="
+              h-[320px]
+              w-[360px]
+              object-contain
+            "
           />
         </div>
 
       </section>
 
-      {/* ================= DETAIL CARD ================= */}
 
-      <section className="relative -mt-[1px] min-h-[500px] rounded-t-[24px] border-t border-[#e4e0d8] bg-[#fffcf4] px-[28px] pb-8 pt-[42px] shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
+      {/* =====================================================
+          DETAIL CARD
+      ===================================================== */}
 
-        {/* ================= NAME + PRICE ================= */}
+      <section
+        className="
+          relative
+          -mt-[1px]
+          min-h-[500px]
+          rounded-t-[24px]
+          border-t
+          border-[#e4e0d8]
+          bg-[#fffcf4]
+          px-[28px]
+          pb-8
+          pt-[42px]
+          shadow-[0_-2px_10px_rgba(0,0,0,0.03)]
+        "
+      >
+
+        {/* ===================================================
+            NAME + PRICE
+        =================================================== */}
 
         <div className="flex items-center justify-between gap-4">
 
-          <h1 className="font-anton text-[28px] uppercase leading-none text-[#111]">
+          <h1
+            className="
+              font-anton
+              text-[28px]
+              uppercase
+              leading-none
+              text-[#111]
+            "
+          >
             {product.name}
           </h1>
 
-          <span className="whitespace-nowrap text-[26px] font-extrabold text-[#111]">
+          <span
+            className="
+              whitespace-nowrap
+              text-[26px]
+              font-extrabold
+              text-[#111]
+            "
+          >
             Rp{" "}
             {product.price.toLocaleString("id-ID")}
           </span>
 
         </div>
 
-        {/* ================= DESCRIPTION ================= */}
 
-        <p className="mt-[20px] text-[18px] leading-[1.55] text-[#5d5a57]">
+        {/* ===================================================
+            DESCRIPTION
+        =================================================== */}
+
+        <p
+          className="
+            mt-[20px]
+            text-[18px]
+            leading-[1.55]
+            text-[#5d5a57]
+          "
+        >
           {product.description}
         </p>
 
-        {/* ================= CUSTOMIZATION ================= */}
+
+        {/* ===================================================
+            CUSTOMIZATION
+        =================================================== */}
 
         <div className="mt-[26px]">
 
-          <h2 className="text-[17px] font-bold tracking-wide text-[#111]">
+          <h2
+            className="
+              text-[17px]
+              font-bold
+              tracking-wide
+              text-[#111]
+            "
+          >
             CUSTOMIZATION
           </h2>
 
@@ -165,7 +281,10 @@ export default function MenuDetail() {
 
         </div>
 
-        {/* ================= NOTES ================= */}
+
+        {/* ===================================================
+            NOTES
+        =================================================== */}
 
         <div className="mt-[24px]">
 
@@ -176,23 +295,67 @@ export default function MenuDetail() {
             onChange={(e) =>
               setNotes(e.target.value)
             }
-            className="h-[59px] w-full rounded-[17px] border border-[#e5e1da] bg-white px-[15px] text-[15px] outline-none placeholder:text-[#999]"
+            className="
+              h-[59px]
+              w-full
+              rounded-[17px]
+              border
+              border-[#e5e1da]
+              bg-white
+              px-[15px]
+              text-[15px]
+              text-[#111]
+              outline-none
+              placeholder:text-[#999]
+              focus:border-[#292826]
+            "
           />
 
         </div>
 
-        {/* ================= ADD TO CART ================= */}
+
+        {/* ===================================================
+            ADD TO CART
+        =================================================== */}
 
         <button
+          type="button"
           onClick={handleAddToCart}
-          className="mt-[31px] flex h-[61px] w-full items-center justify-between gap-3 rounded-[18px] bg-[#292826] px-[22px] text-white active:scale-[0.98]"
+          className="
+            mt-[31px]
+            flex
+            h-[61px]
+            w-full
+            items-center
+            justify-between
+            gap-3
+            rounded-[18px]
+            bg-[#292826]
+            px-[22px]
+            text-white
+            transition
+            active:scale-[0.98]
+          "
         >
 
-          <span className="whitespace-nowrap text-[12px] font-bold tracking-[0.3px]">
+          <span
+            className="
+              whitespace-nowrap
+              text-[12px]
+              font-bold
+              tracking-[0.3px]
+            "
+          >
             TAMBAH KE KERANJANG
           </span>
 
-          <span className="whitespace-nowrap text-[16px] font-bold">
+          <span
+            className="
+              whitespace-nowrap
+              text-[16px]
+              font-bold
+            "
+          >
             Rp{" "}
             {totalPrice.toLocaleString("id-ID")}
           </span>

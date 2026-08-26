@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import SearchBar from "../../../components/costumer/menu/SearchBar";
-import CategoryTabs from "../../../components/costumer/menu/CategoryTabs";
 import SectionTitle from "../../../components/costumer/menu/SectionTitle";
 import ProductCard from "../../../components/costumer/menu/ProductCard";
 import CartBar from "../../../components/costumer/menu/CartBar";
@@ -19,12 +18,17 @@ export default function MenuPage() {
 
   const [activeCategory, setActiveCategory] = useState("all");
   const [search, setSearch] = useState("");
+  const [categoryOpen, setCategoryOpen] = useState(false);
 
   const {
     addToCart,
     totalItems,
     totalPrice,
   } = useCart();
+
+  /* =========================================
+     FILTER MENU
+  ========================================= */
 
   const filteredItems = useMemo(() => {
     return menuItems.filter((item) => {
@@ -40,6 +44,10 @@ export default function MenuPage() {
     });
   }, [activeCategory, search]);
 
+  /* =========================================
+     CATEGORY DATA
+  ========================================= */
+
   const comboItems = filteredItems.filter(
     (item) => item.category === "combo"
   );
@@ -47,6 +55,18 @@ export default function MenuPage() {
   const burgerItems = filteredItems.filter(
     (item) => item.category === "burger"
   );
+
+  const drinkItems = filteredItems.filter(
+    (item) => item.category === "drink"
+  );
+
+  const snackItems = filteredItems.filter(
+    (item) => item.category === "snack"
+  );
+
+  /* =========================================
+     ADD TO CART
+  ========================================= */
 
   const handleAddToCart = (product) => {
     addToCart({
@@ -60,13 +80,28 @@ export default function MenuPage() {
     });
   };
 
-  return (
-    <main className="min-h-screen overflow-x-hidden bg-[#fffcf4] pb-24">
+  /* =========================================
+     CHANGE CATEGORY
+  ========================================= */
 
-      {/* ================= TOP SPACING ================= */}
+  const handleCategoryChange = (categoryId) => {
+    setActiveCategory(categoryId);
+    setCategoryOpen(false);
+  };
+
+  return (
+    <main className="min-h-screen overflow-x-hidden bg-[#fffcf4] pb-[150px]">
+
+      {/* =====================================
+          TOP SPACING
+      ===================================== */}
+
       <div className="h-[42px]" />
 
-      {/* ================= BANNER ================= */}
+      {/* =====================================
+          BANNER
+      ===================================== */}
+
       <div className="px-[22px]">
         <img
           src={bannerburger}
@@ -75,23 +110,22 @@ export default function MenuPage() {
         />
       </div>
 
-      {/* ================= SEARCH ================= */}
-      <div className="mt-[17px]">
+      {/* =====================================
+          SEARCH
+      ===================================== */}
+
+      <div className="mt-[27px]">
         <SearchBar
           value={search}
           onChange={setSearch}
         />
       </div>
 
-      {/* ================= CATEGORIES ================= */}
-      <CategoryTabs
-        categories={categories}
-        activeCategory={activeCategory}
-        onCategoryChange={setActiveCategory}
-      />
+      {/* =====================================
+          CHECKERBOARD
+      ===================================== */}
 
-      {/* ================= CHECKERBOARD ================= */}
-      <div className="mt-2 h-[44px] overflow-hidden border-y-2 border-[#292826]">
+      <div className="relative z-0 mt-[14px] h-[44px] overflow-hidden border-y-2 border-[#292826]">
         <img
           src={checkerboard}
           alt=""
@@ -99,18 +133,20 @@ export default function MenuPage() {
         />
       </div>
 
-      {/* ================= COMBO ================= */}
+      {/* =====================================
+          COMBO
+      ===================================== */}
+
       {(activeCategory === "all" ||
         activeCategory === "combo") &&
         comboItems.length > 0 && (
-          <section className="mt-[16px]">
+          <section className="mt-[18px]">
             <SectionTitle>
               COMBO
             </SectionTitle>
 
             <div className="mt-[14px] overflow-x-auto px-4 scrollbar-hide">
               <div className="flex w-max gap-4">
-
                 {comboItems.map((product) => (
                   <ProductCard
                     key={product.id}
@@ -119,28 +155,29 @@ export default function MenuPage() {
                       handleAddToCart(product)
                     }
                     onClick={() =>
-                      navigate(`costumer/menu/${product.id}`)
+                      navigate(`/menu/${product.id}`)
                     }
                   />
                 ))}
-
               </div>
             </div>
           </section>
         )}
 
-      {/* ================= BEST BURGER ================= */}
+      {/* =====================================
+          BURGER
+      ===================================== */}
+
       {(activeCategory === "all" ||
         activeCategory === "burger") &&
         burgerItems.length > 0 && (
           <section className="mt-[28px]">
             <SectionTitle>
-              BEST BURGER
+              BURGER
             </SectionTitle>
 
             <div className="mt-[14px] overflow-x-auto px-4 scrollbar-hide">
               <div className="flex w-max gap-4">
-
                 {burgerItems.map((product) => (
                   <ProductCard
                     key={product.id}
@@ -149,20 +186,114 @@ export default function MenuPage() {
                       handleAddToCart(product)
                     }
                     onClick={() =>
-                      navigate(`costumer/menu/${product.id}`)
+                      navigate(`/menu/${product.id}`)
                     }
                   />
                 ))}
-
               </div>
             </div>
           </section>
         )}
 
-      {/* ================= CART BAR ================= */}
+      {/* =====================================
+          DRINK
+      ===================================== */}
+
+      {(activeCategory === "all" ||
+        activeCategory === "drink") &&
+        drinkItems.length > 0 && (
+          <section className="mt-[28px]">
+            <SectionTitle>
+              DRINK
+            </SectionTitle>
+
+            <div className="mt-[14px] overflow-x-auto px-4 scrollbar-hide">
+              <div className="flex w-max gap-4">
+                {drinkItems.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onAdd={() =>
+                      handleAddToCart(product)
+                    }
+                    onClick={() =>
+                      navigate(`/menu/${product.id}`)
+                    }
+                  />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+      {/* =====================================
+          SNACK
+      ===================================== */}
+
+      {(activeCategory === "all" ||
+        activeCategory === "snack") &&
+        snackItems.length > 0 && (
+          <section className="mt-[28px]">
+            <SectionTitle>
+              SNACK
+            </SectionTitle>
+
+            <div className="mt-[14px] overflow-x-auto px-4 scrollbar-hide">
+              <div className="flex w-max gap-4">
+                {snackItems.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onAdd={() =>
+                      handleAddToCart(product)
+                    }
+                    onClick={() =>
+                      navigate(`/menu/${product.id}`)
+                    }
+                  />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+      {/* =====================================
+          EMPTY RESULT
+      ===================================== */}
+
+      {filteredItems.length === 0 && (
+        <div className="px-5 py-16 text-center">
+          <p className="text-[15px] font-semibold text-[#777]">
+            Menu tidak ditemukan
+          </p>
+
+          <button
+            type="button"
+            onClick={() => {
+              setSearch("");
+              setActiveCategory("all");
+            }}
+            className="mt-3 text-[13px] font-bold underline"
+          >
+            Reset filter
+          </button>
+        </div>
+      )}
+
+      {/* =====================================
+          FLOATING MENU + CART
+      ===================================== */}
+
       <CartBar
         itemCount={totalItems}
         total={totalPrice}
+        categories={categories}
+        activeCategory={activeCategory}
+        categoryOpen={categoryOpen}
+        onToggleCategory={() =>
+          setCategoryOpen((prev) => !prev)
+        }
+        onCategoryChange={handleCategoryChange}
       />
 
     </main>
