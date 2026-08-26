@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { QrCode } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
 
 export default function QrisPaymentPage() {
   const navigate = useNavigate();
+  
+  // Ambil total harga dari CartContext
+  const { totalPrice } = useCart();
 
-  // ISI ATAU GANTI PATH GAMBAR DI SINI JIKA SUDAH ADA
-  // Contoh: const qrisImage = '/images/qris-toko.png';
-  const qrisImage = null; 
+  // Ubah ke '/images/qris-code.png' jika gambar QRIS sudah dimasukkan ke folder public/images/
+  const qrisImage = '/images/qris-code.png';
 
-  const totalAmount = 166000;
-  const [timeLeft, setTimeLeft] = useState(299); // 04:59 (in seconds)
+  const [timeLeft, setTimeLeft] = useState(299); // 04:59 (dalam detik)
 
   // Timer Countdown
   useEffect(() => {
@@ -46,13 +48,18 @@ export default function QrisPaymentPage() {
           </span>
         </div>
 
-        {/* QR Code Container / Placeholder */}
+        {/* QR Code Container */}
         <div className="w-full aspect-square bg-[#D9D9D9] rounded-2xl flex items-center justify-center overflow-hidden mb-6 shadow-inner border border-gray-200/50">
           {qrisImage ? (
             <img 
               src={qrisImage} 
-              alt="QRIS Code" 
-              className="w-full h-full object-cover" 
+              alt="QRIS Store Code" 
+              className="w-full h-full object-contain p-4 bg-white"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.parentElement.classList.add('flex-col');
+                e.target.parentElement.innerHTML = '<span class="text-xs text-gray-400 font-medium">Gambar /public/images/qris-code.png belum ditemukan</span>';
+              }}
             />
           ) : (
             <div className="text-center p-6">
@@ -62,18 +69,21 @@ export default function QrisPaymentPage() {
           )}
         </div>
 
-        {/* Total Label */}
+        {/* Total Label Dinamis */}
         <div className="text-center">
           <span className="font-bold text-base text-gray-900">Total</span>
           <p className="font-display text-2xl text-gray-900 mt-1">
-            Rp {totalAmount.toLocaleString('id-ID')}
+            Rp {(totalPrice || 0).toLocaleString('id-ID')}
           </p>
         </div>
       </div>
 
       {/* Done Button */}
       <button 
-        onClick={() => navigate('/')}
+        onClick={() => {
+          // Opsional: Anda bisa memanggil fungsi clearCart() di sini
+          navigate('/');
+        }}
         className="w-full bg-zinc-900 text-white font-bold tracking-wider rounded-2xl py-4 transition-colors hover:bg-black shadow-lg text-sm uppercase mt-6"
       >
         DONE
