@@ -6,7 +6,7 @@ export default function ModalMenu({ isOpen, onClose, onSave, editingItem }) {
     nama: '',
     deskripsi: '',
     harga: '',
-    kategori: 'Makanan',
+    kategori: 'Combo', // Default kategori diubah
     gambarUrl: '',
     isPromo: false,
     labelPromo: 'Favorit!',
@@ -29,7 +29,7 @@ export default function ModalMenu({ isOpen, onClose, onSave, editingItem }) {
         nama: '',
         deskripsi: '',
         harga: '',
-        kategori: 'Makanan',
+        kategori: 'Combo', // Default kategori diubah
         gambarUrl: '',
         isPromo: false,
         labelPromo: 'Favorit!',
@@ -103,9 +103,9 @@ export default function ModalMenu({ isOpen, onClose, onSave, editingItem }) {
             required
           />
 
-          {/* Kategori Toggle */}
+          {/* Kategori Toggle - Diubah menjadi 4 opsi */}
           <div className="flex bg-[#EFECE6] p-1 rounded-xl">
-            {['Makanan', 'Minuman'].map((kat) => (
+            {['Combo', 'Burger', 'Drink', 'Snack'].map((kat) => (
               <button
                 key={kat}
                 type="button"
