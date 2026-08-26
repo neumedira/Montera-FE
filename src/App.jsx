@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
+
 import { CartProvider } from "./context/CartContext";
 
 import "./App.css";
@@ -7,9 +13,9 @@ import "./App.css";
 // ==============================
 // CUSTOMER
 // ==============================
-import Pilihan from "./components/pilihan/Pilihan";
 import Menu from "./pages/costumer/menu/Menu";
 import MenuDetail from "./pages/costumer/menu/MenuDetail";
+import LoadingScreen from "./components/costumer/menu/LoadingScreen";
 
 // ==============================
 // ADMIN
@@ -35,8 +41,51 @@ import QrisPaymentPage from "./pages/QrisPaymentPage";
 // ==============================
 import NewOrderModal from "./components/modal/NewOrderModal";
 
+
+// =========================================================
+// CUSTOMER MENU WRAPPER
+// =========================================================
+
+function CustomerMenuWrapper() {
+  const location = useLocation();
+
+  const [isLoading, setIsLoading] = useState(
+    !location.state?.skipLoading
+  );
+
+  useEffect(() => {
+    // Kalau kembali dari detail menu,
+    // langsung tampilkan menu tanpa loading
+    if (location.state?.skipLoading) {
+      setIsLoading(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  return <Menu />;
+}
+
+
+// =========================================================
+// APP
+// =========================================================
+
 function App() {
   const [showNewOrder, setShowNewOrder] = useState(false);
+
+  // =======================================================
+  // GLOBAL NEW ORDER NOTIFICATION
+  // =======================================================
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -49,111 +98,107 @@ function App() {
   return (
     <BrowserRouter>
       <CartProvider>
+
         <Routes>
 
-          {/* =================================
-              CUSTOMER
-          ================================= */}
+          {/* ===============================================
+              CUSTOMER MENU
+          =============================================== */}
 
-          {/* Pilihan Dine In / Take Away */}
           <Route
             path="/"
-            element={<Pilihan />}
+            element={<CustomerMenuWrapper />}
           />
 
-          {/* QR Meja */}
-          <Route
-            path="/scan/:token"
-            element={<Pilihan />}
-          />
+          {/* ===============================================
+              CUSTOMER MENU DETAIL
+              
+              Contoh:
+              /menu/1
+              /menu/2
+              /menu/3
+          =============================================== */}
 
-          {/* Menu Customer */}
           <Route
-            path="/costumer/menu"
-            element={<Menu />}
-          />
-
-          {/* Detail Menu Customer */}
-          <Route
-            path="/costumer/menu/:id"
+            path="/menu/:id"
             element={<MenuDetail />}
           />
 
-          {/* =================================
-              ADMIN
-          ================================= */}
 
-          {/* Login Admin */}
+          {/* ===============================================
+              ADMIN
+          =============================================== */}
+
           <Route
             path="/admin/login"
             element={<Login />}
           />
 
-          {/* Login alternatif */}
           <Route
             path="/login"
             element={<Login />}
           />
 
-          {/* Dashboard */}
           <Route
             path="/admin"
             element={<Dashboard />}
           />
 
-          {/* Kelola Menu */}
           <Route
             path="/menu"
             element={<KelolaMenu />}
           />
 
-          {/* Kelola QR */}
           <Route
             path="/qr"
             element={<KelolaQR />}
           />
 
-          {/* Settings */}
           <Route
             path="/settings"
             element={<Settings />}
           />
 
-          {/* Pesanan */}
           <Route
             path="/pesanan"
             element={<OrderPage />}
           />
 
-          {/* Laporan */}
           <Route
             path="/laporan"
             element={<Laporan />}
           />
 
-          {/* =================================
-              CART / ORDER / PAYMENT
-          ================================= */}
 
-          {/* Cart */}
+          {/* ===============================================
+              CART
+          =============================================== */}
+
           <Route
             path="/cart"
             element={<CartPage />}
           />
 
-          {/* Order Detail */}
+
+          {/* ===============================================
+              ORDER DETAIL
+          =============================================== */}
+
           <Route
             path="/order-details"
             element={<OrderDetailPage />}
           />
 
-          {/* Cash Payment */}
+
+          {/* ===============================================
+              PAYMENT
+          =============================================== */}
+
           <Route
             path="/cash-payment"
             element={<CashPaymentPage />}
           />
 
-          {/* QRIS Payment */}
           <Route
             path="/qris-payment"
             element={<QrisPaymentPage />}
@@ -161,9 +206,11 @@ function App() {
 
         </Routes>
 
-        {/* =================================
-            GLOBAL NEW ORDER NOTIFICATION
-        ================================= */}
+
+        {/* ===============================================
+            GLOBAL NEW ORDER MODAL
+        =============================================== */}
+
         <NewOrderModal
           isOpen={showNewOrder}
           onClose={() => setShowNewOrder(false)}
