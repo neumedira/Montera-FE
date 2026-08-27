@@ -26,7 +26,8 @@ export default function OrderCard({
   return (
     <div
       className="
-        overflow-hidden rounded-2xl
+        overflow-hidden
+        rounded-2xl
         border border-[#E7E1D5]
         bg-[#FFFCF4]
         shadow-[0_1px_3px_rgba(0,0,0,0.03)]
@@ -48,7 +49,8 @@ export default function OrderCard({
           {/* Table */}
           <div
             className="
-              flex h-10 w-10 shrink-0 items-center justify-center
+              flex h-10 w-10 shrink-0
+              items-center justify-center
               rounded-xl bg-[#272624]
               text-[10px] font-bold text-white
             "
@@ -56,9 +58,9 @@ export default function OrderCard({
             {order.table}
           </div>
 
+          {/* Customer */}
           <div className="min-w-0">
 
-            {/* Customer + Type */}
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-[15px] font-bold text-[#292825]">
                 {order.customer}
@@ -66,8 +68,12 @@ export default function OrderCard({
 
               <span
                 className={`
-                  rounded-full px-2.5 py-1
-                  text-[10px] font-semibold
+                  rounded-full
+                  px-2.5
+                  py-1
+                  text-[10px]
+                  font-semibold
+
                   ${
                     isTakeAway
                       ? "bg-[#FFE8D3] text-[#F39A52]"
@@ -80,7 +86,17 @@ export default function OrderCard({
             </div>
 
             {/* Info */}
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-[#B1ADA6]">
+            <div
+              className="
+                mt-1
+                flex
+                flex-wrap
+                items-center
+                gap-2
+                text-[11px]
+                text-[#B1ADA6]
+              "
+            >
               <span>{order.orderId}</span>
 
               <span>•</span>
@@ -92,11 +108,17 @@ export default function OrderCard({
               <span>•</span>
 
               <span
-                className={`flex items-center gap-1 font-semibold ${
-                  isCash
-                    ? "text-[#F3A34E]"
-                    : "text-[#7D7B76]"
-                }`}
+                className={`
+                  flex
+                  items-center
+                  gap-1
+                  font-semibold
+                  ${
+                    isCash
+                      ? "text-[#F3A34E]"
+                      : "text-[#7D7B76]"
+                  }
+                `}
               >
                 {isCash ? (
                   <CreditCard
@@ -113,6 +135,7 @@ export default function OrderCard({
                 {order.payment}
               </span>
             </div>
+
           </div>
         </div>
 
@@ -143,15 +166,31 @@ export default function OrderCard({
         <div className="border-t border-[#E9E4D9]">
           <div className="px-4 py-4">
 
-            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.12em] text-[#A7A39B]">
+            {/* Detail Title */}
+            <p
+              className="
+                mb-3
+                text-[10px]
+                font-bold
+                uppercase
+                tracking-[0.12em]
+                text-[#A7A39B]
+              "
+            >
               Detail Pesanan
             </p>
 
+            {/* Items */}
             <div className="space-y-2">
               {order.items.map((item, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between gap-4"
+                  className="
+                    flex
+                    items-center
+                    justify-between
+                    gap-4
+                  "
                 >
                   <p className="text-[14px] font-medium text-[#32302C]">
                     {item.name} ×{item.qty}
@@ -167,12 +206,27 @@ export default function OrderCard({
             {/* Total */}
             <div
               className="
-                mt-4 flex items-center justify-between
-                rounded-xl bg-[#292825] px-4 py-3
+                mt-4
+                flex
+                items-center
+                justify-between
+                rounded-xl
+                bg-[#292825]
+                px-4
+                py-3
               "
             >
+
+              {/* Total */}
               <div>
-                <p className="text-[9px] uppercase tracking-[0.12em] text-[#9D9A93]">
+                <p
+                  className="
+                    text-[9px]
+                    uppercase
+                    tracking-[0.12em]
+                    text-[#9D9A93]
+                  "
+                >
                   Total
                 </p>
 
@@ -181,53 +235,14 @@ export default function OrderCard({
                 </p>
               </div>
 
-              {/* ================================= */}
-              {/* CASH = DONE BUTTON */}
-              {/* ================================= */}
-              {isCash ? (
-                isDone ? (
-                  <span
-                    className="
-                      rounded-full
-                      bg-[#F6A257]
-                      px-4
-                      py-1.5
-                      text-[11px]
-                      font-bold
-                      text-[#282621]
-                    "
-                  >
-                    Done
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDone(order.id);
-                    }}
-                    className="
-                      rounded-full
-                      bg-[#F6A257]
-                      px-4
-                      py-1.5
-                      text-[11px]
-                      font-bold
-                      text-[#282621]
-                      transition
-                      hover:bg-[#F7AE68]
-                      active:scale-95
-                    "
-                  >
-                    Done
-                  </button>
-                )
-              ) : (
-                /* QRIS tetap tampil QRIS BNI */
+              {/* ============================= */}
+              {/* DONE / CLOSED */}
+              {/* ============================= */}
+              {isDone ? (
                 <span
                   className="
                     rounded-full
-                    bg-[#45433F]
+                    bg-[#5A5854]
                     px-4
                     py-1.5
                     text-[11px]
@@ -235,9 +250,33 @@ export default function OrderCard({
                     text-white
                   "
                 >
-                  {order.paymentProvider}
+                  Closed
                 </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDone(order.id);
+                  }}
+                  className="
+                    rounded-full
+                    bg-[#F6A257]
+                    px-4
+                    py-1.5
+                    text-[11px]
+                    font-bold
+                    text-[#282621]
+                    transition
+                    duration-200
+                    hover:bg-[#F7AE68]
+                    active:scale-95
+                  "
+                >
+                  Done
+                </button>
               )}
+
             </div>
 
           </div>
