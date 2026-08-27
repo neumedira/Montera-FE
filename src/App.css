@@ -108,6 +108,120 @@ img {
 }
 
 /* =========================================
+   LOADING FOOD
+========================================= */
+
+/*
+   Gambar makanan berputar
+   Logo tetap berada di tengah
+*/
+
+.animate-loading-food {
+  animation: loadingFoodRotate 5s linear infinite;
+  transform-origin: center;
+}
+
+@keyframes loadingFoodRotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================
+   LOADING LOGO
+========================================= */
+
+.animate-loading-logo {
+  animation: loadingLogoPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes loadingLogoPulse {
+  0% {
+    opacity: 0.8;
+    transform: scale(0.96);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+
+  100% {
+    opacity: 0.8;
+    transform: scale(0.96);
+  }
+}
+
+/* =========================================
+   LOADING EXIT / TRANSITION
+========================================= */
+
+/*
+   Loading mulai menghilang sebelum
+   berpindah ke halaman Menu
+*/
+
+.animate-loading-exit {
+  animation: loadingExit 0.35s ease-in-out forwards;
+}
+
+@keyframes loadingExit {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+}
+
+/* =========================================
+   MENU PAGE ENTER
+========================================= */
+
+/*
+   Menu muncul secara smooth setelah
+   loading selesai
+*/
+
+.menu-page-enter {
+  animation: menuPageEnter 0.5s ease-out both;
+}
+
+@keyframes menuPageEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.99);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* =========================================
+   LOADING SCREEN MOBILE
+========================================= */
+
+@media (max-width: 480px) {
+  .animate-loading-food {
+    width: 290px;
+    height: 290px;
+  }
+
+  .animate-loading-logo {
+    width: 125px;
+  }
+}
+
+/* =========================================
    MOBILE
 ========================================= */
 

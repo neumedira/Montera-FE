@@ -98,7 +98,7 @@ export default function MenuPage() {
   };
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#fffcf4] pb-[150px]">
+    <main className="menu-page-enter min-h-screen overflow-x-hidden bg-[#fffcf4] pb-[150px]">
 
       {/* =====================================
           TOP SPACING
