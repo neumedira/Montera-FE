@@ -6,5 +6,13 @@ export const loginAdmin = async (username, password) => {
     password,
   });
 
+  // Ambil token dari response backend
+  const token = response.data?.data?.token;
+
+  // Simpan token
+  if (token) {
+    localStorage.setItem("admin_token", token);
+  }
+
   return response.data;
 };

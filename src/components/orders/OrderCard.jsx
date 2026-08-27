@@ -6,11 +6,13 @@ import {
 } from "lucide-react";
 
 function formatRupiah(value) {
+  const number = Number(value) || 0;
+
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(number);
 }
 
 export default function OrderCard({
@@ -20,8 +22,62 @@ export default function OrderCard({
   onDone,
   isDone,
 }) {
-  const isTakeAway = order.type === "Take Away";
-  const isCash = order.payment === "Cash";
+  // =========================================================
+  // ORDER TYPE
+  // =========================================================
+
+  const isTakeAway = order.order_type === "takeaway";
+
+  const orderType = isTakeAway
+    ? "Take Away"
+    : "Dine-In";
+
+  // =========================================================
+  // PAYMENT
+  // =========================================================
+
+  const isCash = order.payment_method === "cash";
+
+  const paymentMethod = isCash
+    ? "Cash"
+    : "QRIS";
+
+  // =========================================================
+  // TOTAL
+  // =========================================================
+
+  const subtotal = Number(order.subtotal) || 0;
+  const tax = Number(order.tax_amount) || 0;
+  const serviceCharge =
+    Number(order.service_charge_amount) || 0;
+
+  const total =
+    subtotal +
+    tax +
+    serviceCharge;
+
+  // =========================================================
+  // DATE & TIME
+  // =========================================================
+
+  const createdAt = order.created_at
+    ? new Date(order.created_at)
+    : null;
+
+  const date = createdAt
+    ? createdAt.toLocaleDateString("id-ID", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    : "-";
+
+  const time = createdAt
+    ? createdAt.toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "-";
 
   return (
     <div
@@ -33,7 +89,11 @@ export default function OrderCard({
         shadow-[0_1px_3px_rgba(0,0,0,0.03)]
       "
     >
-      {/* Header */}
+
+      {/* ===================================================== */}
+      {/* HEADER */}
+      {/* ===================================================== */}
+
       <button
         type="button"
         onClick={onToggle}
@@ -43,27 +103,34 @@ export default function OrderCard({
           transition-colors hover:bg-[#FAF7EF]
         "
       >
-        {/* Left */}
+
+        {/* LEFT */}
+
         <div className="flex min-w-0 items-center gap-3">
 
-          {/* Table */}
+          {/* TABLE */}
+
           <div
             className="
               flex h-10 w-10 shrink-0
               items-center justify-center
               rounded-xl bg-[#272624]
-              text-[10px] font-bold text-white
+              text-[10px]
+              font-bold
+              text-white
             "
           >
-            {order.table}
+            {order.table?.name || "-"}
           </div>
 
-          {/* Customer */}
+          {/* CUSTOMER */}
+
           <div className="min-w-0">
 
             <div className="flex flex-wrap items-center gap-2">
+
               <h3 className="text-[15px] font-bold text-[#292825]">
-                {order.customer}
+                {order.customer_name || "Customer"}
               </h3>
 
               <span
@@ -81,11 +148,13 @@ export default function OrderCard({
                   }
                 `}
               >
-                {order.type}
+                {orderType}
               </span>
+
             </div>
 
-            {/* Info */}
+            {/* INFO */}
+
             <div
               className="
                 mt-1
@@ -97,15 +166,24 @@ export default function OrderCard({
                 text-[#B1ADA6]
               "
             >
-              <span>{order.orderId}</span>
 
-              <span>•</span>
+              {/* ORDER NUMBER */}
 
               <span>
-                {order.date}, {order.time}
+                {order.order_number}
               </span>
 
               <span>•</span>
+
+              {/* DATE */}
+
+              <span>
+                {date}, {time}
+              </span>
+
+              <span>•</span>
+
+              {/* PAYMENT */}
 
               <span
                 className={`
@@ -120,6 +198,7 @@ export default function OrderCard({
                   }
                 `}
               >
+
                 {isCash ? (
                   <CreditCard
                     size={12}
@@ -132,17 +211,22 @@ export default function OrderCard({
                   />
                 )}
 
-                {order.payment}
+                {paymentMethod}
+
               </span>
+
             </div>
 
           </div>
+
         </div>
 
-        {/* Right */}
+        {/* RIGHT */}
+
         <div className="ml-4 flex shrink-0 items-center gap-4">
+
           <p className="text-[15px] font-bold text-[#292825]">
-            {formatRupiah(order.total)}
+            {formatRupiah(total)}
           </p>
 
           {open ? (
@@ -158,15 +242,22 @@ export default function OrderCard({
               className="text-[#A7A39B]"
             />
           )}
+
         </div>
+
       </button>
 
-      {/* Detail */}
+      {/* ===================================================== */}
+      {/* DETAIL */}
+      {/* ===================================================== */}
+
       {open && (
         <div className="border-t border-[#E9E4D9]">
+
           <div className="px-4 py-4">
 
-            {/* Detail Title */}
+            {/* DETAIL TITLE */}
+
             <p
               className="
                 mb-3
@@ -180,30 +271,118 @@ export default function OrderCard({
               Detail Pesanan
             </p>
 
-            {/* Items */}
-            <div className="space-y-2">
-              {order.items.map((item, index) => (
-                <div
-                  key={index}
-                  className="
-                    flex
-                    items-center
-                    justify-between
-                    gap-4
-                  "
-                >
-                  <p className="text-[14px] font-medium text-[#32302C]">
-                    {item.name} ×{item.qty}
-                  </p>
+            {/* ================================================= */}
+            {/* ITEMS */}
+            {/* ================================================= */}
 
-                  <p className="text-[14px] font-semibold text-[#32302C]">
-                    {formatRupiah(item.price)}
-                  </p>
-                </div>
-              ))}
+            <div className="space-y-2">
+
+              {order.items?.length > 0 ? (
+
+                order.items.map((item) => {
+
+                  const itemName =
+                    item.menu_item?.name ||
+                    "Menu";
+
+                  const quantity =
+                    Number(item.quantity) || 0;
+
+                  const price =
+                    Number(item.price) || 0;
+
+                  const itemTotal =
+                    price * quantity;
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="
+                        flex
+                        items-center
+                        justify-between
+                        gap-4
+                      "
+                    >
+
+                      <p className="text-[14px] font-medium text-[#32302C]">
+                        {itemName} ×{quantity}
+                      </p>
+
+                      <p className="text-[14px] font-semibold text-[#32302C]">
+                        {formatRupiah(itemTotal)}
+                      </p>
+
+                    </div>
+                  );
+                })
+
+              ) : (
+
+                <p className="text-[13px] text-[#A7A39B]">
+                  Tidak ada item.
+                </p>
+
+              )}
+
             </div>
 
-            {/* Total */}
+            {/* ================================================= */}
+            {/* PRICE BREAKDOWN */}
+            {/* ================================================= */}
+
+            <div
+              className="
+                mt-4
+                space-y-1
+                border-t
+                border-[#E9E4D9]
+                pt-3
+              "
+            >
+
+              <div className="flex justify-between">
+
+                <span className="text-[11px] text-[#A7A39B]">
+                  Subtotal
+                </span>
+
+                <span className="text-[11px] font-medium text-[#57544F]">
+                  {formatRupiah(subtotal)}
+                </span>
+
+              </div>
+
+              <div className="flex justify-between">
+
+                <span className="text-[11px] text-[#A7A39B]">
+                  Pajak
+                </span>
+
+                <span className="text-[11px] font-medium text-[#57544F]">
+                  {formatRupiah(tax)}
+                </span>
+
+              </div>
+
+              <div className="flex justify-between">
+
+                <span className="text-[11px] text-[#A7A39B]">
+                  Service Charge
+                </span>
+
+                <span className="text-[11px] font-medium text-[#57544F]">
+                  {formatRupiah(serviceCharge)}
+                </span>
+
+              </div>
+
+            </div>
+
+            {/* ================================================= */}
+            {/* TOTAL */}
+            {/* ================================================= */}
+
             <div
               className="
                 mt-4
@@ -217,8 +396,10 @@ export default function OrderCard({
               "
             >
 
-              {/* Total */}
+              {/* TOTAL */}
+
               <div>
+
                 <p
                   className="
                     text-[9px]
@@ -231,14 +412,17 @@ export default function OrderCard({
                 </p>
 
                 <p className="mt-0.5 text-[17px] font-bold text-white">
-                  {formatRupiah(order.total)}
+                  {formatRupiah(total)}
                 </p>
+
               </div>
 
-              {/* ============================= */}
+              {/* ================================================= */}
               {/* DONE / CLOSED */}
-              {/* ============================= */}
+              {/* ================================================= */}
+
               {isDone ? (
+
                 <span
                   className="
                     rounded-full
@@ -252,7 +436,9 @@ export default function OrderCard({
                 >
                   Closed
                 </span>
+
               ) : (
+
                 <button
                   type="button"
                   onClick={(e) => {
@@ -275,13 +461,16 @@ export default function OrderCard({
                 >
                   Done
                 </button>
+
               )}
 
             </div>
 
           </div>
+
         </div>
       )}
+
     </div>
   );
 }

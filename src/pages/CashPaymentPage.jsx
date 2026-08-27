@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 
 import LoadingScreen from "../components/costumer/menu/LoadingScreen";
+import api from "../api/axios";
 
 export default function CashPaymentPage() {
   const navigate = useNavigate();
@@ -35,6 +36,9 @@ export default function CashPaymentPage() {
   // =========================================================
   // ORDER NUMBER
   // =========================================================
+  // Sementara masih dummy.
+  // Nomor order sebenarnya sebaiknya berasal dari backend.
+  // =========================================================
 
   const orderNumber = "0001";
 
@@ -42,23 +46,86 @@ export default function CashPaymentPage() {
   // DONE
   // =========================================================
 
-  const handleDone = () => {
-    // Tampilkan LoadingScreen terlebih dahulu
-    setIsFinishing(true);
+  const handleDone = async () => {
+    try {
+      // Tampilkan loading
+      setIsFinishing(true);
 
-    /*
-     * Tunggu sebentar supaya LoadingScreen
-     * sudah benar-benar menggantikan halaman payment.
-     *
-     * Setelah itu:
-     * 1. Clear cart
-     * 2. Masuk kembali ke customer menu
-     */
-    setTimeout(() => {
+      // =======================================================
+      // DATA YANG DIKIRIM KE BACKEND
+      // =======================================================
+
+      const orderData = {
+        table_id: null,
+
+        // Untuk halaman Cash ini sementara dine-in.
+        // Kalau nanti ada pilihan takeaway, tinggal dibuat dinamis.
+        order_type: "dine-in",
+
+        customer_name: customerName,
+
+        // Halaman ini khusus pembayaran cash.
+        payment_method: "cash",
+
+        // Ambil item dari cart
+        items: cart.map((item) => ({
+          menu_item_id: item.id,
+          quantity: item.quantity,
+        })),
+      };
+
+      // =======================================================
+      // DEBUG
+      // =======================================================
+
+      console.log("Order yang dikirim ke backend:", orderData);
+
+      // =======================================================
+      // KIRIM ORDER
+      // POST /api/v1/customer/orders
+      // =======================================================
+
+      const response = await api.post(
+        "customer/orders",
+        orderData
+      );
+
+      console.log(
+        "Order berhasil dibuat:",
+        response.data
+      );
+
+      // =======================================================
+      // ORDER BERHASIL
+      // =======================================================
+
       clearCart();
 
       navigate("/");
-    }, 100);
+    } catch (error) {
+      // =======================================================
+      // ORDER GAGAL
+      // =======================================================
+
+      console.error(
+        "Gagal membuat order:",
+        error
+      );
+
+      console.error(
+        "Response backend:",
+        error.response?.data
+      );
+
+      // Matikan loading supaya user bisa mencoba lagi
+      setIsFinishing(false);
+
+      // Sementara pakai alert dulu
+      alert(
+        error.response?.data?.message ||
+        "Pesanan gagal dikirim. Silakan coba lagi."
+      );
+    }
   };
 
   // =========================================================
@@ -214,6 +281,7 @@ export default function CashPaymentPage() {
       <button
         type="button"
         onClick={handleDone}
+        disabled={isFinishing || !cart || cart.length === 0}
         className="
           mt-6
           w-full
@@ -229,6 +297,8 @@ export default function CashPaymentPage() {
           transition-colors
           hover:bg-black
           active:scale-[0.98]
+          disabled:cursor-not-allowed
+          disabled:opacity-50
         "
       >
         DONE
