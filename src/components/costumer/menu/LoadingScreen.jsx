@@ -9,12 +9,10 @@ export default function LoadingScreen() {
   const [closing, setClosing] = useState(false);
 
   useEffect(() => {
-    // Mulai menghilang sedikit sebelum pindah halaman
     const closeTimer = setTimeout(() => {
       setClosing(true);
     }, 1500);
 
-    // Setelah fade-out hampir selesai, pindah ke Menu
     const navigateTimer = setTimeout(() => {
       navigate("/menu");
     }, 1800);
@@ -31,32 +29,27 @@ export default function LoadingScreen() {
         closing ? "animate-loading-exit pointer-events-none" : ""
       }`}
     >
-      {/* =========================================
-          BACKGROUND / OVERLAY
-      ========================================= */}
+      {/* Overlay */}
       <div className="absolute inset-0 bg-black/25 backdrop-blur-[2px]" />
 
-      {/* =========================================
-          ORNAMEN MAKANAN
-          Berputar mengelilingi logo
-      ========================================= */}
-      <div className="absolute left-1/2 top-1/2 z-10 h-[310px] w-[310px] -translate-x-1/2 -translate-y-1/2">
-        <img
-          src={loadingFood}
-          alt=""
-          className="h-full w-full object-contain animate-loading-food"
-        />
-      </div>
+      {/* LOADING */}
+    <div className="relative z-20 h-[60px] w-[60px]">
 
-      {/* =========================================
-          LOGO MONTERA
-          Tetap di tengah
-      ========================================= */}
+      {/* Bulatan */}
+      <img
+        src={loadingFood}
+        alt=""
+        className="absolute left-1/2 top-1/2 h-[60px] w-[60px] -translate-x-1/2 -translate-y-1/2 object-contain animate-loading-food"
+      />
+
+      {/* Logo kecil di tengah */}
       <img
         src={loadingLogo}
         alt="Montera"
-        className="relative z-20 w-[70px] animate-loading-logo object-contain"
+        className="absolute left-1/2 top-1/2 z-10 h-auto w-[14px] -translate-x-1/2 -translate-y-1/2 object-contain"
       />
+
+    </div>
     </main>
   );
 }

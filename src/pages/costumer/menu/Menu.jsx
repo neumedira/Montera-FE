@@ -98,232 +98,251 @@ export default function MenuPage() {
   };
 
   return (
-    <main className="menu-page-enter min-h-screen overflow-x-hidden bg-[#fffcf4] pb-[150px]">
+    <div className="fixed inset-0 overflow-hidden bg-[#fffcf4]">
 
       {/* =====================================
-          TOP SPACING
+          SCROLLABLE CONTENT
       ===================================== */}
 
-      <div className="h-[42px]" />
+      <main
+        className="
+          menu-page-enter
+          absolute
+          inset-0
+          overflow-x-hidden
+          overflow-y-auto
+          pb-[155px]
+        "
+      >
 
-      {/* =====================================
-          BANNER
-      ===================================== */}
+        {/* =====================================
+            TOP SPACING
+        ===================================== */}
 
-      <div className="px-[22px]">
-        <img
-          src={bannerburger}
-          alt="Good Burger"
-          className="h-[176px] w-full rounded-[17px] object-cover"
-        />
-      </div>
+        <div className="h-[42px]" />
 
-      {/* =====================================
-          SEARCH
-      ===================================== */}
+        {/* =====================================
+            BANNER
+        ===================================== */}
 
-      <div className="mt-[27px]">
-        <SearchBar
-          value={search}
-          onChange={setSearch}
-        />
-      </div>
+        <div className="px-[22px]">
+          <img
+            src={bannerburger}
+            alt="Good Burger"
+            className="h-[176px] w-full rounded-[17px] object-cover"
+          />
+        </div>
 
-      {/* =====================================
-          CHECKERBOARD
-      ===================================== */}
+        {/* =====================================
+            SEARCH
+        ===================================== */}
 
-      <div className="relative z-0 mt-[14px] h-[44px] overflow-hidden border-y-2 border-[#292826]">
-        <img
-          src={checkerboard}
-          alt=""
-          className="h-full w-full object-cover"
-        />
-      </div>
+        <div className="mt-[27px]">
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+          />
+        </div>
 
-      {/* =====================================
-          COMBO
+        {/* =====================================
+            CHECKERBOARD
+        ===================================== */}
 
-          HORIZONTAL CARD
-      ===================================== */}
+        <div className="relative z-0 mt-[14px] h-[44px] overflow-hidden border-y-2 border-[#292826]">
+          <img
+            src={checkerboard}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        </div>
 
-      {(activeCategory === "all" ||
-        activeCategory === "combo") &&
-        comboItems.length > 0 && (
-          <section className="mt-[18px]">
+        {/* =====================================
+            COMBO
+            HORIZONTAL CARD
+        ===================================== */}
 
-            {/* CATEGORY TITLE */}
-            <div className="px-4">
-              <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111]">
-                COMBO
-              </h2>
-            </div>
+        {(activeCategory === "all" ||
+          activeCategory === "combo") &&
+          comboItems.length > 0 && (
+            <section className="mt-[18px]">
 
-            {/* COMBO LIST */}
-            <div className="mt-[14px] overflow-x-auto px-4 scrollbar-hide">
-              <div className="flex w-max gap-4">
-                {comboItems.map((product) => (
-                  <ProductCard
+              <div className="px-4">
+                <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111]">
+                  COMBO
+                </h2>
+              </div>
+
+              <div className="mt-[14px] overflow-x-auto px-4 scrollbar-hide">
+                <div className="flex w-max gap-4">
+                  {comboItems.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onAdd={() =>
+                        handleAddToCart(product)
+                      }
+                      onClick={() =>
+                        handleProductClick(product)
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
+
+            </section>
+          )}
+
+        {/* =====================================
+            BURGER
+            VERTICAL LIST
+        ===================================== */}
+
+        {(activeCategory === "all" ||
+          activeCategory === "burger") &&
+          burgerItems.length > 0 && (
+            <section className="mt-[28px]">
+
+              <div className="px-4">
+                <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111]">
+                  BURGER
+                </h2>
+              </div>
+
+              <div className="mt-[6px] px-4">
+                {burgerItems.map((product) => (
+                  <ProductListItem
                     key={product.id}
                     product={product}
-                    onAdd={() =>
-                      handleAddToCart(product)
-                    }
+                    onAdd={handleAddToCart}
                     onClick={() =>
                       handleProductClick(product)
                     }
                   />
                 ))}
               </div>
-            </div>
 
-          </section>
+            </section>
+          )}
+
+        {/* =====================================
+            DRINK
+            VERTICAL LIST
+        ===================================== */}
+
+        {(activeCategory === "all" ||
+          activeCategory === "drink") &&
+          drinkItems.length > 0 && (
+            <section className="mt-[28px]">
+
+              <div className="px-4">
+                <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111]">
+                  DRINK
+                </h2>
+              </div>
+
+              <div className="mt-[6px] px-4">
+                {drinkItems.map((product) => (
+                  <ProductListItem
+                    key={product.id}
+                    product={product}
+                    onAdd={handleAddToCart}
+                    onClick={() =>
+                      handleProductClick(product)
+                    }
+                  />
+                ))}
+              </div>
+
+            </section>
+          )}
+
+        {/* =====================================
+            SNACK
+            VERTICAL LIST
+        ===================================== */}
+
+        {(activeCategory === "all" ||
+          activeCategory === "snack") &&
+          snackItems.length > 0 && (
+            <section className="mt-[28px]">
+
+              <div className="px-4">
+                <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111]">
+                  SNACK
+                </h2>
+              </div>
+
+              <div className="mt-[6px] px-4">
+                {snackItems.map((product) => (
+                  <ProductListItem
+                    key={product.id}
+                    product={product}
+                    onAdd={handleAddToCart}
+                    onClick={() =>
+                      handleProductClick(product)
+                    }
+                  />
+                ))}
+              </div>
+
+            </section>
+          )}
+
+        {/* =====================================
+            EMPTY RESULT
+        ===================================== */}
+
+        {filteredItems.length === 0 && (
+          <div className="px-5 py-16 text-center">
+            <p className="text-[15px] font-semibold text-[#777]">
+              Menu tidak ditemukan
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                setSearch("");
+                setActiveCategory("all");
+              }}
+              className="mt-3 text-[13px] font-bold underline"
+            >
+              Reset filter
+            </button>
+          </div>
         )}
 
-      {/* =====================================
-          BURGER
-
-          VERTICAL LIST
-      ===================================== */}
-
-      {(activeCategory === "all" ||
-        activeCategory === "burger") &&
-        burgerItems.length > 0 && (
-          <section className="mt-[28px]">
-
-            {/* CATEGORY TITLE */}
-            <div className="px-4">
-              <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111]">
-                BURGER
-              </h2>
-            </div>
-
-            {/* PRODUCT LIST */}
-            <div className="mt-[6px] px-4">
-              {burgerItems.map((product) => (
-                <ProductListItem
-                  key={product.id}
-                  product={product}
-                  onAdd={handleAddToCart}
-                  onClick={() =>
-                    handleProductClick(product)
-                  }
-                />
-              ))}
-            </div>
-
-          </section>
-        )}
+      </main>
 
       {/* =====================================
-          DRINK
-
-          VERTICAL LIST
+          FIXED MENU + CART
+          TIDAK IKUT SCROLL
       ===================================== */}
 
-      {(activeCategory === "all" ||
-        activeCategory === "drink") &&
-        drinkItems.length > 0 && (
-          <section className="mt-[28px]">
-
-            {/* CATEGORY TITLE */}
-            <div className="px-4">
-              <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111]">
-                DRINK
-              </h2>
-            </div>
-
-            {/* PRODUCT LIST */}
-            <div className="mt-[6px] px-4">
-              {drinkItems.map((product) => (
-                <ProductListItem
-                  key={product.id}
-                  product={product}
-                  onAdd={handleAddToCart}
-                  onClick={() =>
-                    handleProductClick(product)
-                  }
-                />
-              ))}
-            </div>
-
-          </section>
-        )}
-
-      {/* =====================================
-          SNACK
-
-          VERTICAL LIST
-      ===================================== */}
-
-      {(activeCategory === "all" ||
-        activeCategory === "snack") &&
-        snackItems.length > 0 && (
-          <section className="mt-[28px]">
-
-            {/* CATEGORY TITLE */}
-            <div className="px-4">
-              <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111]">
-                SNACK
-              </h2>
-            </div>
-
-            {/* PRODUCT LIST */}
-            <div className="mt-[6px] px-4">
-              {snackItems.map((product) => (
-                <ProductListItem
-                  key={product.id}
-                  product={product}
-                  onAdd={handleAddToCart}
-                  onClick={() =>
-                    handleProductClick(product)
-                  }
-                />
-              ))}
-            </div>
-
-          </section>
-        )}
-
-      {/* =====================================
-          EMPTY RESULT
-      ===================================== */}
-
-      {filteredItems.length === 0 && (
-        <div className="px-5 py-16 text-center">
-          <p className="text-[15px] font-semibold text-[#777]">
-            Menu tidak ditemukan
-          </p>
-
-          <button
-            type="button"
-            onClick={() => {
-              setSearch("");
-              setActiveCategory("all");
-            }}
-            className="mt-3 text-[13px] font-bold underline"
-          >
-            Reset filter
-          </button>
+      <div
+        className="
+          fixed
+          bottom-0
+          left-0
+          right-0
+          z-[9999]
+          pointer-events-none
+        "
+      >
+        <div className="pointer-events-auto">
+          <CartBar
+            itemCount={totalItems}
+            total={totalPrice}
+            categories={categories}
+            activeCategory={activeCategory}
+            categoryOpen={categoryOpen}
+            onToggleCategory={() =>
+              setCategoryOpen((prev) => !prev)
+            }
+            onCategoryChange={handleCategoryChange}
+          />
         </div>
-      )}
+      </div>
 
-      {/* =====================================
-          FLOATING MENU + CART
-      ===================================== */}
-
-      <CartBar
-        itemCount={totalItems}
-        total={totalPrice}
-        categories={categories}
-        activeCategory={activeCategory}
-        categoryOpen={categoryOpen}
-        onToggleCategory={() =>
-          setCategoryOpen((prev) => !prev)
-        }
-        onCategoryChange={handleCategoryChange}
-      />
-
-    </main>
+    </div>
   );
 }
