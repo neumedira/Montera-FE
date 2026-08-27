@@ -51,7 +51,8 @@ export default function ModalBundle({ isOpen, onClose, onSave, editingItem, menu
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-      <div className="bg-[#FAF8F5] w-full max-w-md rounded-3xl p-6 relative max-h-[90vh] overflow-y-auto">
+      {/* Scrollbar disembunyikan pada kontainer utama modal */}
+      <div className="bg-[#FAF8F5] w-full max-w-md rounded-3xl p-6 relative max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <button 
           onClick={onClose} 
           type="button" 
@@ -102,7 +103,8 @@ export default function ModalBundle({ isOpen, onClose, onSave, editingItem, menu
           {/* Pilihan Isi Paket */}
           <div className="space-y-2 pt-2">
             <label className="text-xs font-bold text-gray-500 uppercase">Isi Paket</label>
-            <div className="space-y-2 max-h-40 overflow-y-auto">
+            {/* Scrollbar disembunyikan pada daftar isi paket */}
+            <div className="space-y-2 max-h-40 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {menuList && menuList.length > 0 ? (
                 menuList.map((m) => (
                   <label key={m.id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-200 cursor-pointer hover:bg-gray-50">

@@ -155,7 +155,7 @@ export default function KelolaQR() {
                 Kelola QR TABLE
               </h1>
 
-            <p className="text-sm text-gray-500 font-medium">
+            <p className="text-2x1 text-gray-500 font-medium">
               {qrList.length} QR Code
             </p>
           </div>
