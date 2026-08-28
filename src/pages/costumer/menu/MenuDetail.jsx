@@ -40,8 +40,8 @@ export default function MenuDetail() {
 
   if (!product) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#fffcf4]">
-        <p className="font-semibold">
+      <main className="flex min-h-screen items-center justify-center bg-[#fffcf4] dark:bg-[#121212] transition-colors duration-300">
+        <p className="font-semibold text-[#111] dark:text-white">
           Menu tidak ditemukan.
         </p>
       </main>
@@ -104,13 +104,13 @@ export default function MenuDetail() {
   // =========================================================
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#fffcf4]">
+    <main className="min-h-screen overflow-x-hidden bg-[#fffcf4] dark:bg-[#121212] transition-colors duration-300">
 
       {/* =====================================================
           PRODUCT IMAGE
       ===================================================== */}
 
-      <section className="relative h-[458px] overflow-hidden bg-[#fffcf4]">
+      <section className="relative h-[458px] overflow-hidden bg-[#fffcf4] dark:bg-[#121212] transition-colors duration-300">
 
         {/* BACK BUTTON */}
 
@@ -131,7 +131,11 @@ export default function MenuDetail() {
             rounded-full
             border
             border-[#e8e5df]
+            dark:border-[#333333]
             bg-white
+            dark:bg-[#1e1e1e]
+            text-[#111]
+            dark:text-white
             transition
             active:scale-95
           "
@@ -181,11 +185,15 @@ export default function MenuDetail() {
           rounded-t-[24px]
           border-t
           border-[#e4e0d8]
+          dark:border-[#333333]
           bg-[#fffcf4]
+          dark:bg-[#1e1e1e]
           px-[28px]
           pb-8
           pt-[42px]
           shadow-[0_-2px_10px_rgba(0,0,0,0.03)]
+          transition-colors
+          duration-300
         "
       >
 
@@ -202,6 +210,9 @@ export default function MenuDetail() {
               uppercase
               leading-none
               text-[#111]
+              dark:text-white
+              transition-colors
+              duration-300
             "
           >
             {product.name}
@@ -213,6 +224,9 @@ export default function MenuDetail() {
               text-[26px]
               font-extrabold
               text-[#111]
+              dark:text-white
+              transition-colors
+              duration-300
             "
           >
             Rp{" "}
@@ -232,6 +246,9 @@ export default function MenuDetail() {
             text-[18px]
             leading-[1.55]
             text-[#5d5a57]
+            dark:text-[#a1a1aa]
+            transition-colors
+            duration-300
           "
         >
           {product.description}
@@ -250,12 +267,15 @@ export default function MenuDetail() {
               font-bold
               tracking-wide
               text-[#111]
+              dark:text-white
+              transition-colors
+              duration-300
             "
           >
             CUSTOMIZATION
           </h2>
 
-          <div className="mt-[7px] border-t border-[#e8e4dc]" />
+          <div className="mt-[7px] border-t border-[#e8e4dc] dark:border-[#333333] transition-colors duration-300" />
 
           <div className="mt-[24px] space-y-[24px]">
 
@@ -301,13 +321,20 @@ export default function MenuDetail() {
               rounded-[17px]
               border
               border-[#e5e1da]
+              dark:border-[#444444]
               bg-white
+              dark:bg-[#2d2d2d]
               px-[15px]
               text-[15px]
               text-[#111]
+              dark:text-white
               outline-none
               placeholder:text-[#999]
+              dark:placeholder:text-[#888888]
               focus:border-[#292826]
+              dark:focus:border-white
+              transition-colors
+              duration-300
             "
           />
 
@@ -331,8 +358,10 @@ export default function MenuDetail() {
             gap-3
             rounded-[18px]
             bg-[#292826]
+            dark:bg-white
             px-[22px]
             text-white
+            dark:text-[#111]
             transition
             active:scale-[0.98]
           "

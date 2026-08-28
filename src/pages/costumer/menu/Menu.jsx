@@ -98,10 +98,10 @@ export default function MenuPage() {
   };
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-[#fffcf4]">
-
+    <div className="fixed inset-0 overflow-hidden bg-[#fffcf4] dark:bg-[#121212] transition-colors duration-300">
+      {/* Komentar boleh ditaruh di dalam div ini */}
       {/* =====================================
-          SCROLLABLE CONTENT
+         SCROLLABLE CONTENT
       ===================================== */}
 
       <main
@@ -148,11 +148,12 @@ export default function MenuPage() {
             CHECKERBOARD
         ===================================== */}
 
-        <div className="relative z-0 mt-[14px] h-[44px] overflow-hidden border-y-2 border-[#292826]">
+        {/* Menambahkan border yang lebih menyesuaikan saat dark mode */}
+        <div className="relative z-0 mt-[14px] h-[44px] overflow-hidden border-y-2 border-[#292826] dark:border-[#333333]">
           <img
             src={checkerboard}
             alt=""
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover dark:opacity-80" 
           />
         </div>
 
@@ -167,7 +168,8 @@ export default function MenuPage() {
             <section className="mt-[18px]">
 
               <div className="px-4">
-                <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111]">
+                {/* Mengubah teks menjadi putih saat dark mode */}
+                <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111] dark:text-white transition-colors duration-300">
                   COMBO
                 </h2>
               </div>
@@ -203,7 +205,7 @@ export default function MenuPage() {
             <section className="mt-[28px]">
 
               <div className="px-4">
-                <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111]">
+                <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111] dark:text-white transition-colors duration-300">
                   BURGER
                 </h2>
               </div>
@@ -235,7 +237,7 @@ export default function MenuPage() {
             <section className="mt-[28px]">
 
               <div className="px-4">
-                <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111]">
+                <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111] dark:text-white transition-colors duration-300">
                   DRINK
                 </h2>
               </div>
@@ -267,7 +269,7 @@ export default function MenuPage() {
             <section className="mt-[28px]">
 
               <div className="px-4">
-                <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111]">
+                <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111] dark:text-white transition-colors duration-300">
                   SNACK
                 </h2>
               </div>
@@ -294,7 +296,7 @@ export default function MenuPage() {
 
         {filteredItems.length === 0 && (
           <div className="px-5 py-16 text-center">
-            <p className="text-[15px] font-semibold text-[#777]">
+            <p className="text-[15px] font-semibold text-[#777] dark:text-[#a1a1aa] transition-colors duration-300">
               Menu tidak ditemukan
             </p>
 
@@ -304,7 +306,7 @@ export default function MenuPage() {
                 setSearch("");
                 setActiveCategory("all");
               }}
-              className="mt-3 text-[13px] font-bold underline"
+              className="mt-3 text-[13px] font-bold underline dark:text-white transition-colors duration-300"
             >
               Reset filter
             </button>
