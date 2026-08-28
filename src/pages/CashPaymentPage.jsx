@@ -141,7 +141,7 @@ export default function CashPaymentPage() {
   // =========================================================
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] max-w-md mx-auto p-4 flex flex-col justify-between">
+    <div className="min-h-screen bg-[#FAF7F2] dark:bg-[#121212] max-w-md mx-auto p-4 flex flex-col justify-between transition-colors duration-300">
 
       <div>
 
@@ -149,7 +149,7 @@ export default function CashPaymentPage() {
             HEADER CASH
         ===================================================== */}
 
-        <div className="mb-6 flex items-center gap-2 text-gray-900">
+        <div className="mb-6 flex items-center gap-2 text-gray-900 dark:text-white transition-colors duration-300">
 
           <Banknote
             size={24}
@@ -166,7 +166,7 @@ export default function CashPaymentPage() {
             RECEIPT CARD
         ===================================================== */}
 
-        <div className="mb-6 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div className="mb-6 rounded-3xl border border-gray-100 dark:border-[#333333] bg-white dark:bg-[#1e1e1e] p-6 shadow-sm transition-colors duration-300">
 
           {/* ===================================================
               ORDER NUMBER
@@ -174,7 +174,7 @@ export default function CashPaymentPage() {
 
           <div className="mb-6 text-center">
 
-            <span className="font-display text-4xl tracking-wider text-gray-900">
+            <span className="font-display text-4xl tracking-wider text-gray-900 dark:text-white transition-colors duration-300">
               {orderNumber}
             </span>
 
@@ -184,9 +184,9 @@ export default function CashPaymentPage() {
               CUSTOMER NAME
           =================================================== */}
 
-          <div className="mb-4 border-b border-gray-100 pb-3">
+          <div className="mb-4 border-b border-gray-100 dark:border-[#333333] pb-3 transition-colors duration-300">
 
-            <span className="text-sm font-bold text-gray-900">
+            <span className="text-sm font-bold text-gray-900 dark:text-white transition-colors duration-300">
               {customerName}
             </span>
 
@@ -196,7 +196,7 @@ export default function CashPaymentPage() {
               ITEMS
           =================================================== */}
 
-          <div className="space-y-4 border-b border-gray-100 pb-4">
+          <div className="space-y-4 border-b border-gray-100 dark:border-[#333333] pb-4 transition-colors duration-300">
 
             {cart && cart.length > 0 ? (
 
@@ -211,11 +211,11 @@ export default function CashPaymentPage() {
 
                   <div className="min-w-0">
 
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-900">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white transition-colors duration-300">
                       {item.name}
                     </h4>
 
-                    <p className="mt-0.5 text-xs font-medium text-gray-400">
+                    <p className="mt-0.5 text-xs font-medium text-gray-400 dark:text-gray-400 transition-colors duration-300">
                       x{item.quantity}
                     </p>
 
@@ -223,7 +223,7 @@ export default function CashPaymentPage() {
 
                   {/* ITEM TOTAL */}
 
-                  <span className="shrink-0 text-xs font-bold text-gray-900">
+                  <span className="shrink-0 text-xs font-bold text-gray-900 dark:text-white transition-colors duration-300">
                     Rp{" "}
                     {(
                       item.price * item.quantity
@@ -236,7 +236,7 @@ export default function CashPaymentPage() {
 
             ) : (
 
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 dark:text-gray-400 transition-colors duration-300">
                 Tidak ada item
               </p>
 
@@ -250,11 +250,11 @@ export default function CashPaymentPage() {
 
           <div className="flex items-baseline justify-between pt-4">
 
-            <span className="text-xs font-bold text-gray-900">
+            <span className="text-xs font-bold text-gray-900 dark:text-white transition-colors duration-300">
               Grand Total
             </span>
 
-            <span className="font-display text-2xl text-gray-900">
+            <span className="font-display text-2xl text-gray-900 dark:text-white transition-colors duration-300">
               Rp{" "}
               {(totalPrice || 0).toLocaleString("id-ID")}
             </span>
@@ -267,7 +267,7 @@ export default function CashPaymentPage() {
             CASHIER NOTICE
         ===================================================== */}
 
-        <p className="px-4 text-center text-xs font-medium leading-relaxed text-gray-500">
+        <p className="px-4 text-center text-xs font-medium leading-relaxed text-gray-500 dark:text-gray-400 transition-colors duration-300">
           Please proceed directly to the cashier to complete
           the payment.
         </p>
@@ -287,18 +287,23 @@ export default function CashPaymentPage() {
           w-full
           rounded-2xl
           bg-zinc-900
+          dark:bg-white
           py-4
           text-sm
           font-bold
           uppercase
           tracking-wider
           text-white
+          dark:text-[#111]
           shadow-lg
           transition-colors
+          duration-300
           hover:bg-black
+          dark:hover:bg-gray-200
           active:scale-[0.98]
           disabled:cursor-not-allowed
           disabled:opacity-50
+          dark:disabled:opacity-50
         "
       >
         DONE

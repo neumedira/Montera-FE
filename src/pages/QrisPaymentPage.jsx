@@ -90,15 +90,15 @@ export default function QrisPaymentPage() {
   // =========================================================
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] max-w-md mx-auto p-4 flex flex-col justify-between">
+    <div className="min-h-screen bg-[#FAF7F2] dark:bg-[#121212] max-w-md mx-auto p-4 flex flex-col justify-between transition-colors duration-300">
 
       <div>
 
         {/* ================================================
             HEADER QRIS
-        ================================================= */}
+        ================================================ */}
 
-        <div className="mb-6 flex items-center gap-2 text-gray-900">
+        <div className="mb-6 flex items-center gap-2 text-gray-900 dark:text-white transition-colors duration-300">
 
           <QrCode
             size={24}
@@ -113,15 +113,15 @@ export default function QrisPaymentPage() {
 
         {/* ================================================
             SUBTITLE + TIMER
-        ================================================= */}
+        ================================================ */}
 
         <div className="mb-6 text-center">
 
-          <p className="mb-1 text-sm font-bold text-gray-900">
+          <p className="mb-1 text-sm font-bold text-gray-900 dark:text-gray-200 transition-colors duration-300">
             Complete the payment within the timeframe
           </p>
 
-          <span className="font-display text-4xl tracking-wider text-gray-900">
+          <span className="font-display text-4xl tracking-wider text-gray-900 dark:text-white transition-colors duration-300">
             {formatTime(timeLeft)}
           </span>
 
@@ -129,15 +129,15 @@ export default function QrisPaymentPage() {
 
         {/* ================================================
             QR CODE
-        ================================================= */}
+        ================================================ */}
 
-        <div className="mb-6 flex aspect-square w-full items-center justify-center overflow-hidden rounded-2xl border border-gray-200/50 bg-[#D9D9D9] shadow-inner">
+        <div className="mb-6 flex aspect-square w-full items-center justify-center overflow-hidden rounded-2xl border border-gray-200/50 dark:border-[#333333] bg-[#D9D9D9] dark:bg-[#1e1e1e] shadow-inner transition-colors duration-300">
 
           {qrisImage ? (
             <img
               src={qrisImage}
               alt="QRIS Store Code"
-              className="h-full w-full bg-white object-contain p-4"
+              className="h-full w-full bg-white object-contain p-4" // bg-white sengaja dipertahankan agar QR tetap terbaca
               onError={(e) => {
                 e.target.style.display = "none";
 
@@ -146,7 +146,7 @@ export default function QrisPaymentPage() {
                 );
 
                 e.target.parentElement.innerHTML =
-                  '<span class="text-xs font-medium text-gray-400">Gambar /public/images/qris-code.png belum ditemukan</span>';
+                  '<span class="text-xs font-medium text-gray-400 dark:text-gray-500">Gambar /public/images/qris-code.png belum ditemukan</span>';
               }}
             />
           ) : (
@@ -154,10 +154,10 @@ export default function QrisPaymentPage() {
 
               <QrCode
                 size={48}
-                className="mx-auto mb-2 text-gray-400"
+                className="mx-auto mb-2 text-gray-400 dark:text-gray-500 transition-colors duration-300"
               />
 
-              <p className="text-xs font-medium text-gray-400">
+              <p className="text-xs font-medium text-gray-400 dark:text-gray-500 transition-colors duration-300">
                 QRIS Image Placeholder
               </p>
 
@@ -168,15 +168,15 @@ export default function QrisPaymentPage() {
 
         {/* ================================================
             TOTAL
-        ================================================= */}
+        ================================================ */}
 
         <div className="text-center">
 
-          <span className="text-base font-bold text-gray-900">
+          <span className="text-base font-bold text-gray-900 dark:text-gray-200 transition-colors duration-300">
             Total
           </span>
 
-          <p className="mt-1 font-display text-2xl text-gray-900">
+          <p className="mt-1 font-display text-2xl text-gray-900 dark:text-white transition-colors duration-300">
             Rp{" "}
             {(totalPrice || 0).toLocaleString(
               "id-ID"
@@ -189,7 +189,7 @@ export default function QrisPaymentPage() {
 
       {/* ================================================
           DONE BUTTON
-      ================================================= */}
+      ================================================ */}
 
       <button
         type="button"
@@ -199,15 +199,19 @@ export default function QrisPaymentPage() {
           w-full
           rounded-2xl
           bg-zinc-900
+          dark:bg-white
           py-4
           text-sm
           font-bold
           uppercase
           tracking-wider
           text-white
+          dark:text-[#111]
           shadow-lg
           transition-colors
+          duration-300
           hover:bg-black
+          dark:hover:bg-gray-200
           active:scale-[0.98]
         "
       >
