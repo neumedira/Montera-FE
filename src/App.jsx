@@ -11,6 +11,11 @@ import { CartProvider } from "./context/CartContext";
 import "./App.css";
 
 // ==============================
+// PROTECTED ROUTE
+// ==============================
+import ProtectedRoute from "./components/ProtectedRoute";
+
+// ==============================
 // CUSTOMER
 // ==============================
 import Menu from "./pages/costumer/menu/Menu";
@@ -40,7 +45,6 @@ import QrisPaymentPage from "./pages/QrisPaymentPage";
 // MODAL
 // ==============================
 import NewOrderModal from "./components/modal/NewOrderModal";
-
 
 // =========================================================
 // CUSTOMER MENU WRAPPER
@@ -75,7 +79,6 @@ function CustomerMenuWrapper() {
   return <Menu />;
 }
 
-
 // =========================================================
 // APP
 // =========================================================
@@ -98,7 +101,6 @@ function App() {
   return (
     <BrowserRouter>
       <CartProvider>
-
         <Routes>
 
           {/* ===============================================
@@ -112,7 +114,7 @@ function App() {
 
           {/* ===============================================
               CUSTOMER MENU DETAIL
-              
+
               Contoh:
               /menu/1
               /menu/2
@@ -124,51 +126,53 @@ function App() {
             element={<MenuDetail />}
           />
 
-
           {/* ===============================================
-              ADMIN
+              ADMIN LOGIN
           =============================================== */}
 
-          <Route
-            path="/admin/login"
-            element={<Login />}
-          />
-
+          {/* Login tidak membutuhkan token */}
           <Route
             path="/login"
             element={<Login />}
           />
 
-          <Route
-            path="/admin"
-            element={<Dashboard />}
-          />
+          {/* ===============================================
+              PROTECTED ADMIN ROUTES
+          =============================================== */}
 
-          <Route
-            path="/menu"
-            element={<KelolaMenu />}
-          />
+          <Route element={<ProtectedRoute />}>
 
-          <Route
-            path="/qr"
-            element={<KelolaQR />}
-          />
+            <Route
+              path="/admin"
+              element={<Dashboard />}
+            />
 
-          <Route
-            path="/settings"
-            element={<Settings />}
-          />
+            <Route
+              path="/menu"
+              element={<KelolaMenu />}
+            />
 
-          <Route
-            path="/pesanan"
-            element={<OrderPage />}
-          />
+            <Route
+              path="/qr"
+              element={<KelolaQR />}
+            />
 
-          <Route
-            path="/laporan"
-            element={<Laporan />}
-          />
+            <Route
+              path="/settings"
+              element={<Settings />}
+            />
 
+            <Route
+              path="/pesanan"
+              element={<OrderPage />}
+            />
+
+            <Route
+              path="/laporan"
+              element={<Laporan />}
+            />
+
+          </Route>
 
           {/* ===============================================
               CART
@@ -179,7 +183,6 @@ function App() {
             element={<CartPage />}
           />
 
-
           {/* ===============================================
               ORDER DETAIL
           =============================================== */}
@@ -188,7 +191,6 @@ function App() {
             path="/order-details"
             element={<OrderDetailPage />}
           />
-
 
           {/* ===============================================
               PAYMENT
@@ -205,7 +207,6 @@ function App() {
           />
 
         </Routes>
-
 
         {/* ===============================================
             GLOBAL NEW ORDER MODAL
