@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Plus,
@@ -111,20 +110,16 @@ export default function KelolaMenu() {
         return {
           ...item,
 
-          // Frontend field
+          // Frontend field mapping
           nama: item.name,
           harga: item.price,
-
           deskripsi: item.description || "",
-
           gambarUrl: item.photo_url || "",
-
           labelPromo: item.label || "Favorit!",
-
           isPromo: Boolean(item.label),
-
           isTersedia: Boolean(item.is_active),
-
+          addons: item.addons || [], // Membawa relasi add-on dari backend
+          
           kategori:
             item.category?.name ||
             item.category?.nama ||
@@ -187,17 +182,6 @@ export default function KelolaMenu() {
       const data = response?.data || [];
 
       console.log("RAW BUNDLE DATA:", data);
-
-      /*
-       * Backend bundle bisa menggunakan field:
-       * name / nama
-       * price / harga
-       * photo_url / gambarUrl
-       * items / menu_items / selectedMenuItems
-       *
-       * Kita normalisasi ke format yang dipakai
-       * oleh TabBundle dan ModalBundle.
-       */
 
       const formattedBundles = data.map((item) => {
         const selectedMenus =
@@ -316,7 +300,7 @@ export default function KelolaMenu() {
   };
 
   // =========================================================
-  // SAVE MENU
+  // SAVE MENU (DIPERBARUI DENGAN ADDON_IDS)
   // =========================================================
 
   const handleSaveMenu = async (data) => {
@@ -344,6 +328,9 @@ export default function KelolaMenu() {
 
         is_active:
           Boolean(data.isTersedia),
+
+        // Mengirim pilihan add-on ke backend (sesuaikan dengan key backend Anda: addon_ids atau addons)
+        addon_ids: data.selectedAddons || [],
       };
 
       console.log(
@@ -418,17 +405,6 @@ export default function KelolaMenu() {
 
   const handleSaveBundle = async (data) => {
     try {
-      /*
-       * Sesuaikan data dari ModalBundle
-       * ke payload backend.
-       *
-       * Jika ModalBundle menghasilkan:
-       * nama
-       * harga
-       * gambarUrl
-       * selectedMenuItems
-       */
-
       const selectedMenuItems =
         data.selectedMenuItems || [];
 
@@ -440,10 +416,6 @@ export default function KelolaMenu() {
         photo_url:
           data.gambarUrl || null,
 
-        /*
-         * Backend biasanya membutuhkan
-         * daftar menu yang masuk bundle.
-         */
         menu_item_ids:
           selectedMenuItems.map((item) =>
             typeof item === "object"
@@ -1035,7 +1007,6 @@ export default function KelolaMenu() {
       {/* =====================================================
           MODAL MENU
       ===================================================== */}
-
       <ModalMenu
         isOpen={isMenuModalOpen}
         onClose={() => {
@@ -1045,6 +1016,7 @@ export default function KelolaMenu() {
         onSave={handleSaveMenu}
         editingItem={editingMenuItem}
         categories={menuCategories}
+        addonItems={addonItems}
       />
 
       {/* =====================================================
@@ -1081,4 +1053,3 @@ export default function KelolaMenu() {
     </div>
   );
 }
-

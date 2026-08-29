@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 
@@ -8,6 +7,7 @@ export default function ModalMenu({
   onSave,
   editingItem,
   categories = [],
+  addonItems = [],
 }) {
   const [form, setForm] = useState({
     nama: "",
@@ -19,6 +19,8 @@ export default function ModalMenu({
     isPromo: false,
     labelPromo: "Favorit!",
     isTersedia: true,
+    isAddonActive: false,
+    selectedAddons: [],
   });
 
   const [imageInputType, setImageInputType] = useState("file");
@@ -30,6 +32,13 @@ export default function ModalMenu({
 
   useEffect(() => {
     if (editingItem) {
+      // Menyesuaikan penangkapan relasi add-on dari backend (bisa berupa addons atau addon_ids)
+      const existingAddons = 
+        editingItem.addons?.map((a) => a.id) || 
+        editingItem.addon_ids || 
+        editingItem.selectedAddons || 
+        [];
+
       setForm({
         nama: editingItem.name || editingItem.nama || "",
         deskripsi:
@@ -61,6 +70,8 @@ export default function ModalMenu({
           editingItem.is_active ??
           editingItem.isTersedia ??
           true,
+        isAddonActive: existingAddons.length > 0,
+        selectedAddons: existingAddons,
       });
 
       setImagePreview(
@@ -82,6 +93,8 @@ export default function ModalMenu({
         isPromo: false,
         labelPromo: "Favorit!",
         isTersedia: true,
+        isAddonActive: false,
+        selectedAddons: [],
       });
 
       setImagePreview("");
@@ -99,14 +112,12 @@ export default function ModalMenu({
 
     if (!file) return;
 
-    // Validasi ukuran maksimal 2MB
     if (file.size > 2 * 1024 * 1024) {
       alert("Ukuran foto maksimal 2MB.");
       e.target.value = "";
       return;
     }
 
-    // Validasi tipe file
     const allowedTypes = [
       "image/jpeg",
       "image/png",
@@ -120,14 +131,12 @@ export default function ModalMenu({
       return;
     }
 
-    // Simpan FILE asli untuk dikirim ke backend
     setForm((prev) => ({
       ...prev,
       photo: file,
       gambarUrl: "",
     }));
 
-    // Preview hanya untuk tampilan FE
     const previewUrl = URL.createObjectURL(file);
     setImagePreview(previewUrl);
   };
@@ -149,6 +158,22 @@ export default function ModalMenu({
   };
 
   // =========================================================
+  // HANDLE ADDON CHECKBOX
+  // =========================================================
+  
+  const handleAddonChange = (addonId) => {
+    setForm((prev) => {
+      const isSelected = prev.selectedAddons.includes(addonId);
+      return {
+        ...prev,
+        selectedAddons: isSelected
+          ? prev.selectedAddons.filter((id) => id !== addonId)
+          : [...prev.selectedAddons, addonId],
+      };
+    });
+  };
+
+  // =========================================================
   // SUBMIT
   // =========================================================
 
@@ -160,31 +185,29 @@ export default function ModalMenu({
       deskripsi: form.deskripsi,
       harga: form.harga,
       category_id: form.category_id || null,
-
-      // URL kalau user memilih URL
       gambarUrl: form.gambarUrl || "",
-
-      // File asli kalau user upload file
       photo: form.photo,
-
       isPromo: form.isPromo,
       labelPromo: form.isPromo
         ? form.labelPromo
         : null,
       isTersedia: form.isTersedia,
+      // Menyelaraskan nama properti agar diterima dengan benar oleh handleSaveMenu di KelolaMenu.jsx
+      selectedAddons: form.isAddonActive ? form.selectedAddons : [],
     });
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-3 z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-3 z-50 pointer-events-auto">
 
-      <div className="bg-[#FAF8F5] w-full max-w-[380px] rounded-[28px] p-5 relative shadow-xl">
+      {/* Kontainer utama flex-col dengan tinggi maksimal agar tombol simpan tidak tenggelam */}
+      <div className="bg-[#FAF8F5] w-full max-w-[380px] max-h-[85vh] flex flex-col rounded-[28px] p-5 relative shadow-xl">
 
         {/* ===================================================
-            HEADER
+            HEADER (Diam di atas)
         =================================================== */}
 
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-3 shrink-0">
 
           <h2 className="text-base font-bold text-[#222222]">
             {editingItem
@@ -202,15 +225,17 @@ export default function ModalMenu({
 
         </div>
 
+        {/* ===================================================
+            FORM (Bisa di-scroll / overflow-y-auto)
+        =================================================== */}
+
         <form
+          id="modalMenuForm"
           onSubmit={handleSubmit}
-          className="space-y-2.5"
+          className="space-y-2.5 overflow-y-auto pr-1 flex-1"
         >
 
-          {/* =================================================
-              NAMA
-          ================================================= */}
-
+          {/* NAMA */}
           <input
             type="text"
             placeholder="Nama item"
@@ -225,10 +250,7 @@ export default function ModalMenu({
             required
           />
 
-          {/* =================================================
-              DESKRIPSI
-          ================================================= */}
-
+          {/* DESKRIPSI */}
           <textarea
             placeholder="Deskripsi"
             value={form.deskripsi}
@@ -241,10 +263,7 @@ export default function ModalMenu({
             className="w-full px-3.5 py-2 bg-white rounded-xl border border-gray-200 text-xs outline-none placeholder-gray-400 h-14 resize-none"
           />
 
-          {/* =================================================
-              HARGA
-          ================================================= */}
-
+          {/* HARGA */}
           <input
             type="number"
             placeholder="Harga (Rp)"
@@ -259,12 +278,8 @@ export default function ModalMenu({
             required
           />
 
-          {/* =================================================
-              KATEGORI
-          ================================================= */}
-
+          {/* KATEGORI */}
           <div>
-
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">
               KATEGORI
             </label>
@@ -275,8 +290,7 @@ export default function ModalMenu({
               </div>
             ) : (
               <div className="flex flex-wrap bg-[#EFECE6] p-1 rounded-xl gap-1">
-
-                {categories.map((category) => (
+                {categories.key ? null : categories.map((category) => (
                   <button
                     key={category.id}
                     type="button"
@@ -298,26 +312,18 @@ export default function ModalMenu({
                       category.nama}
                   </button>
                 ))}
-
               </div>
             )}
-
           </div>
 
-          {/* =================================================
-              FOTO
-          ================================================= */}
-
+          {/* FOTO */}
           <div className="space-y-1.5 pt-0.5">
-
             <div className="flex items-center justify-between">
-
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                 FOTO ITEM
               </label>
 
               <div className="flex text-[10px] bg-gray-200 rounded-lg p-0.5 font-medium">
-
                 <button
                   type="button"
                   onClick={() =>
@@ -345,14 +351,10 @@ export default function ModalMenu({
                 >
                   URL Link
                 </button>
-
               </div>
-
             </div>
 
             <div className="flex items-center gap-2">
-
-              {/* Preview */}
               {imagePreview && (
                 <img
                   src={imagePreview}
@@ -365,7 +367,6 @@ export default function ModalMenu({
                 />
               )}
 
-              {/* Upload File */}
               {imageInputType === "file" ? (
                 <input
                   type="file"
@@ -374,8 +375,6 @@ export default function ModalMenu({
                   className="w-full text-[11px] text-gray-500 bg-white p-1 rounded-xl border border-gray-200 file:mr-2 file:py-0.5 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-gray-100 file:text-gray-700"
                 />
               ) : (
-
-                /* URL */
                 <input
                   type="text"
                   placeholder="Masukkan URL Gambar (https://...)"
@@ -383,25 +382,17 @@ export default function ModalMenu({
                   onChange={handleImageUrlChange}
                   className="w-full px-3 py-1.5 bg-white rounded-xl border border-gray-200 text-xs outline-none placeholder-gray-400"
                 />
-
               )}
-
             </div>
 
             <p className="text-[9px] text-gray-400">
               Upload: JPG, PNG, WEBP · Maks. 2MB
             </p>
-
           </div>
 
-          {/* =================================================
-              PROMO
-          ================================================= */}
-
+          {/* PROMO */}
           <div className="bg-[#EFECE6]/60 p-2.5 rounded-xl space-y-2">
-
             <div className="flex items-center justify-between">
-
               <span className="text-xs font-bold text-[#222222]">
                 Promo / Label
               </span>
@@ -420,7 +411,6 @@ export default function ModalMenu({
                     : "bg-gray-300"
                 }`}
               >
-
                 <div
                   className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${
                     form.isPromo
@@ -428,9 +418,7 @@ export default function ModalMenu({
                       : "translate-x-0"
                   }`}
                 />
-
               </button>
-
             </div>
 
             {form.isPromo && (
@@ -448,15 +436,74 @@ export default function ModalMenu({
                 className="w-full px-3 py-1 bg-white rounded-lg border border-gray-200 text-xs font-medium outline-none text-[#222222]"
               />
             )}
-
           </div>
 
-          {/* =================================================
-              TERSEDIA
-          ================================================= */}
+          {/* ADD-ON */}
+          <div className="bg-[#EFECE6]/60 p-2.5 rounded-xl space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-[#222222]">
+                Pilih Add-on
+              </span>
 
+              <button
+                type="button"
+                onClick={() =>
+                  setForm({
+                    ...form,
+                    isAddonActive: !form.isAddonActive,
+                  })
+                }
+                className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors duration-300 ${
+                  form.isAddonActive
+                    ? "bg-[#292827]"
+                    : "bg-gray-300"
+                }`}
+              >
+                <div
+                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${
+                    form.isAddonActive
+                      ? "translate-x-4"
+                      : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {form.isAddonActive && (
+              <div className="pt-1.5 space-y-2 max-h-32 overflow-y-auto">
+                {addonItems.length === 0 ? (
+                  <p className="text-[10px] text-gray-500">
+                    Belum ada add-on tersedia.
+                  </p>
+                ) : (
+                  addonItems.map((addon) => (
+                    <label 
+                      key={addon.id} 
+                      className="flex items-center space-x-2.5 cursor-pointer bg-white p-2 rounded-lg border border-gray-100 shadow-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={form.selectedAddons.includes(addon.id)}
+                        onChange={() => handleAddonChange(addon.id)}
+                        className="w-3.5 h-3.5 rounded border-gray-300 accent-[#292827]"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-[#222222]">
+                          {addon.nama || addon.name}
+                        </span>
+                        <span className="text-[10px] font-medium text-gray-500">
+                          + Rp {Number(addon.harga || addon.price || 0).toLocaleString('id-ID')}
+                        </span>
+                      </div>
+                    </label>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* TERSEDIA */}
           <div className="flex items-center justify-between bg-[#EFECE6]/60 p-2.5 rounded-xl">
-
             <span className="text-xs font-bold text-[#222222]">
               Tersedia
             </span>
@@ -476,7 +523,6 @@ export default function ModalMenu({
                   : "bg-gray-300"
               }`}
             >
-
               <div
                 className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${
                   form.isTersedia
@@ -484,26 +530,26 @@ export default function ModalMenu({
                     : "translate-x-0"
                 }`}
               />
-
             </button>
-
           </div>
 
-          {/* =================================================
-              SIMPAN
-          ================================================= */}
+        </form>
 
+        {/* ===================================================
+            TOMBOL SIMPAN (Diam di bawah, tidak ikut tenggelam)
+        =================================================== */}
+
+        <div className="pt-3 shrink-0 mt-auto">
           <button
             type="submit"
-            className="w-full bg-[#292827] text-white py-2.5 rounded-xl font-bold text-xs mt-2 hover:bg-black transition-colors"
+            form="modalMenuForm"
+            className="w-full bg-[#292827] text-white py-2.5 rounded-xl font-bold text-xs hover:bg-black transition-colors cursor-pointer"
           >
             Simpan
           </button>
-
-        </form>
+        </div>
 
       </div>
     </div>
   );
 }
-

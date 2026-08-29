@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -45,7 +44,7 @@ export default function MenuPage() {
   };
 
   // =========================================================
-  // INITIAL DATA
+  // INITIAL DATA & CATEGORIES FIX
   // =========================================================
 
   const cachedMenu = getCachedMenu();
@@ -60,7 +59,7 @@ export default function MenuPage() {
       ) {
         if (!categoryMap.has(item.categoryId)) {
           categoryMap.set(item.categoryId, {
-            id: item.category,
+            id: item.categoryId, // Diperbaiki agar sesuai dengan id kategori asli
             name: item.categoryName,
           });
         }
@@ -97,26 +96,6 @@ export default function MenuPage() {
   const [categoryOpen, setCategoryOpen] =
     useState(false);
 
-  /*
-   * PENTING:
-   *
-   * Kalau cache sudah ada → langsung false.
-   *
-   * Jadi saat balik dari Detail:
-   *
-   * Detail
-   *   ↓
-   * Back
-   *   ↓
-   * MenuPage mount ulang
-   *   ↓
-   * baca sessionStorage
-   *   ↓
-   * loading = false
-   *   ↓
-   * MENU LANGSUNG MUNCUL
-   */
-
   const [loading, setLoading] =
     useState(cachedMenu.length === 0);
 
@@ -134,18 +113,12 @@ export default function MenuPage() {
   // =========================================================
 
   useEffect(() => {
-    /*
-     * Kalau sudah ada cache,
-     * JANGAN fetch ulang.
-     */
-
-    if (cachedMenu.length > 0) {
-      return;
-    }
-
     const fetchMenus = async () => {
       try {
-        setLoading(true);
+        // Jika belum ada cache sama sekali, aktifkan loading
+        if (cachedMenu.length === 0) {
+          setLoading(true);
+        }
         setError("");
 
         const response =
@@ -246,7 +219,7 @@ export default function MenuPage() {
         );
 
         // =====================================================
-        // BUILD CATEGORY
+        // BUILD CATEGory
         // =====================================================
 
         const formattedCategories =
@@ -288,8 +261,8 @@ export default function MenuPage() {
       (item) => {
         const categoryMatch =
           activeCategory === "all" ||
-          item.category ===
-            activeCategory;
+          item.categoryId === activeCategory ||
+          String(item.categoryId) === String(activeCategory);
 
         const searchMatch =
           item.name
@@ -390,16 +363,7 @@ export default function MenuPage() {
   // LOADING
   // =========================================================
 
-  /*
-   * Hanya terjadi ketika BENAR-BENAR
-   * belum punya cache.
-   *
-   * Tidak akan muncul saat:
-   *
-   * Menu → Detail → Back → Menu
-   */
-
-  if (loading) {
+  if (loading && menuItems.length === 0) {
     return null;
   }
 
