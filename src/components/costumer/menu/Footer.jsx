@@ -43,22 +43,15 @@ export default function Footer() {
 
     // Kalau sudah URL lengkap
     if (
-      trimmedValue.startsWith(
-        "http://"
-      ) ||
-      trimmedValue.startsWith(
-        "https://"
-      )
+      trimmedValue.startsWith("http://") ||
+      trimmedValue.startsWith("https://")
     ) {
       return trimmedValue;
     }
 
     // Hapus @ kalau ada
     const username =
-      trimmedValue.replace(
-        /^@/,
-        ""
-      );
+      trimmedValue.replace(/^@/, "");
 
     return `https://instagram.com/${username}`;
   };
@@ -77,22 +70,15 @@ export default function Footer() {
 
     // Kalau sudah URL lengkap
     if (
-      trimmedValue.startsWith(
-        "http://"
-      ) ||
-      trimmedValue.startsWith(
-        "https://"
-      )
+      trimmedValue.startsWith("http://") ||
+      trimmedValue.startsWith("https://")
     ) {
       return trimmedValue;
     }
 
     // Hapus @ kalau ada
     const username =
-      trimmedValue.replace(
-        /^@/,
-        ""
-      );
+      trimmedValue.replace(/^@/, "");
 
     return `https://tiktok.com/@${username}`;
   };
@@ -132,7 +118,6 @@ export default function Footer() {
           "customer_settings",
           JSON.stringify(data)
         );
-
       } catch (error) {
         console.error(
           "Gagal mengambil data pengaturan footer:",
@@ -169,7 +154,7 @@ export default function Footer() {
     "";
 
   // =========================================================
-  // SOCIAL MEDIA DATA
+  // SOCIAL MEDIA
   // =========================================================
 
   const instagramValue =
@@ -218,7 +203,13 @@ export default function Footer() {
         =================================================== */}
 
         {hasSocial && (
-          <div className="flex items-center gap-[24px]">
+          <div
+            className="
+              flex
+              items-center
+              gap-[18px]
+            "
+          >
 
             {/* =================================================
                 INSTAGRAM
@@ -237,8 +228,8 @@ export default function Footer() {
                 "
               >
                 <svg
-                  width="46"
-                  height="46"
+                  width="32"
+                  height="32"
                   viewBox="0 0 24 24"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
@@ -288,8 +279,8 @@ export default function Footer() {
                 "
               >
                 <svg
-                  width="46"
-                  height="46"
+                  width="32"
+                  height="32"
                   viewBox="0 0 24 24"
                   fill="currentColor"
                   xmlns="http://www.w3.org/2000/svg"
@@ -310,7 +301,7 @@ export default function Footer() {
 
         <div
           className="
-            mt-[28px]
+            mt-[22px]
             h-px
             w-full
             bg-white/90
@@ -324,13 +315,13 @@ export default function Footer() {
         {address && (
           <p
             className="
-              mt-[30px]
+              mt-[22px]
               max-w-[620px]
               whitespace-pre-line
-              text-[18px]
+              text-[14px]
               font-semibold
               leading-[1.5]
-              tracking-[0.35px]
+              tracking-[0.25px]
             "
           >
             {address}
@@ -341,4 +332,3 @@ export default function Footer() {
     </footer>
   );
 }
-

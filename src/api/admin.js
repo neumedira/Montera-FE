@@ -96,7 +96,9 @@ export const updateSettings = async (data) => {
     data.payment_settings.forEach((payment, index) => {
       formData.append(
         `payment_settings[${index}][method]`,
-        payment.method ?? payment.type ?? ""
+        payment.method ??
+          payment.type ??
+          ""
       );
 
       formData.append(
@@ -122,7 +124,9 @@ export const updateSettings = async (data) => {
       // QR IMAGE
       // =====================================================
 
-      if (payment.qr_image instanceof File) {
+      if (
+        payment.qr_image instanceof File
+      ) {
         formData.append(
           `payment_settings[${index}][qr_image]`,
           payment.qr_image
@@ -136,7 +140,8 @@ export const updateSettings = async (data) => {
     formData,
     {
       headers: {
-        "Content-Type": "multipart/form-data",
+        "Content-Type":
+          "multipart/form-data",
       },
     }
   );
@@ -148,7 +153,9 @@ export const updateSettings = async (data) => {
 // DELETE PAYMENT METHOD
 // =========================================================
 
-export const deletePaymentMethod = async (id) => {
+export const deletePaymentMethod = async (
+  id
+) => {
   const response = await api.delete(
     `/admin/settings/payment-methods/${id}`
   );
@@ -168,7 +175,9 @@ export const getMenuCategories = async () => {
   return response.data;
 };
 
-export const createMenuCategory = async (data) => {
+export const createMenuCategory = async (
+  data
+) => {
   const response = await api.post(
     "/admin/menu-categories",
     data
@@ -177,7 +186,10 @@ export const createMenuCategory = async (data) => {
   return response.data;
 };
 
-export const updateMenuCategory = async (id, data) => {
+export const updateMenuCategory = async (
+  id,
+  data
+) => {
   const response = await api.put(
     `/admin/menu-categories/${id}`,
     data
@@ -186,7 +198,9 @@ export const updateMenuCategory = async (id, data) => {
   return response.data;
 };
 
-export const deleteMenuCategory = async (id) => {
+export const deleteMenuCategory = async (
+  id
+) => {
   const response = await api.delete(
     `/admin/menu-categories/${id}`
   );
@@ -206,7 +220,9 @@ export const getMenuItems = async () => {
   return response.data;
 };
 
-export const getMenuItem = async (id) => {
+export const getMenuItem = async (
+  id
+) => {
   const response = await api.get(
     `/admin/menu-items/${id}`
   );
@@ -218,45 +234,73 @@ export const getMenuItem = async (id) => {
 // CREATE MENU ITEM
 // =========================================================
 
-export const createMenuItem = async (data) => {
+export const createMenuItem = async (
+  data
+) => {
   const formData = new FormData();
+
+  // =======================================================
+  // BASIC DATA
+  // =======================================================
 
   formData.append(
     "name",
-    data.name
+    data.name ?? ""
   );
 
   formData.append(
     "price",
-    data.price
+    data.price ?? 0
   );
 
-  if (data.category_id) {
+  // =======================================================
+  // CATEGORY
+  // =======================================================
+
+  if (
+    data.category_id !== null &&
+    data.category_id !== undefined &&
+    data.category_id !== ""
+  ) {
     formData.append(
       "category_id",
       data.category_id
     );
   }
 
-  if (data.label) {
-    formData.append(
-      "label",
-      data.label
-    );
-  }
+  // =======================================================
+  // LABEL
+  // =======================================================
+  // Kalau label aktif:
+  //     "Favorit!"
+  //
+  // Kalau label tidak aktif:
+  //     ""
+  //
+  // Ini dibuat konsisten dengan update.
+  // =======================================================
 
-  if (data.description) {
-    formData.append(
-      "description",
-      data.description
-    );
-  }
+  formData.append(
+    "label",
+    data.label ?? ""
+  );
+
+  // =======================================================
+  // DESCRIPTION
+  // =======================================================
+
+  formData.append(
+    "description",
+    data.description ?? ""
+  );
 
   // =======================================================
   // FOTO FILE
   // =======================================================
 
-  if (data.photo) {
+  if (
+    data.photo instanceof File
+  ) {
     formData.append(
       "photo",
       data.photo
@@ -267,17 +311,57 @@ export const createMenuItem = async (data) => {
   // FOTO URL
   // =======================================================
 
-  if (data.photo_url) {
+  if (
+    data.photo_url
+  ) {
     formData.append(
       "photo_url",
       data.photo_url
     );
   }
 
+  // =======================================================
+  // STATUS
+  // =======================================================
+
   formData.append(
     "is_active",
-    data.is_active ? "1" : "0"
+    data.is_active
+      ? "1"
+      : "0"
   );
+
+  // =======================================================
+  // ADDON IDS
+  // =======================================================
+
+  if (
+    Array.isArray(data.addon_ids)
+  ) {
+    data.addon_ids.forEach(
+      (addonId) => {
+        formData.append(
+          "addon_ids[]",
+          addonId
+        );
+      }
+    );
+  }
+
+  // =======================================================
+  // DEBUG
+  // =======================================================
+
+  console.log(
+    "CREATE MENU FORMDATA:",
+    Object.fromEntries(
+      formData.entries()
+    )
+  );
+
+  // =======================================================
+  // REQUEST
+  // =======================================================
 
   const response = await api.post(
     "/admin/menu-items",
@@ -303,63 +387,151 @@ export const updateMenuItem = async (
 ) => {
   const formData = new FormData();
 
+  // =======================================================
+  // BASIC DATA
+  // =======================================================
+
   formData.append(
     "name",
-    data.name
+    data.name ?? ""
   );
 
   formData.append(
     "price",
-    data.price
+    data.price ?? 0
   );
 
-  if (data.category_id) {
+  // =======================================================
+  // CATEGORY
+  // =======================================================
+
+  if (
+    data.category_id !== null &&
+    data.category_id !== undefined &&
+    data.category_id !== ""
+  ) {
     formData.append(
       "category_id",
       data.category_id
     );
   }
 
-  if (data.label) {
-    formData.append(
-      "label",
-      data.label
-    );
-  }
+  // =======================================================
+  // LABEL
+  // =======================================================
+  //
+  // INI BAGIAN PENTING.
+  //
+  // Jangan menggunakan:
+  //
+  // if (data.label) {
+  //   formData.append("label", data.label);
+  // }
+  //
+  // Karena kalau toggle OFF:
+  //
+  // data.label = null
+  //
+  // maka field label tidak dikirim sama sekali.
+  //
+  // Sekarang:
+  //
+  // ON  → "Favorit!"
+  // OFF → ""
+  //
+  // =======================================================
 
-  if (data.description) {
-    formData.append(
-      "description",
-      data.description
-    );
-  }
+  formData.append(
+    "label",
+    data.label ?? ""
+  );
 
-  // Foto file baru
-  if (data.photo) {
+  // =======================================================
+  // DESCRIPTION
+  // =======================================================
+
+  formData.append(
+    "description",
+    data.description ?? ""
+  );
+
+  // =======================================================
+  // FOTO FILE BARU
+  // =======================================================
+
+  if (
+    data.photo instanceof File
+  ) {
     formData.append(
       "photo",
       data.photo
     );
   }
 
-  // URL foto
-  if (data.photo_url) {
+  // =======================================================
+  // FOTO URL
+  // =======================================================
+
+  if (
+    data.photo_url
+  ) {
     formData.append(
       "photo_url",
       data.photo_url
     );
   }
 
+  // =======================================================
+  // STATUS
+  // =======================================================
+
   formData.append(
     "is_active",
-    data.is_active ? "1" : "0"
+    data.is_active
+      ? "1"
+      : "0"
   );
 
-  // Laravel method spoofing
+  // =======================================================
+  // ADDON IDS
+  // =======================================================
+
+  if (
+    Array.isArray(data.addon_ids)
+  ) {
+    data.addon_ids.forEach(
+      (addonId) => {
+        formData.append(
+          "addon_ids[]",
+          addonId
+        );
+      }
+    );
+  }
+
+  // =======================================================
+  // LARAVEL METHOD SPOOFING
+  // =======================================================
+
   formData.append(
     "_method",
     "PUT"
   );
+
+  // =======================================================
+  // DEBUG
+  // =======================================================
+
+  console.log(
+    "UPDATE MENU FORMDATA:",
+    Object.fromEntries(
+      formData.entries()
+    )
+  );
+
+  // =======================================================
+  // REQUEST
+  // =======================================================
 
   const response = await api.post(
     `/admin/menu-items/${id}`,
@@ -379,7 +551,9 @@ export const updateMenuItem = async (
 // DELETE MENU ITEM
 // =========================================================
 
-export const deleteMenuItem = async (id) => {
+export const deleteMenuItem = async (
+  id
+) => {
   const response = await api.delete(
     `/admin/menu-items/${id}`
   );
@@ -399,7 +573,9 @@ export const getAddons = async () => {
   return response.data;
 };
 
-export const createAddon = async (data) => {
+export const createAddon = async (
+  data
+) => {
   const response = await api.post(
     "/admin/addons",
     data
@@ -420,7 +596,9 @@ export const updateAddon = async (
   return response.data;
 };
 
-export const deleteAddon = async (id) => {
+export const deleteAddon = async (
+  id
+) => {
   const response = await api.delete(
     `/admin/addons/${id}`
   );
@@ -440,7 +618,9 @@ export const getBundles = async () => {
   return response.data;
 };
 
-export const createBundle = async (data) => {
+export const createBundle = async (
+  data
+) => {
   const response = await api.post(
     "/admin/bundles",
     data
@@ -461,7 +641,9 @@ export const updateBundle = async (
   return response.data;
 };
 
-export const deleteBundle = async (id) => {
+export const deleteBundle = async (
+  id
+) => {
   const response = await api.delete(
     `/admin/bundles/${id}`
   );
