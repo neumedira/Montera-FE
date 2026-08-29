@@ -1,90 +1,15 @@
-import { memo, useState } from "react";
+
+import { useEffect, useState } from "react";
 import {
-  Check,
   X,
+  CreditCard,
+  Banknote,
   QrCode,
+  Building2,
+  WalletCards,
+  Upload,
+  Trash2,
 } from "lucide-react";
-
-/* =========================================================
-   PAYMENT TYPES
-========================================================= */
-
-const PAYMENT_TYPES = [
-  {
-    value: "tunai",
-    label: "Tunai",
-  },
-  {
-    value: "qris",
-    label: "QRIS",
-  },
-  {
-    value: "tf_bank",
-    label: "TF Bank",
-  },
-  {
-    value: "ewallet",
-    label: "E-Wallet",
-  },
-  {
-    value: "kartu",
-    label: "Kartu",
-  },
-];
-
-/* =========================================================
-   E-WALLET TYPES
-========================================================= */
-
-const EWALLET_TYPES = [
-  "GoPay",
-  "OVO",
-  "DANA",
-  "ShopeePay",
-  "LinkAja",
-];
-
-/* =========================================================
-   CARD TYPES
-========================================================= */
-
-const CARD_TYPES = [
-  "Debit",
-  "Kredit",
-];
-
-/* =========================================================
-   EMPTY FORM
-========================================================= */
-
-const EMPTY_FORM = {
-  name: "",
-  type: "",
-  enabled: true,
-
-  // QRIS
-  provider: "",
-  merchantId: "",
-  qrImage: "",
-
-  // TRANSFER BANK
-  bankName: "",
-  accountName: "",
-  accountNumber: "",
-
-  // E-WALLET
-  ewalletType: "",
-  ewalletAccountName: "",
-  ewalletNumber: "",
-
-  // KARTU
-  cardType: "",
-  cardProvider: "",
-};
-
-/* =========================================================
-   MAIN COMPONENT
-========================================================= */
 
 export default function PaymentMethodModal({
   editingId,
@@ -92,85 +17,105 @@ export default function PaymentMethodModal({
   onClose,
   onSave,
 }) {
-  const [form, setForm] = useState(() => {
-    if (!initialData) {
-      return {
-        ...EMPTY_FORM,
-      };
-    }
-
-    return {
-      ...EMPTY_FORM,
-
-      name: initialData.name || "",
-      type: initialData.type || "tunai",
-      enabled: initialData.enabled ?? true,
-
-      provider: initialData.provider || "",
-      merchantId: initialData.merchantId || "",
-      qrImage: initialData.qrImage || "",
-
-      bankName: initialData.bankName || "",
-      accountName: initialData.accountName || "",
-      accountNumber: initialData.accountNumber || "",
-
-      ewalletType:
-        initialData.ewalletType || "",
-      ewalletAccountName:
-        initialData.ewalletAccountName || "",
-      ewalletNumber:
-        initialData.ewalletNumber || "",
-
-      cardType: initialData.cardType || "",
-      cardProvider:
-        initialData.cardProvider || "",
-    };
+  const [form, setForm] = useState({
+    method: "tunai",
+    is_active: true,
+    provider_note: "",
+    qr_image: null,
+    qr_image_url: null,
   });
 
-  /* =======================================================
-     HANDLE CHANGE
-  ======================================================= */
+  const [preview, setPreview] = useState(null);
 
-  const handleChange = (field, value) => {
+  // =========================================================
+  // LOAD DATA EDIT
+  // =========================================================
+
+  useEffect(() => {
+    if (initialData) {
+      const method =
+        initialData.method ||
+        initialData.type ||
+        "tunai";
+
+      const qrImageUrl =
+        initialData.qr_image_url || null;
+
+      setForm({
+        method,
+        is_active:
+          initialData.is_active ??
+          initialData.enabled ??
+          true,
+
+        provider_note:
+          initialData.provider_note ??
+          initialData.provider ??
+          "",
+
+        qr_image: null,
+        qr_image_url: qrImageUrl,
+      });
+
+      setPreview(qrImageUrl);
+    } else {
+      setForm({
+        method: "tunai",
+        is_active: true,
+        provider_note: "",
+        qr_image: null,
+        qr_image_url: null,
+      });
+
+      setPreview(null);
+    }
+  }, [initialData]);
+
+  // =========================================================
+  // UPDATE FORM
+  // =========================================================
+
+  const updateForm = (field, value) => {
     setForm((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
 
-  /* =======================================================
-     CHANGE PAYMENT TYPE
-  ======================================================= */
+  // =========================================================
+  // SELECT METHOD
+  // HANYA BISA SAAT TAMBAH
+  // =========================================================
 
-  const handleTypeChange = (type) => {
+  const selectMethod = (method) => {
+    if (editingId) return;
+
     setForm((prev) => ({
       ...prev,
+      method,
 
-      type,
+      qr_image:
+        method === "qris"
+          ? prev.qr_image
+          : null,
 
-      provider: "",
-      merchantId: "",
-      qrImage: "",
-
-      bankName: "",
-      accountName: "",
-      accountNumber: "",
-
-      ewalletType: "",
-      ewalletAccountName: "",
-      ewalletNumber: "",
-
-      cardType: "",
-      cardProvider: "",
+      qr_image_url:
+        method === "qris"
+          ? prev.qr_image_url
+          : null,
     }));
+
+    if (method !== "qris") {
+      setPreview(null);
+    }
   };
 
-  /* =======================================================
-     UPLOAD QR CODE
-  ======================================================= */
+  // =========================================================
+  // UPLOAD QR
+  // =========================================================
 
-  const handleQrUpload = (e) => {
-    const file = e.target.files?.[0];
+  const handleQrUpload = (event) => {
+    const file = event.target.files?.[0];
 
     if (!file) return;
 
@@ -179,734 +124,528 @@ export default function PaymentMethodModal({
       return;
     }
 
-    const imageUrl = URL.createObjectURL(file);
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Ukuran gambar maksimal 5 MB.");
+      return;
+    }
+
+    // Hapus preview blob sebelumnya jika ada
+    if (
+      preview &&
+      preview.startsWith("blob:")
+    ) {
+      URL.revokeObjectURL(preview);
+    }
+
+    const objectUrl =
+      URL.createObjectURL(file);
 
     setForm((prev) => ({
       ...prev,
-      qrImage: imageUrl,
+      qr_image: file,
+      qr_image_url: null,
     }));
+
+    setPreview(objectUrl);
+
+    // Supaya file yang sama bisa dipilih lagi
+    event.target.value = "";
   };
 
-  /* =======================================================
-     VALIDATION
-  ======================================================= */
+  // =========================================================
+  // REMOVE QR
+  // =========================================================
 
-  const validateForm = () => {
-    if (!form.name.trim()) {
+  const removeQr = () => {
+    if (
+      preview &&
+      preview.startsWith("blob:")
+    ) {
+      URL.revokeObjectURL(preview);
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      qr_image: null,
+      qr_image_url: null,
+    }));
+
+    setPreview(null);
+  };
+
+  // =========================================================
+  // CLEANUP PREVIEW
+  // =========================================================
+
+  useEffect(() => {
+    return () => {
+      if (
+        preview &&
+        preview.startsWith("blob:")
+      ) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [preview]);
+
+  // =========================================================
+  // SAVE
+  // =========================================================
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    // -------------------------------------------------------
+    // VALIDASI METODE
+    // -------------------------------------------------------
+
+    if (!form.method) {
       alert(
-        "Nama metode pembayaran wajib diisi."
+        "Metode pembayaran wajib dipilih."
       );
-      return false;
+      return;
     }
 
-    if (!form.type) {
-      alert(
-        "Jenis pembayaran wajib dipilih."
-      );
-      return false;
-    }
-
-    /* QRIS */
-
-    if (form.type === "qris") {
-      if (!form.provider.trim()) {
-        alert(
-          "Provider QRIS wajib diisi."
-        );
-        return false;
-      }
-
-      if (!form.merchantId.trim()) {
-        alert(
-          "Merchant ID wajib diisi."
-        );
-        return false;
-      }
-    }
-
-    /* TRANSFER BANK */
-
-    if (form.type === "tf_bank") {
-      if (!form.bankName.trim()) {
-        alert(
-          "Nama bank wajib diisi."
-        );
-        return false;
-      }
-
-      if (!form.accountName.trim()) {
-        alert(
-          "Nama pemilik rekening wajib diisi."
-        );
-        return false;
-      }
-
-      if (!form.accountNumber.trim()) {
-        alert(
-          "Nomor rekening wajib diisi."
-        );
-        return false;
-      }
-    }
-
-    /* E-WALLET */
-
-    if (form.type === "ewallet") {
-      if (!form.ewalletType) {
-        alert(
-          "Jenis E-Wallet wajib dipilih."
-        );
-        return false;
-      }
-
-      if (!form.ewalletAccountName.trim()) {
-        alert(
-          "Nama pemilik akun wajib diisi."
-        );
-        return false;
-      }
-
-      if (!form.ewalletNumber.trim()) {
-        alert(
-          "Nomor HP / ID akun wajib diisi."
-        );
-        return false;
-      }
-    }
-
-    /* KARTU */
-
-    if (form.type === "kartu") {
-      if (!form.cardType) {
-        alert(
-          "Jenis kartu wajib dipilih."
-        );
-        return false;
-      }
-
-      if (!form.cardProvider.trim()) {
-        alert(
-          "Provider / Bank wajib diisi."
-        );
-        return false;
-      }
-    }
-
-    return true;
-  };
-
-  /* =======================================================
-     DESCRIPTION
-  ======================================================= */
-
-  const generateDescription = () => {
-    switch (form.type) {
-      case "tunai":
-        return "Pembayaran tunai";
-
-      case "qris":
-        return form.provider
-          ? `QRIS • ${form.provider}`
-          : "Pembayaran QRIS";
-
-      case "tf_bank":
-        return form.bankName
-          ? `Transfer Bank • ${form.bankName}`
-          : "Transfer Bank";
-
-      case "ewallet":
-        return form.ewalletType
-          ? `E-Wallet • ${form.ewalletType}`
-          : "Pembayaran E-Wallet";
-
-      case "kartu":
-        return form.cardProvider
-          ? `${form.cardType || "Kartu"} • ${form.cardProvider}`
-          : "Pembayaran kartu";
-
-      default:
-        return "";
-    }
-  };
-
-  /* =======================================================
-     SUBMIT
-  ======================================================= */
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (!validateForm()) return;
+    // -------------------------------------------------------
+    // PROVIDER / NOTE
+    //
+    // Field ini SELALU ada.
+    // Tidak diwajibkan supaya Tunai juga tetap bisa
+    // disimpan tanpa isi provider.
+    // -------------------------------------------------------
 
     const paymentData = {
-      name: form.name.trim(),
-      type: form.type,
-      enabled: form.enabled,
+      method: form.method,
 
-      // QRIS
-      provider: form.provider,
-      merchantId: form.merchantId,
-      qrImage: form.qrImage,
+      is_active: form.is_active,
 
-      // TRANSFER BANK
-      bankName: form.bankName,
-      accountName: form.accountName,
-      accountNumber: form.accountNumber,
+      provider_note:
+        form.provider_note.trim(),
 
-      // E-WALLET
-      ewalletType: form.ewalletType,
-      ewalletAccountName:
-        form.ewalletAccountName,
-      ewalletNumber: form.ewalletNumber,
+      qr_image: form.qr_image,
 
-      // KARTU
-      cardType: form.cardType,
-      cardProvider: form.cardProvider,
-
-      description: generateDescription(),
+      qr_image_url:
+        form.qr_image_url,
     };
 
-    onSave(paymentData);
-  };
+    console.log(
+      "PAYMENT DATA:",
+      paymentData
+    );
 
-  /* =======================================================
-     DYNAMIC FIELDS
-  ======================================================= */
+    try {
+      const result =
+        await onSave(paymentData);
 
-  const renderDynamicFields = () => {
-    switch (form.type) {
-      /* =====================================================
-         TUNAI
-      ===================================================== */
-
-      case "tunai":
-        return null;
-
-      /* =====================================================
-         QRIS
-      ===================================================== */
-
-      case "qris":
-        return (
-          <div className="space-y-3.5">
-            <InputField
-              label="PROVIDER"
-              value={form.provider}
-              onChange={(value) =>
-                handleChange(
-                  "provider",
-                  value
-                )
-              }
-              placeholder="Contoh: BCA, BNI, GoPay"
-            />
-
-            <InputField
-              label="MERCHANT ID"
-              value={form.merchantId}
-              onChange={(value) =>
-                handleChange(
-                  "merchantId",
-                  value
-                )
-              }
-              placeholder="Masukkan merchant ID"
-            />
-
-            {/* UPLOAD QR */}
-
-            <div>
-              <label className="mb-1.5 block text-[8px] font-extrabold tracking-[1px] text-[#858078]">
-                FOTO QR CODE
-              </label>
-
-              <label className="relative flex min-h-[95px] w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[10px] border border-dashed border-[#d5d0c6] bg-[#faf8f1] transition hover:border-[#aaa39a]">
-                {form.qrImage ? (
-                  <div className="flex flex-col items-center gap-1.5">
-                    <img
-                      src={form.qrImage}
-                      alt="QR Code"
-                      className="h-[64px] w-[64px] rounded-lg object-contain"
-                    />
-
-                    <span className="text-[9px] font-bold text-[#292725]">
-                      Klik untuk mengganti
-                    </span>
-                  </div>
-                ) : (
-                  <>
-                    <div className="mb-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-[#e9e6de]">
-                      <QrCode
-                        size={16}
-                        className="text-[#77736b]"
-                      />
-                    </div>
-
-                    <span className="text-[10px] font-bold text-[#292725]">
-                      Upload Foto QR Code
-                    </span>
-
-                    <span className="mt-0.5 text-[8px] text-[#aaa59d]">
-                      PNG, JPG atau JPEG
-                    </span>
-                  </>
-                )}
-
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/jpg"
-                  onChange={handleQrUpload}
-                  className="hidden"
-                />
-              </label>
-            </div>
-          </div>
-        );
-
-      /* =====================================================
-         TRANSFER BANK
-      ===================================================== */
-
-      case "tf_bank":
-        return (
-          <div className="space-y-3.5">
-            <InputField
-              label="NAMA BANK"
-              value={form.bankName}
-              onChange={(value) =>
-                handleChange(
-                  "bankName",
-                  value
-                )
-              }
-              placeholder="Contoh: BCA"
-            />
-
-            <InputField
-              label="NAMA PEMILIK REKENING"
-              value={form.accountName}
-              onChange={(value) =>
-                handleChange(
-                  "accountName",
-                  value
-                )
-              }
-              placeholder="Masukkan nama pemilik rekening"
-            />
-
-            <InputField
-              label="NOMOR REKENING"
-              value={form.accountNumber}
-              onChange={(value) =>
-                handleChange(
-                  "accountNumber",
-                  value
-                )
-              }
-              placeholder="Masukkan nomor rekening"
-            />
-          </div>
-        );
-
-      /* =====================================================
-         E-WALLET
-      ===================================================== */
-
-      case "ewallet":
-        return (
-          <div className="space-y-3.5">
-            <CustomSelect
-              label="JENIS E-WALLET"
-              value={form.ewalletType}
-              onChange={(value) =>
-                handleChange(
-                  "ewalletType",
-                  value
-                )
-              }
-              placeholder="Pilih jenis E-Wallet"
-              options={EWALLET_TYPES}
-            />
-
-            <InputField
-              label="NAMA PEMILIK AKUN"
-              value={
-                form.ewalletAccountName
-              }
-              onChange={(value) =>
-                handleChange(
-                  "ewalletAccountName",
-                  value
-                )
-              }
-              placeholder="Masukkan nama pemilik akun"
-            />
-
-            <InputField
-              label="NOMOR HP / ID AKUN"
-              value={form.ewalletNumber}
-              onChange={(value) =>
-                handleChange(
-                  "ewalletNumber",
-                  value
-                )
-              }
-              placeholder="Masukkan nomor HP / ID akun"
-            />
-          </div>
-        );
-
-      /* =====================================================
-         KARTU
-      ===================================================== */
-
-      case "kartu":
-        return (
-          <div className="space-y-3.5">
-            <CustomSelect
-              label="JENIS KARTU"
-              value={form.cardType}
-              onChange={(value) =>
-                handleChange(
-                  "cardType",
-                  value
-                )
-              }
-              placeholder="Pilih jenis kartu"
-              options={CARD_TYPES}
-            />
-
-            <InputField
-              label="PROVIDER / BANK"
-              value={form.cardProvider}
-              onChange={(value) =>
-                handleChange(
-                  "cardProvider",
-                  value
-                )
-              }
-              placeholder="Contoh: BCA, BNI, Mandiri"
-            />
-          </div>
-        );
-
-      default:
-        return null;
+      return result;
+    } catch (error) {
+      console.error(
+        "Gagal menyimpan metode pembayaran:",
+        error
+      );
     }
   };
 
-  /* =========================================================
-     RETURN
-  ========================================================= */
+  // =========================================================
+  // METHODS
+  // =========================================================
+
+  const methods = [
+    {
+      value: "tunai",
+      label: "Tunai",
+      description:
+        "Pembayaran langsung dengan uang tunai",
+      icon: Banknote,
+    },
+    {
+      value: "qris",
+      label: "QRIS",
+      description:
+        "Pembayaran menggunakan QRIS",
+      icon: QrCode,
+    },
+    {
+      value: "tf_bank",
+      label: "Transfer Bank",
+      description:
+        "Pembayaran melalui transfer bank",
+      icon: Building2,
+    },
+    {
+      value: "ewallet",
+      label: "E-Wallet",
+      description:
+        "GoPay, OVO, DANA, ShopeePay, dll",
+      icon: WalletCards,
+    },
+    {
+      value: "kartu",
+      label: "Kartu",
+      description:
+        "Pembayaran menggunakan kartu",
+      icon: CreditCard,
+    },
+  ];
+
+  // =========================================================
+  // RETURN
+  // =========================================================
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 py-4">
-      {/* OVERLAY */}
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/45 px-4 py-6">
 
-      <button
-        type="button"
-        aria-label="Tutup modal"
-        className="absolute inset-0 cursor-default bg-black/50 backdrop-blur-[2px]"
-        onClick={onClose}
-      />
+      {/* ===================================================
+          MODAL
+      =================================================== */}
 
-      {/* MODAL */}
+      <div className="flex max-h-[90vh] w-full max-w-[500px] flex-col overflow-hidden rounded-[18px] bg-[#fffdf7] shadow-2xl">
 
-      <div className="relative flex max-h-[84vh] w-full max-w-[430px] flex-col overflow-hidden rounded-[18px] bg-[#fffdf7] shadow-2xl">
-        {/* =================================================
+        {/* ===================================================
             HEADER
-        ================================================= */}
+        =================================================== */}
 
-        <div className="flex shrink-0 items-center justify-between px-5 pb-3 pt-4.5">
+        <div className="flex shrink-0 items-center justify-between border-b border-[#e5e0d6] px-5 py-4">
+
           <div>
-            <h2 className="text-[16px] font-extrabold tracking-[-0.3px] text-[#292725]">
+            <h2 className="text-[15px] font-extrabold text-[#292725]">
               {editingId
                 ? "Edit Metode Pembayaran"
                 : "Tambah Metode Pembayaran"}
             </h2>
 
             <p className="mt-0.5 text-[9px] text-[#aaa59d]">
-              Atur metode pembayaran usaha kamu.
+              {editingId
+                ? "Ubah informasi metode pembayaran."
+                : "Atur metode pembayaran yang tersedia."}
             </p>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="flex h-[28px] w-[28px] items-center justify-center rounded-full text-[#96918a] transition hover:bg-[#efede6] hover:text-[#292725]"
+            className="flex h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-[#eeeae2] text-[#66625b] transition hover:bg-[#e2ded5] active:scale-95"
           >
-            <X size={18} />
+            <X size={15} />
           </button>
+
         </div>
 
-        {/* =================================================
+        {/* ===================================================
             FORM
-        ================================================= */}
+        =================================================== */}
 
         <form
           onSubmit={handleSubmit}
-          className="flex min-h-0 flex-1 flex-col"
+          className="min-h-0 flex-1 overflow-y-auto p-5"
         >
-          {/* SCROLL CONTENT */}
 
-          <div className="overflow-y-auto px-5 pb-3">
-            <div className="space-y-3">
-              {/* NAMA METODE */}
+          {/* =================================================
+              METODE PEMBAYARAN
+          ================================================= */}
 
-              <InputField
-                label="NAMA METODE"
-                value={form.name}
-                onChange={(value) =>
-                  handleChange(
-                    "name",
-                    value
-                  )
-                }
-                placeholder="Contoh: QRIS BNI"
-                autoFocus
-              />
+          <div>
 
-              {/* JENIS PEMBAYARAN */}
+            <label className="mb-2 block text-[9px] font-extrabold tracking-[1px] text-[#858078]">
+              METODE PEMBAYARAN
+            </label>
 
-              <CustomSelect
-                label="JENIS PEMBAYARAN"
-                value={form.type}
-                onChange={
-                  handleTypeChange
-                }
-                placeholder="Pilih jenis pembayaran"
-                options={PAYMENT_TYPES}
-                objectOptions
-              />
+            <div className="grid grid-cols-2 gap-2">
 
-              {/* DYNAMIC FIELDS */}
+              {methods.map((item) => {
+                const Icon = item.icon;
 
-              {form.type && (
-                <div className="pt-0.5">
-                  {renderDynamicFields()}
-                </div>
-              )}
+                const active =
+                  form.method === item.value;
+
+                const disabled =
+                  !!editingId;
+
+                return (
+                  <button
+                    key={item.value}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() =>
+                      selectMethod(
+                        item.value
+                      )
+                    }
+                    className={`flex items-center gap-2.5 rounded-[11px] border p-3 text-left transition ${
+                      active
+                        ? "border-[#252423] bg-[#252423] text-white"
+                        : "border-[#ded9cf] bg-[#fffdf7] text-[#292725]"
+                    } ${
+                      disabled
+                        ? "cursor-not-allowed opacity-65"
+                        : "hover:bg-[#f5f1e8]"
+                    }`}
+                  >
+
+                    <div
+                      className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px] ${
+                        active
+                          ? "bg-white/10"
+                          : "bg-[#eeeae2]"
+                      }`}
+                    >
+                      <Icon
+                        size={16}
+                        className={
+                          active
+                            ? "text-white"
+                            : "text-[#68645d]"
+                        }
+                      />
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="text-[10.5px] font-bold">
+                        {item.label}
+                      </p>
+
+                      <p
+                        className={`mt-0.5 text-[8px] leading-3 ${
+                          active
+                            ? "text-white/60"
+                            : "text-[#aaa59d]"
+                        }`}
+                      >
+                        {item.description}
+                      </p>
+                    </div>
+
+                  </button>
+                );
+              })}
+
             </div>
+
+            {/* =================================================
+                INFO SAAT EDIT
+            ================================================= */}
+
+            {editingId && (
+              <div className="mt-2.5 rounded-[9px] bg-[#f3f0e8] px-3 py-2">
+                <p className="text-[8px] leading-3 text-[#858078]">
+                  Metode pembayaran tidak dapat
+                  diganti saat edit. Jika ingin
+                  menggunakan metode lain, tambahkan
+                  metode pembayaran baru.
+                </p>
+              </div>
+            )}
+
           </div>
 
           {/* =================================================
-              FOOTER
+              PROVIDER / NOTE
+              SELALU MUNCUL
           ================================================= */}
 
-          <div className="shrink-0 px-5 pb-4 pt-2">
-            {/* AVAILABLE */}
+          <div className="mt-4">
 
-            <div className="mb-2.5 flex items-center justify-between rounded-[10px] bg-[#f3f1e9] px-3.5 py-2.5">
-              <div>
-                <span className="text-[11px] font-bold text-[#292725]">
-                  Tersedia
-                </span>
-              </div>
+            <label className="mb-1.5 block text-[9px] font-extrabold tracking-[1px] text-[#858078]">
+              PROVIDER / NOTE
+            </label>
 
-              {/* TOGGLE */}
+            <input
+              type="text"
+              value={
+                form.provider_note || ""
+              }
+              onChange={(event) =>
+                updateForm(
+                  "provider_note",
+                  event.target.value
+                )
+              }
+              placeholder={
+                form.method === "tf_bank"
+                  ? "Contoh: BNI • 1234567890 • a.n. Montera"
+                  : form.method === "ewallet"
+                  ? "Contoh: DANA • 08123456789"
+                  : form.method === "qris"
+                  ? "Contoh: BNI"
+                  : form.method === "kartu"
+                  ? "Contoh: BCA Debit / Visa"
+                  : "Contoh: Pembayaran langsung"
+              }
+              className="h-[40px] w-full rounded-[11px] border border-[#dcd7cd] bg-[#fffdf7] px-3.5 text-[11px] font-medium text-[#292725] outline-none transition placeholder:text-[#b8b3aa] focus:border-[#252423]"
+            />
 
-              <button
-                type="button"
-                aria-label="Ubah ketersediaan metode pembayaran"
-                onClick={() =>
-                  handleChange(
-                    "enabled",
-                    !form.enabled
-                  )
-                }
-                className={`relative flex h-[24px] w-[42px] shrink-0 items-center rounded-full p-[3px] transition-colors duration-200 ${
-                  form.enabled
-                    ? "bg-[#292725]"
-                    : "bg-[#c9c5bc]"
-                }`}
-              >
-                <span
-                  className={`block h-[18px] w-[18px] shrink-0 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-transform duration-200 ${
-                    form.enabled
-                      ? "translate-x-[18px]"
-                      : "translate-x-0"
-                  }`}
-                />
-              </button>
+            {form.method === "tf_bank" && (
+              <p className="mt-1.5 text-[8px] leading-3 text-[#aaa59d]">
+                Bisa diisi nama bank, nomor
+                rekening, dan nama pemilik rekening.
+              </p>
+            )}
+
+            {form.method === "ewallet" && (
+              <p className="mt-1.5 text-[8px] leading-3 text-[#aaa59d]">
+                Bisa diisi nama E-Wallet dan
+                nomor HP / ID akun.
+              </p>
+            )}
+
+          </div>
+
+          {/* =================================================
+              QR IMAGE
+          ================================================= */}
+
+          {form.method === "qris" && (
+            <div className="mt-4">
+
+              <label className="mb-1.5 block text-[9px] font-extrabold tracking-[1px] text-[#858078]">
+                GAMBAR QRIS
+              </label>
+
+              {preview ? (
+                <div className="relative overflow-hidden rounded-[12px] border border-[#ded9cf] bg-[#f7f4ec] p-3">
+
+                  <div className="flex justify-center">
+                    <img
+                      src={preview}
+                      alt="Preview QRIS"
+                      className="h-[190px] w-[190px] rounded-[8px] bg-white object-contain"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={removeQr}
+                    className="absolute right-3 top-3 flex h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-[#f8dfdc] text-[#ed3044] transition hover:bg-[#f3d1ce]"
+                    title="Hapus QR"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+
+                </div>
+              ) : (
+                <label className="flex min-h-[150px] cursor-pointer flex-col items-center justify-center rounded-[12px] border border-dashed border-[#d5d0c6] bg-[#f7f4ec] text-center transition hover:bg-[#f1ede4]">
+
+                  <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#e8e4db] text-[#77736b]">
+                    <Upload size={17} />
+                  </div>
+
+                  <p className="text-[10px] font-bold text-[#292725]">
+                    Upload gambar QRIS
+                  </p>
+
+                  <p className="mt-1 text-[8px] text-[#aaa59d]">
+                    PNG, JPG, atau JPEG • Maks. 5 MB
+                  </p>
+
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg"
+                    onChange={
+                      handleQrUpload
+                    }
+                    className="hidden"
+                  />
+
+                </label>
+              )}
+
+              {/* =================================================
+                  GANTI GAMBAR QR
+              ================================================= */}
+
+              {preview && (
+                <label className="mt-2 flex h-[34px] cursor-pointer items-center justify-center gap-1.5 rounded-[9px] border border-[#dcd7cd] bg-[#fffdf7] text-[9px] font-bold text-[#68645d] transition hover:bg-[#f3f0e8]">
+
+                  <Upload size={13} />
+
+                  Ganti Gambar QR
+
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg"
+                    onChange={
+                      handleQrUpload
+                    }
+                    className="hidden"
+                  />
+
+                </label>
+              )}
+
+            </div>
+          )}
+
+          {/* =================================================
+              ACTIVE
+          ================================================= */}
+
+          <div className="mt-4 flex items-center justify-between rounded-[11px] bg-[#f7f4ec] px-3.5 py-3">
+
+            <div>
+              <p className="text-[10.5px] font-bold text-[#292725]">
+                Aktifkan metode pembayaran
+              </p>
+
+              <p className="mt-0.5 text-[8px] text-[#aaa59d]">
+                Metode aktif akan tersedia saat pembayaran.
+              </p>
             </div>
 
-            {/* SUBMIT */}
+            <button
+              type="button"
+              onClick={() =>
+                updateForm(
+                  "is_active",
+                  !form.is_active
+                )
+              }
+              className={`relative h-[24px] w-[44px] rounded-full transition ${
+                form.is_active
+                  ? "bg-[#252423]"
+                  : "bg-[#d5d1c8]"
+              }`}
+            >
+
+              <span
+                className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition ${
+                  form.is_active
+                    ? "left-[23px]"
+                    : "left-[3px]"
+                }`}
+              />
+
+            </button>
+
+          </div>
+
+          {/* =================================================
+              BUTTONS
+          ================================================= */}
+
+          <div className="mt-5 flex justify-end gap-2">
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="h-[36px] rounded-[10px] border border-[#dcd7cd] bg-[#fffdf7] px-4 text-[10px] font-bold text-[#68645d] transition hover:bg-[#f3f0e8]"
+            >
+              Batal
+            </button>
 
             <button
               type="submit"
-              className="flex h-[43px] w-full items-center justify-center rounded-[10px] bg-[#292725] text-[12px] font-extrabold text-white transition hover:bg-[#1f1e1c] active:scale-[0.99]"
+              className="h-[36px] rounded-[10px] bg-[#252423] px-4 text-[10px] font-bold text-white transition hover:bg-[#353331] active:scale-[0.98]"
             >
               {editingId
                 ? "Simpan Perubahan"
-                : "Simpan Metode"}
+                : "Tambah Metode"}
             </button>
+
           </div>
+
         </form>
       </div>
     </div>
   );
 }
 
-/* =========================================================
-   INPUT FIELD
-========================================================= */
-
-const InputField = memo(function InputField({
-  label,
-  value,
-  onChange,
-  placeholder,
-  autoFocus = false,
-}) {
-  return (
-    <div>
-      <label className="mb-1.5 block text-[8px] font-extrabold tracking-[1px] text-[#858078]">
-        {label}
-      </label>
-
-      <input
-        type="text"
-        value={value || ""}
-        onChange={(e) =>
-          onChange(e.target.value)
-        }
-        placeholder={placeholder}
-        autoFocus={autoFocus}
-        className="h-[40px] w-full rounded-[9px] border border-[#d8d3c9] bg-[#fffdf7] px-3 text-[11px] font-medium text-[#302e2b] outline-none transition placeholder:text-[#aaa59d] focus:border-[#aaa39a]"
-      />
-    </div>
-  );
-});
-
-/* =========================================================
-   CUSTOM SELECT
-========================================================= */
-
-const CustomSelect = memo(function CustomSelect({
-  label,
-  value,
-  onChange,
-  placeholder,
-  options = [],
-  objectOptions = false,
-}) {
-  const [isOpen, setIsOpen] =
-    useState(false);
-
-  const selectedOption = objectOptions
-    ? options.find(
-        (option) =>
-          option.value === value
-      )
-    : null;
-
-  const displayValue = objectOptions
-    ? selectedOption?.label
-    : value;
-
-  const handleSelect = (option) => {
-    const selectedValue = objectOptions
-      ? option.value
-      : option;
-
-    onChange(selectedValue);
-    setIsOpen(false);
-  };
-
-  return (
-    <div className="relative">
-      <label className="mb-1.5 block text-[8px] font-extrabold tracking-[1px] text-[#858078]">
-        {label}
-      </label>
-
-      <button
-        type="button"
-        onClick={() =>
-          setIsOpen((prev) => !prev)
-        }
-        className={`flex h-[40px] w-full items-center justify-between rounded-[9px] border bg-[#fffdf7] px-3 text-left text-[11px] font-medium outline-none transition ${
-          isOpen
-            ? "border-[#aaa39a]"
-            : "border-[#d8d3c9]"
-        }`}
-      >
-        <span
-          className={
-            displayValue
-              ? "text-[#302e2b]"
-              : "text-[#aaa59d]"
-          }
-        >
-          {displayValue ||
-            placeholder}
-        </span>
-
-        <svg
-          width="13"
-          height="13"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          className={`shrink-0 text-[#96918a] ${
-            isOpen
-              ? "rotate-180"
-              : ""
-          }`}
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
-      </button>
-
-      {isOpen && (
-        <div className="absolute left-0 right-0 top-[63px] z-[120] overflow-hidden rounded-[9px] border border-[#d8d3c9] bg-[#fffdf7] shadow-lg">
-          <div className="max-h-[180px] overflow-y-auto p-1">
-            {options.map((option) => {
-              const optionValue =
-                objectOptions
-                  ? option.value
-                  : option;
-
-              const optionLabel =
-                objectOptions
-                  ? option.label
-                  : option;
-
-              const selected =
-                value === optionValue;
-
-              return (
-                <button
-                  key={optionValue}
-                  type="button"
-                  onClick={() =>
-                    handleSelect(
-                      option
-                    )
-                  }
-                  className={`flex w-full items-center justify-between rounded-[7px] px-2.5 py-2 text-left text-[10.5px] ${
-                    selected
-                      ? "bg-[#f0ede5] font-bold text-[#292725]"
-                      : "text-[#55514b] hover:bg-[#f5f2eb]"
-                  }`}
-                >
-                  <span>
-                    {optionLabel}
-                  </span>
-
-                  {selected && (
-                    <Check
-                      size={12}
-                      strokeWidth={2.5}
-                      className="text-[#292725]"
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-});

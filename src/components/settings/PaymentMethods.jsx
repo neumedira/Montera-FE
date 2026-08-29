@@ -1,4 +1,5 @@
 import { useState } from "react";
+
 import {
   CreditCard,
   Plus,
@@ -18,18 +19,31 @@ import PaymentMethodModal from "./modal/PaymentMethodModal";
    MAIN COMPONENT
 ========================================================= */
 
-export default function PaymentMethods({ data, setData }) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [editingPayment, setEditingPayment] = useState(null);
+export default function PaymentMethods({
+  data,
+  setData,
+  onSavePayment,
+}) {
+  const [isModalOpen, setIsModalOpen] =
+    useState(false);
 
-  const paymentMethods = Array.isArray(data?.paymentMethods)
-    ? data.paymentMethods
-    : [];
+  const [editingId, setEditingId] =
+    useState(null);
 
-  /* =======================================================
-     OPEN ADD MODAL
-  ======================================================= */
+  const [editingPayment, setEditingPayment] =
+    useState(null);
+
+  const [saving, setSaving] =
+    useState(false);
+
+  const paymentMethods =
+    Array.isArray(data?.paymentMethods)
+      ? data.paymentMethods
+      : [];
+
+  // =========================================================
+  // OPEN ADD
+  // =========================================================
 
   const openAddModal = () => {
     setEditingId(null);
@@ -37,9 +51,9 @@ export default function PaymentMethods({ data, setData }) {
     setIsModalOpen(true);
   };
 
-  /* =======================================================
-     OPEN EDIT MODAL
-  ======================================================= */
+  // =========================================================
+  // OPEN EDIT
+  // =========================================================
 
   const openEditModal = (payment) => {
     setEditingId(payment.id);
@@ -47,93 +61,87 @@ export default function PaymentMethods({ data, setData }) {
     setIsModalOpen(true);
   };
 
-  /* =======================================================
-     CLOSE MODAL
-  ======================================================= */
+  // =========================================================
+  // CLOSE
+  // =========================================================
 
   const closeModal = () => {
+    if (saving) return;
+
     setIsModalOpen(false);
     setEditingId(null);
     setEditingPayment(null);
   };
 
-  /* =======================================================
-     SAVE PAYMENT
-  ======================================================= */
+  // =========================================================
+  // SAVE PAYMENT
+  // =========================================================
 
-  const handleSavePayment = (paymentData) => {
-    if (editingId) {
-      /* EDIT */
+  const handleSavePayment = async (
+    paymentData
+  ) => {
+    if (saving) return;
 
-      setData((prev) => ({
-        ...prev,
+    try {
+      setSaving(true);
 
-        paymentMethods: Array.isArray(prev.paymentMethods)
-          ? prev.paymentMethods.map((payment) =>
-              payment.id === editingId
-                ? {
-                    ...payment,
-                    ...paymentData,
-                    id: editingId,
-                  }
-                : payment
-            )
-          : [],
-      }));
-    } else {
-      /* ADD */
+      console.log(
+        "PAYMENT DATA DARI MODAL:",
+        paymentData
+      );
 
-      setData((prev) => ({
-        ...prev,
+      const success =
+        await onSavePayment(
+          paymentData,
+          editingId
+        );
 
-        paymentMethods: [
-          ...(Array.isArray(prev.paymentMethods)
-            ? prev.paymentMethods
-            : []),
+      if (!success) {
+        return;
+      }
 
-          {
-            ...paymentData,
-            id: Date.now(),
-          },
-        ],
-      }));
+      // =====================================================
+      // API SUKSES
+      // Parent sudah GET ulang database
+      //
+      // Tutup modal setelah benar-benar berhasil.
+      // =====================================================
+
+      setIsModalOpen(false);
+      setEditingId(null);
+      setEditingPayment(null);
+
+      alert(
+        editingId
+          ? "Metode pembayaran berhasil diperbarui."
+          : "Metode pembayaran berhasil ditambahkan."
+      );
+    } catch (error) {
+      console.error(
+        "ERROR PAYMENT:",
+        error
+      );
+    } finally {
+      setSaving(false);
     }
-
-    closeModal();
   };
 
-  /* =======================================================
-     DELETE PAYMENT
-  ======================================================= */
+  // =========================================================
+  // DELETE
+  // =========================================================
 
-  const deletePayment = (id) => {
-    const confirmed = window.confirm(
-      "Yakin ingin menghapus metode pembayaran ini?"
+  const deletePayment = () => {
+    alert(
+      "Fitur hapus metode pembayaran belum tersedia di API backend."
     );
-
-    if (!confirmed) return;
-
-    setData((prev) => ({
-      ...prev,
-
-      paymentMethods: Array.isArray(prev.paymentMethods)
-        ? prev.paymentMethods.filter(
-            (payment) => payment.id !== id
-          )
-        : [],
-    }));
   };
 
-  /* =========================================================
-     RETURN
-  ========================================================= */
+  // =========================================================
+  // RETURN
+  // =========================================================
 
   return (
     <>
-      {/* =====================================================
-          PAYMENT SECTION
-      ===================================================== */}
-
       <SettingSection
         title="METODE PEMBAYARAN"
         icon={
@@ -175,84 +183,104 @@ export default function PaymentMethods({ data, setData }) {
               </p>
             </div>
           ) : (
-            paymentMethods.map((payment) => (
-              <div
-                key={payment.id}
-                className="flex min-h-[62px] items-center justify-between gap-3 rounded-[11px] bg-[#f7f4ec] px-3 py-2.5"
-              >
-                {/* INFO */}
+            paymentMethods.map(
+              (payment) => (
+                <div
+                  key={payment.id}
+                  className="flex min-h-[62px] items-center justify-between gap-3 rounded-[11px] bg-[#f7f4ec] px-3 py-2.5"
+                >
+                  {/* INFO */}
 
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <PaymentIcon type={payment.type} />
-
-                  <div className="min-w-0">
-                    <p className="truncate text-[11.5px] font-bold text-[#292725]">
-                      {payment.name}
-                    </p>
-
-                    <p className="mt-0.5 truncate text-[9px] text-[#aaa59d]">
-                      {getPaymentDescription(payment)}
-                    </p>
-                  </div>
-                </div>
-
-                {/* ACTION */}
-
-                <div className="flex shrink-0 items-center gap-1.5">
-                  {/* STATUS */}
-
-                  <div
-                    className={`flex h-[30px] w-[30px] items-center justify-center rounded-[8px] ${
-                      payment.enabled
-                        ? "bg-[#dcf8e8] text-[#00a85a]"
-                        : "bg-[#e4e1da] text-[#aaa59d]"
-                    }`}
-                    title={
-                      payment.enabled
-                        ? "Aktif"
-                        : "Nonaktif"
-                    }
-                  >
-                    <Check
-                      size={14}
-                      strokeWidth={2.3}
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <PaymentIcon
+                      type={
+                        payment.method ||
+                        payment.type
+                      }
                     />
+
+                    <div className="min-w-0">
+                      <p className="truncate text-[11.5px] font-bold text-[#292725]">
+                        {getPaymentName(
+                          payment
+                        )}
+                      </p>
+
+                      <p className="mt-0.5 truncate text-[9px] text-[#aaa59d]">
+                        {getPaymentDescription(
+                          payment
+                        )}
+                      </p>
+                    </div>
                   </div>
 
-                  {/* EDIT */}
+                  {/* ACTION */}
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      openEditModal(payment)
-                    }
-                    className="flex h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-[#e6e3dc] text-[#292725] transition hover:bg-[#ddd9d0] active:scale-95"
-                    title="Edit"
-                  >
-                    <Pencil
-                      size={13}
-                      strokeWidth={2}
-                    />
-                  </button>
+                  <div className="flex shrink-0 items-center gap-1.5">
 
-                  {/* DELETE */}
+                    {/* STATUS */}
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      deletePayment(payment.id)
-                    }
-                    className="flex h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-[#f8dfdc] text-[#ed3044] transition hover:bg-[#f3d1ce] active:scale-95"
-                    title="Hapus"
-                  >
-                    <Trash2
-                      size={13}
-                      strokeWidth={2}
-                    />
-                  </button>
+                    <div
+                      className={`flex h-[30px] w-[30px] items-center justify-center rounded-[8px] ${
+                        isPaymentActive(
+                          payment
+                        )
+                          ? "bg-[#dcf8e8] text-[#00a85a]"
+                          : "bg-[#e4e1da] text-[#aaa59d]"
+                      }`}
+                      title={
+                        isPaymentActive(
+                          payment
+                        )
+                          ? "Aktif"
+                          : "Nonaktif"
+                      }
+                    >
+                      <Check
+                        size={14}
+                        strokeWidth={2.3}
+                      />
+                    </div>
+
+                    {/* EDIT */}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openEditModal(
+                          payment
+                        )
+                      }
+                      className="flex h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-[#e6e3dc] text-[#292725] transition hover:bg-[#ddd9d0] active:scale-95"
+                      title="Edit"
+                    >
+                      <Pencil
+                        size={13}
+                        strokeWidth={2}
+                      />
+                    </button>
+
+                    {/* DELETE */}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        deletePayment(
+                          payment.id
+                        )
+                      }
+                      className="flex h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-[#f8dfdc] text-[#ed3044] transition hover:bg-[#f3d1ce] active:scale-95"
+                      title="Hapus"
+                    >
+                      <Trash2
+                        size={13}
+                        strokeWidth={2}
+                      />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))
+              )
+            )
           )}
         </div>
       </SettingSection>
@@ -267,10 +295,129 @@ export default function PaymentMethods({ data, setData }) {
           initialData={editingPayment}
           onClose={closeModal}
           onSave={handleSavePayment}
+          saving={saving}
         />
       )}
     </>
   );
+}
+
+/* =========================================================
+   PAYMENT ACTIVE
+========================================================= */
+
+function isPaymentActive(payment) {
+  if (
+    payment.is_active !==
+    undefined
+  ) {
+    return Boolean(
+      payment.is_active
+    );
+  }
+
+  return Boolean(
+    payment.enabled
+  );
+}
+
+/* =========================================================
+   PAYMENT NAME
+========================================================= */
+
+function getPaymentName(payment) {
+  const method =
+    payment.method ||
+    payment.type;
+
+  if (method === "tunai") {
+    return (
+      payment.name ||
+      "Tunai"
+    );
+  }
+
+  if (method === "qris") {
+    return (
+      payment.name ||
+      "QRIS"
+    );
+  }
+
+  if (method === "tf_bank") {
+    return (
+      payment.name ||
+      "Transfer Bank"
+    );
+  }
+
+  if (method === "ewallet") {
+    return (
+      payment.name ||
+      "E-Wallet"
+    );
+  }
+
+  if (method === "kartu") {
+    return (
+      payment.name ||
+      "Kartu"
+    );
+  }
+
+  return (
+    payment.name ||
+    payment.provider_note ||
+    "Metode Pembayaran"
+  );
+}
+
+/* =========================================================
+   PAYMENT DESCRIPTION
+========================================================= */
+
+function getPaymentDescription(
+  payment
+) {
+  const method =
+    payment.method ||
+    payment.type;
+
+  const provider =
+    payment.provider_note ||
+    payment.provider ||
+    "";
+
+  switch (method) {
+    case "tunai":
+      return "Pembayaran tunai";
+
+    case "qris":
+      return provider
+        ? `QRIS • ${provider}`
+        : "Pembayaran QRIS";
+
+    case "tf_bank":
+      return provider
+        ? `Transfer Bank • ${provider}`
+        : "Transfer Bank";
+
+    case "ewallet":
+      return provider
+        ? `E-Wallet • ${provider}`
+        : "Pembayaran E-Wallet";
+
+    case "kartu":
+      return provider
+        ? `Kartu • ${provider}`
+        : "Pembayaran kartu";
+
+    default:
+      return (
+        provider ||
+        "Metode pembayaran"
+      );
+  }
 }
 
 /* =========================================================
@@ -335,41 +482,4 @@ function PaymentIcon({ type }) {
       {icon}
     </div>
   );
-}
-
-/* =========================================================
-   PAYMENT DESCRIPTION
-========================================================= */
-
-function getPaymentDescription(payment) {
-  switch (payment.type) {
-    case "tunai":
-      return "Pembayaran tunai";
-
-    case "qris":
-      return payment.provider
-        ? `QRIS • ${payment.provider}`
-        : "Pembayaran QRIS";
-
-    case "tf_bank":
-      return payment.bankName
-        ? `Transfer Bank • ${payment.bankName}`
-        : "Transfer Bank";
-
-    case "ewallet":
-      return payment.ewalletType
-        ? `E-Wallet • ${payment.ewalletType}`
-        : "Pembayaran E-Wallet";
-
-    case "kartu":
-      return payment.cardProvider
-        ? `${payment.cardType || "Kartu"} • ${payment.cardProvider}`
-        : "Pembayaran kartu";
-
-    default:
-      return (
-        payment.description ||
-        "Metode pembayaran"
-      );
-  }
 }

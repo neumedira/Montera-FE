@@ -28,6 +28,122 @@ export const logoutAdmin = async () => {
 };
 
 // =========================================================
+// SETTINGS
+// =========================================================
+
+export const getSettings = async () => {
+  const response = await api.get("/admin/settings");
+
+  return response.data;
+};
+
+export const updateSettings = async (data) => {
+  const formData = new FormData();
+
+  // =======================================================
+  // BUSINESS PROFILE
+  // =======================================================
+
+  if (data.business_profile) {
+    formData.append(
+      "business_profile[cafe_name]",
+      data.business_profile.cafe_name ?? ""
+    );
+
+    formData.append(
+      "business_profile[address]",
+      data.business_profile.address ?? ""
+    );
+
+    formData.append(
+      "business_profile[whatsapp_number]",
+      data.business_profile.whatsapp_number ?? ""
+    );
+
+    formData.append(
+      "business_profile[instagram]",
+      data.business_profile.instagram ?? ""
+    );
+
+    formData.append(
+      "business_profile[tiktok]",
+      data.business_profile.tiktok ?? ""
+    );
+  }
+
+  // =======================================================
+  // TAX SETTING
+  // =======================================================
+
+  if (data.tax_setting) {
+    formData.append(
+      "tax_setting[tax_percentage]",
+      data.tax_setting.tax_percentage ?? 0
+    );
+
+    formData.append(
+      "tax_setting[service_charge_percentage]",
+      data.tax_setting.service_charge_percentage ?? 0
+    );
+  }
+
+  // =======================================================
+  // PAYMENT SETTINGS
+  // =======================================================
+
+  if (Array.isArray(data.payment_settings)) {
+    data.payment_settings.forEach((payment, index) => {
+      formData.append(
+        `payment_settings[${index}][method]`,
+        payment.method ?? payment.type ?? ""
+      );
+
+      formData.append(
+        `payment_settings[${index}][is_active]`,
+        payment.is_active !== undefined
+          ? payment.is_active
+            ? "1"
+            : "0"
+          : payment.enabled
+            ? "1"
+            : "0"
+      );
+
+      formData.append(
+        `payment_settings[${index}][provider_note]`,
+        payment.provider_note ??
+          payment.provider ??
+          payment.description ??
+          ""
+      );
+
+      // =====================================================
+      // QR IMAGE
+      // =====================================================
+
+      if (payment.qr_image instanceof File) {
+        formData.append(
+          `payment_settings[${index}][qr_image]`,
+          payment.qr_image
+        );
+      }
+    });
+  }
+
+  const response = await api.post(
+    "/admin/settings",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  return response.data;
+};
+
+// =========================================================
 // MENU CATEGORIES
 // =========================================================
 
