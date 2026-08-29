@@ -10,6 +10,7 @@ import PaymentMethods from "../components/settings/PaymentMethods";
 import {
   getSettings,
   updateSettings,
+  deletePaymentMethod,
 } from "../api/admin";
 
 export default function Settings() {
@@ -34,7 +35,8 @@ export default function Settings() {
     paymentMethods: [],
   });
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
 
   // =========================================================
   // LOAD SETTINGS
@@ -44,30 +46,70 @@ export default function Settings() {
     try {
       setLoading(true);
 
-      const response = await getSettings();
+      const response =
+        await getSettings();
 
-      console.log("========================================");
-      console.log("SETTINGS API:", response);
-      console.log("SETTINGS DATA:", response?.data);
+      console.log(
+        "========================================"
+      );
 
-      const data = response?.data || {};
+      console.log(
+        "SETTINGS API:",
+        response
+      );
 
-      const business = data.business_profile;
-      const tax = data.tax_setting;
-      const payments = data.payment_settings;
+      console.log(
+        "SETTINGS DATA:",
+        response?.data
+      );
 
-      console.log("BUSINESS PROFILE:", business);
-      console.log("TAX SETTING:", tax);
-      console.log("PAYMENT SETTINGS:", payments);
-      console.log("========================================");
+      const data =
+        response?.data || {};
+
+      const business =
+        data.business_profile;
+
+      const tax =
+        data.tax_setting;
+
+      const payments =
+        data.payment_settings;
+
+      console.log(
+        "BUSINESS PROFILE:",
+        business
+      );
+
+      console.log(
+        "TAX SETTING:",
+        tax
+      );
+
+      console.log(
+        "PAYMENT SETTINGS:",
+        payments
+      );
+
+      console.log(
+        "========================================"
+      );
 
       setSettings({
         business: {
-          cafeName: business?.cafe_name || "",
-          address: business?.address || "",
-          whatsapp: business?.whatsapp_number || "",
-          instagram: business?.instagram || "",
-          tiktok: business?.tiktok || "",
+          cafeName:
+            business?.cafe_name || "",
+
+          address:
+            business?.address || "",
+
+          whatsapp:
+            business?.whatsapp_number || "",
+
+          instagram:
+            business?.instagram || "",
+
+          tiktok:
+            business?.tiktok || "",
         },
 
         tax: {
@@ -75,7 +117,8 @@ export default function Settings() {
             tax?.tax_percentage ?? "",
 
           serviceCharge:
-            tax?.service_charge_percentage ?? "",
+            tax?.service_charge_percentage ??
+            "",
         },
 
         paymentMethods:
@@ -110,76 +153,87 @@ export default function Settings() {
   // SAVE BUSINESS + TAX
   // =========================================================
 
-  const handleSaveSettings = async () => {
-    try {
-      const payload = {
-        business_profile: {
-          cafe_name:
-            settings.business.cafeName,
+  const handleSaveSettings =
+    async () => {
+      try {
+        const payload = {
+          business_profile: {
+            cafe_name:
+              settings.business.cafeName,
 
-          address:
-            settings.business.address,
+            address:
+              settings.business.address,
 
-          whatsapp_number:
-            settings.business.whatsapp,
+            whatsapp_number:
+              settings.business.whatsapp,
 
-          instagram:
-            settings.business.instagram,
+            instagram:
+              settings.business.instagram,
 
-          tiktok:
-            settings.business.tiktok,
-        },
+            tiktok:
+              settings.business.tiktok,
+          },
 
-        tax_setting: {
-          tax_percentage:
-            settings.tax.regionalTax || 0,
+          tax_setting: {
+            tax_percentage:
+              settings.tax.regionalTax ||
+              0,
 
-          service_charge_percentage:
-            settings.tax.serviceCharge || 0,
-        },
+            service_charge_percentage:
+              settings.tax.serviceCharge ||
+              0,
+          },
 
-        payment_settings:
-          settings.paymentMethods || [],
-      };
+          payment_settings:
+            settings.paymentMethods || [],
+        };
 
-      console.log("========================================");
-      console.log(
-        "SAVE SETTINGS PAYLOAD:",
-        payload
-      );
+        console.log(
+          "========================================"
+        );
 
-      const response =
-        await updateSettings(payload);
+        console.log(
+          "SAVE SETTINGS PAYLOAD:",
+          payload
+        );
 
-      console.log(
-        "SAVE SETTINGS RESPONSE:",
-        response
-      );
-      console.log("========================================");
+        const response =
+          await updateSettings(
+            payload
+          );
 
-      // Ambil data terbaru dari database
-      await loadSettings();
+        console.log(
+          "SAVE SETTINGS RESPONSE:",
+          response
+        );
 
-      alert(
-        "Pengaturan berhasil disimpan."
-      );
-    } catch (error) {
-      console.error(
-        "Gagal menyimpan settings:",
-        error
-      );
+        console.log(
+          "========================================"
+        );
 
-      console.error(
-        "ERROR RESPONSE:",
-        error.response?.data
-      );
+        // Ambil data terbaru dari database
+        await loadSettings();
 
-      alert(
-        error.response?.data?.message ||
-          "Gagal menyimpan pengaturan."
-      );
-    }
-  };
+        alert(
+          "Pengaturan berhasil disimpan."
+        );
+      } catch (error) {
+        console.error(
+          "Gagal menyimpan settings:",
+          error
+        );
+
+        console.error(
+          "ERROR RESPONSE:",
+          error.response?.data
+        );
+
+        alert(
+          error.response?.data?.message ||
+            "Gagal menyimpan pengaturan."
+        );
+      }
+    };
 
   // =========================================================
   // SAVE PAYMENT
@@ -207,7 +261,10 @@ export default function Settings() {
         paymentSettings =
           currentPayments.map(
             (payment) => {
-              if (payment.id !== editingId) {
+              if (
+                payment.id !==
+                editingId
+              ) {
                 return payment;
               }
 
@@ -216,6 +273,9 @@ export default function Settings() {
                 ...paymentData,
 
                 // Backend
+                // Method TIDAK diganti saat edit.
+                // PaymentMethodModal sudah
+                // mengirim method lama.
                 method:
                   paymentData.method,
 
@@ -227,6 +287,9 @@ export default function Settings() {
 
                 qr_image:
                   paymentData.qr_image,
+
+                qr_image_url:
+                  paymentData.qr_image_url,
               };
             }
           );
@@ -242,6 +305,10 @@ export default function Settings() {
           paymentData,
         ];
       }
+
+      // =====================================================
+      // PAYLOAD
+      // =====================================================
 
       const payload = {
         business_profile: {
@@ -263,10 +330,12 @@ export default function Settings() {
 
         tax_setting: {
           tax_percentage:
-            settings.tax.regionalTax || 0,
+            settings.tax.regionalTax ||
+            0,
 
           service_charge_percentage:
-            settings.tax.serviceCharge || 0,
+            settings.tax.serviceCharge ||
+            0,
         },
 
         payment_settings:
@@ -285,7 +354,9 @@ export default function Settings() {
       );
 
       const response =
-        await updateSettings(payload);
+        await updateSettings(
+          payload
+        );
 
       console.log(
         "PAYMENT SAVE RESPONSE:",
@@ -329,16 +400,66 @@ export default function Settings() {
   };
 
   // =========================================================
+  // DELETE PAYMENT
+  // =========================================================
+
+  const handleDeletePayment =
+    async (id) => {
+      try {
+        if (!id) {
+          return false;
+        }
+
+        console.log(
+          "DELETE PAYMENT ID:",
+          id
+        );
+
+        await deletePaymentMethod(
+          id
+        );
+
+        // ===================================================
+        // Ambil ulang data dari database
+        // ===================================================
+
+        await loadSettings();
+
+        return true;
+      } catch (error) {
+        console.error(
+          "Gagal menghapus metode pembayaran:",
+          error
+        );
+
+        console.error(
+          "ERROR RESPONSE:",
+          error.response?.data
+        );
+
+        alert(
+          error.response?.data?.message ||
+            "Gagal menghapus metode pembayaran."
+        );
+
+        return false;
+      }
+    };
+
+  // =========================================================
   // LOADING
   // =========================================================
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f5f2eb] text-[#292725]">
+
         <Navbar />
 
         <main className="mx-auto max-w-[1000px] px-5 py-6 pb-[90px] md:px-8">
+
           <div className="pb-[17px]">
+
             <h1 className="text-[22px] font-extrabold tracking-[-0.5px] md:text-[24px]">
               Pengaturan
             </h1>
@@ -346,10 +467,13 @@ export default function Settings() {
             <p className="mt-0.5 text-[12px] text-[#aaa59d]">
               Memuat pengaturan...
             </p>
+
           </div>
+
         </main>
 
         <BottomNavigation />
+
       </div>
     );
   }
@@ -360,13 +484,17 @@ export default function Settings() {
 
   return (
     <div className="min-h-screen bg-[#f5f2eb] text-[#292725]">
+
       <Navbar />
 
       <main className="mx-auto max-w-[1000px] px-5 py-6 pb-[90px] md:px-8">
 
-        {/* PAGE HEADER */}
+        {/* ===================================================
+            PAGE HEADER
+        =================================================== */}
 
         <div className="pb-[17px]">
+
           <h1 className="text-[22px] font-extrabold tracking-[-0.5px] md:text-[24px]">
             Pengaturan
           </h1>
@@ -374,9 +502,12 @@ export default function Settings() {
           <p className="mt-0.5 text-[12px] text-[#aaa59d]">
             Konfigurasi sistem Montera Burger
           </p>
+
         </div>
 
-        {/* SETTINGS */}
+        {/* ===================================================
+            SETTINGS
+        =================================================== */}
 
         <div className="space-y-[17px]">
 
@@ -395,13 +526,20 @@ export default function Settings() {
           <PaymentMethods
             data={settings}
             setData={setSettings}
-            onSavePayment={handleSavePayment}
+            onSavePayment={
+              handleSavePayment
+            }
+            onDeletePayment={
+              handleDeletePayment
+            }
           />
 
         </div>
+
       </main>
 
       <BottomNavigation />
+
     </div>
   );
 }

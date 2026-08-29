@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 
 import {
@@ -14,6 +15,8 @@ import {
 
 import SettingSection from "./SettingSection";
 import PaymentMethodModal from "./modal/PaymentMethodModal";
+
+import { deletePaymentMethod } from "../../api/admin";
 
 /* =========================================================
    MAIN COMPONENT
@@ -62,7 +65,7 @@ export default function PaymentMethods({
   };
 
   // =========================================================
-  // CLOSE
+  // CLOSE MODAL
   // =========================================================
 
   const closeModal = () => {
@@ -103,8 +106,6 @@ export default function PaymentMethods({
       // =====================================================
       // API SUKSES
       // Parent sudah GET ulang database
-      //
-      // Tutup modal setelah benar-benar berhasil.
       // =====================================================
 
       setIsModalOpen(false);
@@ -127,13 +128,72 @@ export default function PaymentMethods({
   };
 
   // =========================================================
-  // DELETE
+  // DELETE PAYMENT
   // =========================================================
 
-  const deletePayment = () => {
-    alert(
-      "Fitur hapus metode pembayaran belum tersedia di API backend."
+  const deletePayment = async (id) => {
+    if (saving) return;
+
+    const confirmed = window.confirm(
+      "Apakah kamu yakin ingin menghapus metode pembayaran ini?"
     );
+
+    if (!confirmed) return;
+
+    try {
+      setSaving(true);
+
+      console.log(
+        "DELETE PAYMENT ID:",
+        id
+      );
+
+      // =====================================================
+      // DELETE KE BACKEND
+      // =====================================================
+
+      await deletePaymentMethod(id);
+
+      // =====================================================
+      // HAPUS DARI STATE FE
+      // Supaya langsung hilang dari tampilan
+      // =====================================================
+
+      setData((prev) => ({
+        ...prev,
+
+        paymentMethods:
+          Array.isArray(
+            prev.paymentMethods
+          )
+            ? prev.paymentMethods.filter(
+                (payment) =>
+                  payment.id !== id
+              )
+            : [],
+      }));
+
+      alert(
+        "Metode pembayaran berhasil dihapus."
+      );
+    } catch (error) {
+      console.error(
+        "Gagal menghapus metode pembayaran:",
+        error
+      );
+
+      console.error(
+        "ERROR RESPONSE:",
+        error.response?.data
+      );
+
+      alert(
+        error.response?.data?.message ||
+          "Gagal menghapus metode pembayaran."
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   // =========================================================
@@ -155,7 +215,8 @@ export default function PaymentMethods({
           <button
             type="button"
             onClick={openAddModal}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] bg-[#252423] text-white transition hover:bg-[#353331] active:scale-95"
+            disabled={saving}
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] bg-[#252423] text-white transition hover:bg-[#353331] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             title="Tambah metode pembayaran"
           >
             <Plus
@@ -165,7 +226,9 @@ export default function PaymentMethods({
           </button>
         }
       >
-        {/* PAYMENT LIST */}
+        {/* ===================================================
+            PAYMENT LIST
+        =================================================== */}
 
         <div className="space-y-2.5">
           {paymentMethods.length === 0 ? (
@@ -189,7 +252,9 @@ export default function PaymentMethods({
                   key={payment.id}
                   className="flex min-h-[62px] items-center justify-between gap-3 rounded-[11px] bg-[#f7f4ec] px-3 py-2.5"
                 >
-                  {/* INFO */}
+                  {/* =================================================
+                      INFO
+                  ================================================= */}
 
                   <div className="flex min-w-0 items-center gap-2.5">
                     <PaymentIcon
@@ -214,7 +279,9 @@ export default function PaymentMethods({
                     </div>
                   </div>
 
-                  {/* ACTION */}
+                  {/* =================================================
+                      ACTION
+                  ================================================= */}
 
                   <div className="flex shrink-0 items-center gap-1.5">
 
@@ -251,7 +318,8 @@ export default function PaymentMethods({
                           payment
                         )
                       }
-                      className="flex h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-[#e6e3dc] text-[#292725] transition hover:bg-[#ddd9d0] active:scale-95"
+                      disabled={saving}
+                      className="flex h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-[#e6e3dc] text-[#292725] transition hover:bg-[#ddd9d0] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                       title="Edit"
                     >
                       <Pencil
@@ -269,7 +337,8 @@ export default function PaymentMethods({
                           payment.id
                         )
                       }
-                      className="flex h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-[#f8dfdc] text-[#ed3044] transition hover:bg-[#f3d1ce] active:scale-95"
+                      disabled={saving}
+                      className="flex h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-[#f8dfdc] text-[#ed3044] transition hover:bg-[#f3d1ce] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                       title="Hapus"
                     >
                       <Trash2
@@ -286,7 +355,7 @@ export default function PaymentMethods({
       </SettingSection>
 
       {/* =====================================================
-          MODAL
+          PAYMENT METHOD MODAL
       ===================================================== */}
 
       {isModalOpen && (
@@ -328,7 +397,12 @@ function isPaymentActive(payment) {
 function getPaymentName(payment) {
   const method =
     payment.method ||
-    payment.type;
+    payment.type ||
+    "";
+
+  // =======================================================
+  // CASH
+  // =======================================================
 
   if (method === "tunai") {
     return (
@@ -337,28 +411,75 @@ function getPaymentName(payment) {
     );
   }
 
-  if (method === "qris") {
+  // =======================================================
+  // QRIS
+  //
+  // Bisa:
+  // qris
+  // qris_bni
+  // qris_bca
+  // =======================================================
+
+  if (
+    method === "qris" ||
+    method.startsWith("qris_")
+  ) {
     return (
       payment.name ||
       "QRIS"
     );
   }
 
-  if (method === "tf_bank") {
+  // =======================================================
+  // TRANSFER BANK
+  //
+  // Bisa:
+  // tf_bank
+  // tf_bank_bni
+  // tf_bank_bca
+  // =======================================================
+
+  if (
+    method === "tf_bank" ||
+    method.startsWith("tf_bank_")
+  ) {
     return (
       payment.name ||
       "Transfer Bank"
     );
   }
 
-  if (method === "ewallet") {
+  // =======================================================
+  // E-WALLET
+  //
+  // Bisa:
+  // ewallet
+  // ewallet_dana
+  // ewallet_gopay
+  // =======================================================
+
+  if (
+    method === "ewallet" ||
+    method.startsWith("ewallet_")
+  ) {
     return (
       payment.name ||
       "E-Wallet"
     );
   }
 
-  if (method === "kartu") {
+  // =======================================================
+  // KARTU
+  //
+  // Bisa:
+  // kartu
+  // kartu_bca_debit
+  // =======================================================
+
+  if (
+    method === "kartu" ||
+    method.startsWith("kartu_")
+  ) {
     return (
       payment.name ||
       "Kartu"
@@ -381,50 +502,96 @@ function getPaymentDescription(
 ) {
   const method =
     payment.method ||
-    payment.type;
+    payment.type ||
+    "";
 
   const provider =
     payment.provider_note ||
     payment.provider ||
     "";
 
-  switch (method) {
-    case "tunai":
-      return "Pembayaran tunai";
+  // =======================================================
+  // TUNAI
+  // =======================================================
 
-    case "qris":
-      return provider
-        ? `QRIS • ${provider}`
-        : "Pembayaran QRIS";
-
-    case "tf_bank":
-      return provider
-        ? `Transfer Bank • ${provider}`
-        : "Transfer Bank";
-
-    case "ewallet":
-      return provider
-        ? `E-Wallet • ${provider}`
-        : "Pembayaran E-Wallet";
-
-    case "kartu":
-      return provider
-        ? `Kartu • ${provider}`
-        : "Pembayaran kartu";
-
-    default:
-      return (
-        provider ||
-        "Metode pembayaran"
-      );
+  if (method === "tunai") {
+    return "Pembayaran tunai";
   }
+
+  // =======================================================
+  // QRIS
+  //
+  // qris_bni
+  // provider_note = BNI
+  //
+  // hasil:
+  // QRIS • BNI
+  // =======================================================
+
+  if (
+    method === "qris" ||
+    method.startsWith("qris_")
+  ) {
+    return provider
+      ? `QRIS • ${provider}`
+      : "Pembayaran QRIS";
+  }
+
+  // =======================================================
+  // TRANSFER BANK
+  // =======================================================
+
+  if (
+    method === "tf_bank" ||
+    method.startsWith("tf_bank_")
+  ) {
+    return provider
+      ? `Transfer Bank • ${provider}`
+      : "Transfer Bank";
+  }
+
+  // =======================================================
+  // E-WALLET
+  // =======================================================
+
+  if (
+    method === "ewallet" ||
+    method.startsWith("ewallet_")
+  ) {
+    return provider
+      ? `E-Wallet • ${provider}`
+      : "Pembayaran E-Wallet";
+  }
+
+  // =======================================================
+  // KARTU
+  // =======================================================
+
+  if (
+    method === "kartu" ||
+    method.startsWith("kartu_")
+  ) {
+    return provider
+      ? `Kartu • ${provider}`
+      : "Pembayaran kartu";
+  }
+
+  return (
+    provider ||
+    "Metode pembayaran"
+  );
 }
 
 /* =========================================================
    PAYMENT ICON
 ========================================================= */
 
-function PaymentIcon({ type }) {
+function PaymentIcon({
+  type,
+}) {
+  const method =
+    type || "";
+
   let icon = (
     <CreditCard
       size={17}
@@ -432,7 +599,11 @@ function PaymentIcon({ type }) {
     />
   );
 
-  if (type === "tunai") {
+  // =======================================================
+  // TUNAI
+  // =======================================================
+
+  if (method === "tunai") {
     icon = (
       <Banknote
         size={17}
@@ -441,7 +612,18 @@ function PaymentIcon({ type }) {
     );
   }
 
-  if (type === "qris") {
+  // =======================================================
+  // QRIS
+  //
+  // qris
+  // qris_bni
+  // qris_bca
+  // =======================================================
+
+  else if (
+    method === "qris" ||
+    method.startsWith("qris_")
+  ) {
     icon = (
       <QrCode
         size={17}
@@ -450,7 +632,14 @@ function PaymentIcon({ type }) {
     );
   }
 
-  if (type === "tf_bank") {
+  // =======================================================
+  // TRANSFER BANK
+  // =======================================================
+
+  else if (
+    method === "tf_bank" ||
+    method.startsWith("tf_bank_")
+  ) {
     icon = (
       <Building2
         size={17}
@@ -459,7 +648,14 @@ function PaymentIcon({ type }) {
     );
   }
 
-  if (type === "ewallet") {
+  // =======================================================
+  // E-WALLET
+  // =======================================================
+
+  else if (
+    method === "ewallet" ||
+    method.startsWith("ewallet_")
+  ) {
     icon = (
       <WalletCards
         size={17}
@@ -468,7 +664,14 @@ function PaymentIcon({ type }) {
     );
   }
 
-  if (type === "kartu") {
+  // =======================================================
+  // KARTU
+  // =======================================================
+
+  else if (
+    method === "kartu" ||
+    method.startsWith("kartu_")
+  ) {
     icon = (
       <CreditCard
         size={17}
@@ -483,3 +686,4 @@ function PaymentIcon({ type }) {
     </div>
   );
 }
+
