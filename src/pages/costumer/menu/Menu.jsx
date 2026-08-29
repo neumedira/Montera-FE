@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -5,6 +6,7 @@ import SearchBar from "../../../components/costumer/menu/SearchBar";
 import ProductCard from "../../../components/costumer/menu/ProductCard";
 import ProductListItem from "../../../components/costumer/menu/ProductListItem";
 import CartBar from "../../../components/costumer/menu/CartBar";
+import LoadingScreen from "../../../components/costumer/menu/LoadingScreen";
 
 import bannerburger from "../../../assets/costumer/bannerburger.png";
 import checkerboard from "../../../assets/costumer/checkerboard.png";
@@ -63,7 +65,8 @@ export default function MenuPage() {
           .filter((item) => item.is_active)
           .map((item) => {
             const categoryName =
-              item.category?.name?.toLowerCase() || "uncategorized";
+              item.category?.name?.toLowerCase() ||
+              "uncategorized";
 
             return {
               id: item.id,
@@ -71,18 +74,23 @@ export default function MenuPage() {
               price: Number(item.price),
               description: item.description || "",
 
-              // API sekarang menggunakan photo_url
+              // Foto dari backend
               image: item.photo_url || null,
 
+              // Kategori
               category: categoryName,
-
-              categoryId: item.category?.id || item.category_id,
+              categoryId:
+                item.category?.id ||
+                item.category_id,
 
               categoryName:
-                item.category?.name || "Lainnya",
+                item.category?.name ||
+                "Lainnya",
 
+              // Untuk sementara
               bestseller: false,
 
+              // Add-on dari backend
               addons: item.addons || [],
             };
           });
@@ -233,13 +241,7 @@ export default function MenuPage() {
   // =========================================================
 
   if (loading) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-[#fffcf4] dark:bg-[#121212] transition-colors duration-300">
-        <p className="text-[15px] font-semibold text-[#777] dark:text-[#aaa]">
-          Memuat menu...
-        </p>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   // =========================================================
@@ -263,6 +265,10 @@ export default function MenuPage() {
       </div>
     );
   }
+
+  // =========================================================
+  // RENDER
+  // =========================================================
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#fffcf4] dark:bg-[#121212] transition-colors duration-300">
@@ -327,79 +333,49 @@ export default function MenuPage() {
             MENU
         ===================================================== */}
 
-        {activeCategory === "all" ? (
+        {groupedItems.map((group) => (
+          <section
+            key={group.id}
+            className="mt-[28px]"
+          >
 
-          /*
-           * ALL CATEGORY
-           *
-           * Tampilkan menu berdasarkan kategori
-           * yang dikirim backend.
-           */
+            {/* CATEGORY TITLE */}
 
-          groupedItems.map((group) => (
-            <section
-              key={group.id}
-              className="mt-[28px]"
-            >
+            <div className="px-4">
+              <h2
+                className="
+                  text-[22px]
+                  font-black
+                  uppercase
+                  leading-[26px]
+                  tracking-[-0.5px]
+                  text-[#111]
+                  dark:text-white
+                  transition-colors
+                  duration-300
+                "
+              >
+                {group.name}
+              </h2>
+            </div>
 
-              <div className="px-4">
-                <h2
-                  className="
-                    text-[22px]
-                    font-black
-                    uppercase
-                    leading-[26px]
-                    tracking-[-0.5px]
-                    text-[#111]
-                    dark:text-white
-                    transition-colors
-                    duration-300
-                  "
-                >
-                  {group.name}
-                </h2>
-              </div>
+            {/* =================================================
+                COMBO
+                CARD HORIZONTAL
+            ================================================= */}
 
-              {/* =================================================
-                  KALAU CATEGORY COMBO
-                  PAKAI HORIZONTAL CARD
-              ================================================= */}
+            {group.name.toLowerCase() === "combo" ? (
 
-              {group.name.toLowerCase() === "combo" ? (
-
-                <div className="mt-[14px] overflow-x-auto px-4 scrollbar-hide">
-                  <div className="flex w-max gap-4">
-
-                    {group.items.map((product) => (
-                      <ProductCard
-                        key={product.id}
-                        product={product}
-                        onAdd={() =>
-                          handleAddToCart(product)
-                        }
-                        onClick={() =>
-                          handleProductClick(product)
-                        }
-                      />
-                    ))}
-
-                  </div>
-                </div>
-
-              ) : (
-
-                /* =================================================
-                   CATEGORY BIASA
-                   PAKAI LIST
-                ================================================= */
-
-                <div className="mt-[6px] px-4">
+              <div className="mt-[14px] overflow-x-auto px-4 scrollbar-hide">
+                <div className="flex w-max gap-4">
 
                   {group.items.map((product) => (
-                    <ProductListItem
+                    <ProductCard
                       key={product.id}
                       product={product}
-                      onAdd={handleAddToCart}
+                      onAdd={() =>
+                        handleAddToCart(product)
+                      }
                       onClick={() =>
                         handleProductClick(product)
                       }
@@ -407,83 +383,32 @@ export default function MenuPage() {
                   ))}
 
                 </div>
-              )}
-
-            </section>
-          ))
-
-        ) : (
-
-          /*
-           * CATEGORY TERTENTU
-           */
-
-          groupedItems.map((group) => (
-            <section
-              key={group.id}
-              className="mt-[28px]"
-            >
-
-              <div className="px-4">
-                <h2
-                  className="
-                    text-[22px]
-                    font-black
-                    uppercase
-                    leading-[26px]
-                    tracking-[-0.5px]
-                    text-[#111]
-                    dark:text-white
-                  "
-                >
-                  {group.name}
-                </h2>
               </div>
 
-              {group.name.toLowerCase() === "combo" ? (
+            ) : (
 
-                <div className="mt-[14px] overflow-x-auto px-4 scrollbar-hide">
-                  <div className="flex w-max gap-4">
+              /* =================================================
+                 CATEGORY BIASA
+              ================================================= */
 
-                    {group.items.map((product) => (
-                      <ProductCard
-                        key={product.id}
-                        product={product}
-                        onAdd={() =>
-                          handleAddToCart(product)
-                        }
-                        onClick={() =>
-                          handleProductClick(product)
-                        }
-                      />
-                    ))}
+              <div className="mt-[6px] px-4">
 
-                  </div>
-                </div>
+                {group.items.map((product) => (
+                  <ProductListItem
+                    key={product.id}
+                    product={product}
+                    onAdd={handleAddToCart}
+                    onClick={() =>
+                      handleProductClick(product)
+                    }
+                  />
+                ))}
 
-              ) : (
+              </div>
+            )}
 
-                <div className="mt-[6px] px-4">
-
-                  {group.items.map((product) => (
-                    <ProductListItem
-                      key={product.id}
-                      product={product}
-                      onAdd={handleAddToCart}
-                      onClick={() =>
-                        handleProductClick(product)
-                      }
-                    />
-                  ))}
-
-                </div>
-
-              )}
-
-            </section>
-          ))
-
-        )}
+          </section>
+        ))}
 
         {/* =====================================================
             EMPTY RESULT
@@ -546,3 +471,4 @@ export default function MenuPage() {
     </div>
   );
 }
+
