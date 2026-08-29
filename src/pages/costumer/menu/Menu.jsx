@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -55,12 +54,6 @@ export default function MenuPage() {
     const categoryMap = new Map();
 
     menus.forEach((item) => {
-      // Menu yang memiliki label tidak dijadikan
-      // bagian dari kategori biasa.
-      if (item.label) {
-        return;
-      }
-
       if (
         item.categoryId &&
         item.categoryName
@@ -106,10 +99,8 @@ export default function MenuPage() {
 
       name: item.name,
 
-      // =====================================================
-      // LABEL
-      // =====================================================
-
+      // Label tetap disimpan.
+      // Digunakan untuk section Best Seller.
       label:
         item.label || null,
 
@@ -135,8 +126,8 @@ export default function MenuPage() {
         item.category?.name ||
         "Lainnya",
 
-      // Menu yang memiliki label otomatis
-      // dianggap sebagai Best Seller.
+      // Produk yang memiliki label
+      // akan dianggap sebagai Best Seller.
       bestseller:
         Boolean(item.label),
 
@@ -523,6 +514,15 @@ export default function MenuPage() {
   // =========================================================
   // LABELED MENU GROUPS
   // =========================================================
+  //
+  // Produk yang punya label tetap masuk ke section ini.
+  //
+  // Contoh:
+  // label = "Best Seller"
+  //
+  // Maka produk akan tampil sebagai ProductCard
+  // dengan gambar Best Seller.
+  // =========================================================
 
   const labeledGroups =
     useMemo(() => {
@@ -563,13 +563,16 @@ export default function MenuPage() {
   // =========================================================
   // REGULAR MENU
   // =========================================================
+  //
+  // SEMUA produk tetap masuk ke menu kategori bawah.
+  //
+  // Tapi nanti saat dikirim ke ProductListItem,
+  // label dan bestseller dimatikan khusus untuk tampilan ini.
+  // =========================================================
 
   const regularItems =
     useMemo(() => {
-      return filteredItems.filter(
-        (item) =>
-          !item.label
-      );
+      return filteredItems;
     }, [
       filteredItems,
     ]);
@@ -776,6 +779,16 @@ export default function MenuPage() {
 
         {/* ===================================================
             LABELED MENU
+        ===================================================
+        
+        Produk yang punya label tampil di sini
+        sebagai ProductCard horizontal.
+        
+        ProductCard tetap menggunakan:
+        
+        product.bestseller
+        
+        sehingga gambar Best Seller tetap muncul.
         =================================================== */}
 
         {labeledGroups.map(
@@ -850,6 +863,15 @@ export default function MenuPage() {
 
         {/* ===================================================
             REGULAR CATEGORY MENU
+        ===================================================
+        
+        SEMUA produk tampil di sini.
+        
+        Kalau produk sebelumnya punya label:
+        - tetap muncul di Best Seller di atas
+        - tetap muncul di kategori bawah
+        - TAPI label/bestseller DIHILANGKAN dari
+          ProductListItem.
         =================================================== */}
 
         {groupedItems.map(
@@ -893,12 +915,31 @@ export default function MenuPage() {
                       key={
                         product.id
                       }
-                      product={
-                        product
-                      }
+
+                      /*
+                       * PENTING:
+                       *
+                       * Product asli tetap punya:
+                       * label
+                       * bestseller
+                       *
+                       * supaya section Best Seller
+                       * tetap bisa menggunakannya.
+                       *
+                       * Tapi khusus ProductListItem,
+                       * kita matikan keduanya.
+                       */
+
+                      product={{
+                        ...product,
+                        label: null,
+                        bestseller: false,
+                      }}
+
                       onAdd={
                         handleAddToCart
                       }
+
                       onClick={() =>
                         handleProductClick(
                           product
@@ -951,8 +992,6 @@ export default function MenuPage() {
 
         {/* ===================================================
             FOOTER
-            FOOTER SEKARANG ADA DI DALAM MAIN
-            JADI IKUT SCROLL DAN BERADA SETELAH SEMUA MENU
         =================================================== */}
 
         <Footer />
@@ -961,7 +1000,6 @@ export default function MenuPage() {
 
       {/* =====================================================
           FIXED CART
-          TETAP NEMPEL DI BAWAH LAYAR
       ===================================================== */}
 
       <div
@@ -1011,4 +1049,3 @@ export default function MenuPage() {
     </div>
   );
 }
-
