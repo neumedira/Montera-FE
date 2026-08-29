@@ -1,9 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import CostumizationOption from "../../../components/costumer/menu/CostumizationOption";
-import { menuItems } from "../../../data/menuData";
+import { getCustomerMenus } from "../../../api/costumer";
 
 import { useCart } from "../../../context/CartContext";
 
@@ -14,6 +14,70 @@ export default function MenuDetail() {
   const { addToCart } = useCart();
 
   // =========================================================
+  // STATE
+  // =========================================================
+
+  const [menuItems, setMenuItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const [selectedAddons, setSelectedAddons] = useState({});
+  const [notes, setNotes] = useState("");
+
+  // =========================================================
+  // FETCH CUSTOMER MENU
+  // =========================================================
+
+  useEffect(() => {
+    const fetchMenus = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await getCustomerMenus();
+
+        console.log("CUSTOMER MENU DETAIL API:", response);
+
+        const rawMenus = response?.data || [];
+
+        const formattedMenus = rawMenus
+          .filter((item) => item.is_active)
+          .map((item) => ({
+            id: item.id,
+            name: item.name,
+            price: Number(item.price),
+            description: item.description || "",
+            image: item.photo_url || null,
+
+            category: item.category || null,
+            categoryId: item.category_id,
+
+            addons: (item.addons || []).map((addon) => ({
+              id: addon.id,
+              name: addon.name,
+              price: Number(addon.price),
+            })),
+          }));
+
+        setMenuItems(formattedMenus);
+      } catch (err) {
+        console.error(
+          "Gagal mengambil detail menu:",
+          err
+        );
+
+        setError(
+          "Gagal memuat detail menu. Silakan coba lagi."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMenus();
+  }, []);
+
+  // =========================================================
   // FIND PRODUCT
   // =========================================================
 
@@ -21,52 +85,39 @@ export default function MenuDetail() {
     return menuItems.find(
       (item) => item.id === Number(id)
     );
-  }, [id]);
+  }, [menuItems, id]);
 
   // =========================================================
-  // STATE
+  // ADDON PRICE
   // =========================================================
 
-  const [costumizations, setCostumizations] = useState({
-    cheese: false,
-    onion: false,
-  });
+  const extraPrice = useMemo(() => {
+    if (!product?.addons) return 0;
 
-  const [notes, setNotes] = useState("");
+    return product.addons.reduce((total, addon) => {
+      if (selectedAddons[addon.id]) {
+        return total + addon.price;
+      }
 
-  // =========================================================
-  // PRODUCT NOT FOUND
-  // =========================================================
-
-  if (!product) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#fffcf4] dark:bg-[#121212] transition-colors duration-300">
-        <p className="font-semibold text-[#111] dark:text-white">
-          Menu tidak ditemukan.
-        </p>
-      </main>
-    );
-  }
+      return total;
+    }, 0);
+  }, [product, selectedAddons]);
 
   // =========================================================
-  // CUSTOMIZATION PRICE
+  // TOTAL PRICE
   // =========================================================
-
-  const extraPrice =
-    (costumizations.cheese ? 5000 : 0) +
-    (costumizations.onion ? 5000 : 0);
 
   const totalPrice =
-    product.price + extraPrice;
+    (product?.price || 0) + extraPrice;
 
   // =========================================================
-  // TOGGLE CUSTOMIZATION
+  // TOGGLE ADDON
   // =========================================================
 
-  const toggleCostumization = (name) => {
-    setCostumizations((current) => ({
+  const toggleAddon = (addonId) => {
+    setSelectedAddons((current) => ({
       ...current,
-      [name]: !current[name],
+      [addonId]: !current[addonId],
     }));
   };
 
@@ -75,29 +126,95 @@ export default function MenuDetail() {
   // =========================================================
 
   const handleAddToCart = () => {
+    if (!product) return;
+
+    const selectedAddonList = product.addons.filter(
+      (addon) => selectedAddons[addon.id]
+    );
+
     const cartItem = {
       ...product,
 
-      costumizations: {
-        cheese: costumizations.cheese,
-        onion: costumizations.onion,
-      },
+      addons: selectedAddonList,
+
+      // Tetap simpan customization supaya
+      // CartContext lama tidak error
+      costumizations: selectedAddonList.reduce(
+        (result, addon) => {
+          result[addon.id] = true;
+          return result;
+        },
+        {}
+      ),
 
       notes,
 
       price: totalPrice,
     };
 
-    // Tambahkan ke keranjang
+    console.log(
+      "ADD TO CART:",
+      cartItem
+    );
+
     addToCart(cartItem);
 
-    // Kembali ke menu TANPA loading
     navigate("/", {
       state: {
         skipLoading: true,
       },
     });
   };
+
+  // =========================================================
+  // LOADING
+  // =========================================================
+
+  if (loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#fffcf4] dark:bg-[#121212] transition-colors duration-300">
+        <p className="text-[15px] font-semibold text-[#777] dark:text-[#aaa]">
+          Memuat menu...
+        </p>
+      </main>
+    );
+  }
+
+  // =========================================================
+  // ERROR
+  // =========================================================
+
+  if (error) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-[#fffcf4] px-6 text-center dark:bg-[#121212]">
+        <p className="text-[15px] font-semibold text-[#777] dark:text-[#aaa]">
+          {error}
+        </p>
+
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-3 text-[13px] font-bold underline dark:text-white"
+        >
+          Coba lagi
+        </button>
+      </main>
+    );
+  }
+
+  // =========================================================
+  // PRODUCT NOT FOUND
+  // =========================================================
+
+  if (!product) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#fffcf4] dark:bg-[#121212]">
+        <p className="font-semibold text-[#111] dark:text-white">
+          Menu tidak ditemukan.
+        </p>
+      </main>
+    );
+  }
 
   // =========================================================
   // RENDER
@@ -146,7 +263,6 @@ export default function MenuDetail() {
           />
         </button>
 
-
         {/* PRODUCT IMAGE */}
 
         <div
@@ -159,19 +275,23 @@ export default function MenuDetail() {
             pt-[45px]
           "
         >
-          <img
-            src={product.image}
-            alt={product.name}
-            className="
-              h-[320px]
-              w-[360px]
-              object-contain
-            "
-          />
+          {product.image ? (
+            <img
+              src={product.image}
+              alt={product.name}
+              className="
+                h-[320px]
+                w-[360px]
+                object-contain
+              "
+            />
+          ) : (
+            <div className="flex h-[320px] w-[360px] items-center justify-center text-[14px] text-[#999]">
+              Tidak ada foto
+            </div>
+          )}
         </div>
-
       </section>
-
 
       {/* =====================================================
           DETAIL CARD
@@ -235,7 +355,6 @@ export default function MenuDetail() {
 
         </div>
 
-
         {/* ===================================================
             DESCRIPTION
         =================================================== */}
@@ -254,53 +373,75 @@ export default function MenuDetail() {
           {product.description}
         </p>
 
-
         {/* ===================================================
-            CUSTOMIZATION
+            ADDONS
         =================================================== */}
 
-        <div className="mt-[26px]">
+        {product.addons.length > 0 && (
+          <div className="mt-[26px]">
 
-          <h2
-            className="
-              text-[17px]
-              font-bold
-              tracking-wide
-              text-[#111]
-              dark:text-white
-              transition-colors
-              duration-300
-            "
-          >
-            CUSTOMIZATION
-          </h2>
+            <h2
+              className="
+                text-[17px]
+                font-bold
+                tracking-wide
+                text-[#111]
+                dark:text-white
+                transition-colors
+                duration-300
+              "
+            >
+              ADD ON
+            </h2>
 
-          <div className="mt-[7px] border-t border-[#e8e4dc] dark:border-[#333333] transition-colors duration-300" />
+            <div className="mt-[7px] border-t border-[#e8e4dc] dark:border-[#333333]" />
 
-          <div className="mt-[24px] space-y-[24px]">
+            <div className="mt-[24px] space-y-[24px]">
 
-            <CostumizationOption
-              label="Extra Cheese"
-              price={5000}
-              checked={costumizations.cheese}
-              onChange={() =>
-                toggleCostumization("cheese")
-              }
-            />
+              {product.addons.map((addon) => (
+                <CostumizationOption
+                  key={addon.id}
+                  label={addon.name}
+                  price={addon.price}
+                  checked={!!selectedAddons[addon.id]}
+                  onChange={() =>
+                    toggleAddon(addon.id)
+                  }
+                />
+              ))}
 
-            <CostumizationOption
-              label="Extra Onion"
-              price={5000}
-              checked={costumizations.onion}
-              onChange={() =>
-                toggleCostumization("onion")
-              }
-            />
+            </div>
 
           </div>
+        )}
 
-        </div>
+        {/* ===================================================
+            NO ADDON
+        =================================================== */}
 
+        {product.addons.length === 0 && (
+          <div className="mt-[26px]">
+
+            <h2
+              className="
+                text-[17px]
+                font-bold
+                tracking-wide
+                text-[#111]
+                dark:text-white
+              "
+            >
+              ADD ON
+            </h2>
+
+            <div className="mt-[7px] border-t border-[#e8e4dc] dark:border-[#333333]" />
+
+            <p className="mt-[18px] text-[14px] text-[#888] dark:text-[#999]">
+              Tidak ada add on untuk menu ini.
+            </p>
+
+          </div>
+        )}
 
         {/* ===================================================
             NOTES
@@ -339,7 +480,6 @@ export default function MenuDetail() {
           />
 
         </div>
-
 
         {/* ===================================================
             ADD TO CART
