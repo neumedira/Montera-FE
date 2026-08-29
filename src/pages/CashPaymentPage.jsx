@@ -27,11 +27,17 @@ export default function CashPaymentPage() {
   const [isFinishing, setIsFinishing] = useState(false);
 
   // =========================================================
-  // CUSTOMER
+  // CUSTOMER, ORDER TYPE & TIME
   // =========================================================
 
-  const customerName =
-    location.state?.customerName || "Customer";
+  const customerName = location.state?.customerName || "Customer";
+  
+  // Ambil raw value untuk backend (dine-in / take-away)
+  const rawOrderType = location.state?.orderType || "dine-in";
+  // Format tampilan untuk UI
+  const orderTypeDisplay = rawOrderType === "dine-in" ? "Dine In" : "Take Away";
+  
+  const orderTime = location.state?.orderTime || "-";
 
   // =========================================================
   // ORDER NUMBER
@@ -58,9 +64,8 @@ export default function CashPaymentPage() {
       const orderData = {
         table_id: null,
 
-        // Untuk halaman Cash ini sementara dine-in.
-        // Kalau nanti ada pilihan takeaway, tinggal dibuat dinamis.
-        order_type: "dine-in",
+        // Menggunakan order_type yang dipilih user secara dinamis
+        order_type: rawOrderType,
 
         customer_name: customerName,
 
@@ -181,14 +186,23 @@ export default function CashPaymentPage() {
           </div>
 
           {/* ===================================================
-              CUSTOMER NAME
+              CUSTOMER NAME, ORDER TYPE & TIME
           =================================================== */}
 
-          <div className="mb-4 border-b border-gray-100 dark:border-[#333333] pb-3 transition-colors duration-300">
+          <div className="mb-4 border-b border-gray-100 dark:border-[#333333] pb-3 flex justify-between items-end transition-colors duration-300">
 
             <span className="text-sm font-bold text-gray-900 dark:text-white transition-colors duration-300">
               {customerName}
             </span>
+
+            <div className="text-right">
+              <span className="block font-bold text-xs uppercase tracking-wider text-gray-600 dark:text-gray-300 transition-colors duration-300">
+                {orderTypeDisplay}
+              </span>
+              <span className="block text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 transition-colors duration-300">
+                {orderTime}
+              </span>
+            </div>
 
           </div>
 

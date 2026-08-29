@@ -1,21 +1,37 @@
 import React, { useState, useEffect } from "react";
 import { QrCode } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 
 import LoadingScreen from "../components/costumer/menu/LoadingScreen";
+import api from "../api/axios"; // Pastikan path ini sesuai
 
 export default function QrisPaymentPage() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // =========================================================
   // CART
   // =========================================================
 
   const {
+    cart,
     totalPrice,
     clearCart,
   } = useCart();
+
+  // =========================================================
+  // CUSTOMER, ORDER TYPE & TIME
+  // =========================================================
+
+  const customerName = location.state?.customerName || "Customer";
+  
+  // Ambil raw value untuk backend (dine-in / take-away)
+  const rawOrderType = location.state?.orderType || "dine-in";
+  // Format tampilan untuk UI
+  const orderTypeDisplay = rawOrderType === "dine-in" ? "Dine In" : "Take Away";
+  
+  const orderTime = location.state?.orderTime || "-";
 
   // =========================================================
   // FINISHING / LOADING
@@ -62,19 +78,51 @@ export default function QrisPaymentPage() {
   // DONE
   // =========================================================
 
-  const handleDone = () => {
-    // Tampilkan loading terlebih dahulu
-    setIsFinishing(true);
+  const handleDone = async () => {
+    try {
+      // Tampilkan loading
+      setIsFinishing(true);
 
-    /*
-     * Beri waktu agar LoadingScreen sudah tampil.
-     * Setelah itu cart dikosongkan dan kembali ke "/".
-     */
-    setTimeout(() => {
+      // =======================================================
+      // DATA YANG DIKIRIM KE BACKEND
+      // =======================================================
+      const orderData = {
+        table_id: null,
+        order_type: rawOrderType,
+        customer_name: customerName,
+        payment_method: "qris", // Halaman khusus QRIS
+        items: cart.map((item) => ({
+          menu_item_id: item.id,
+          quantity: item.quantity,
+        })),
+      };
+
+      console.log("Order yang dikirim ke backend:", orderData);
+
+      // =======================================================
+      // KIRIM ORDER
+      // POST /api/v1/customer/orders
+      // =======================================================
+      const response = await api.post("customer/orders", orderData);
+      console.log("Order berhasil dibuat:", response.data);
+
+      // =======================================================
+      // ORDER BERHASIL
+      // =======================================================
       clearCart();
-
       navigate("/");
-    }, 100);
+      
+    } catch (error) {
+      console.error("Gagal membuat order:", error);
+      console.error("Response backend:", error.response?.data);
+
+      setIsFinishing(false);
+
+      alert(
+        error.response?.data?.message ||
+        "Pesanan gagal dikirim. Silakan coba lagi."
+      );
+    }
   };
 
   // =========================================================
@@ -137,33 +185,44 @@ export default function QrisPaymentPage() {
             <img
               src={qrisImage}
               alt="QRIS Store Code"
-              className="h-full w-full bg-white object-contain p-4" // bg-white sengaja dipertahankan agar QR tetap terbaca
+              className="h-full w-full bg-white object-contain p-4" 
               onError={(e) => {
                 e.target.style.display = "none";
-
-                e.target.parentElement.classList.add(
-                  "flex-col"
-                );
-
+                e.target.parentElement.classList.add("flex-col");
                 e.target.parentElement.innerHTML =
                   '<span class="text-xs font-medium text-gray-400 dark:text-gray-500">Gambar /public/images/qris-code.png belum ditemukan</span>';
               }}
             />
           ) : (
             <div className="p-6 text-center">
-
               <QrCode
                 size={48}
                 className="mx-auto mb-2 text-gray-400 dark:text-gray-500 transition-colors duration-300"
               />
-
               <p className="text-xs font-medium text-gray-400 dark:text-gray-500 transition-colors duration-300">
                 QRIS Image Placeholder
               </p>
-
             </div>
           )}
 
+        </div>
+
+        {/* ================================================
+            CUSTOMER & ORDER DETAILS INFO
+        ================================================ */}
+
+        <div className="mb-6 flex items-center justify-between rounded-xl border border-gray-100 dark:border-[#333333] bg-white dark:bg-[#1e1e1e] p-4 shadow-sm transition-colors duration-300">
+          <div>
+            <span className="block text-sm font-bold text-gray-900 dark:text-white transition-colors duration-300">
+              {customerName}
+            </span>
+            <span className="mt-0.5 block text-[11px] text-gray-500 dark:text-gray-400 transition-colors duration-300">
+              {orderTime}
+            </span>
+          </div>
+          <span className="rounded-full bg-gray-100 dark:bg-[#2d2d2d] px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200 transition-colors duration-300">
+            {orderTypeDisplay}
+          </span>
         </div>
 
         {/* ================================================
@@ -194,6 +253,7 @@ export default function QrisPaymentPage() {
       <button
         type="button"
         onClick={handleDone}
+        disabled={isFinishing || !cart || cart.length === 0}
         className="
           mt-6
           w-full
@@ -213,6 +273,9 @@ export default function QrisPaymentPage() {
           hover:bg-black
           dark:hover:bg-gray-200
           active:scale-[0.98]
+          disabled:cursor-not-allowed
+          disabled:opacity-50
+          dark:disabled:opacity-50
         "
       >
         DONE

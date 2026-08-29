@@ -16,10 +16,19 @@ export default function OrderDetailPage() {
   const handleProceed = () => {
     if (!isFormValid) return; 
 
+    // Buat format waktu saat ini (Contoh: 29 Agt 2026, 20:30)
+    const orderTime = new Date().toLocaleString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
     if (paymentMethod === 'cash') {
-      navigate('/cash-payment', { state: { customerName } });
+      navigate('/cash-payment', { state: { customerName, orderType, orderTime } });
     } else if (paymentMethod === 'qris') {
-      navigate('/qris-payment', { state: { customerName } });
+      navigate('/qris-payment', { state: { customerName, orderType, orderTime } });
     }
   };
 
