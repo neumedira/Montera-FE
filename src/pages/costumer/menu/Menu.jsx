@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import SearchBar from "../../../components/costumer/menu/SearchBar";
@@ -6,19 +6,30 @@ import ProductCard from "../../../components/costumer/menu/ProductCard";
 import ProductListItem from "../../../components/costumer/menu/ProductListItem";
 import CartBar from "../../../components/costumer/menu/CartBar";
 
-import { categories, menuItems } from "../../../data/menuData";
-
 import bannerburger from "../../../assets/costumer/bannerburger.png";
 import checkerboard from "../../../assets/costumer/checkerboard.png";
 
 import { useCart } from "../../../context/CartContext";
+import { getCustomerMenus } from "../../../api/costumer";
 
 export default function MenuPage() {
   const navigate = useNavigate();
 
+  const [menuItems, setMenuItems] = useState([]);
+
+  const [categories, setCategories] = useState([
+    {
+      id: "all",
+      name: "All",
+    },
+  ]);
+
   const [activeCategory, setActiveCategory] = useState("all");
   const [search, setSearch] = useState("");
   const [categoryOpen, setCategoryOpen] = useState(false);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const {
     addToCart,
@@ -26,9 +37,117 @@ export default function MenuPage() {
     totalPrice,
   } = useCart();
 
-  /* =========================================
-     FILTER MENU
-  ========================================= */
+  // =========================================================
+  // FETCH CUSTOMER MENU
+  // =========================================================
+
+  useEffect(() => {
+    const fetchMenus = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await getCustomerMenus();
+
+        console.log("CUSTOMER MENU API:", response);
+
+        const rawMenus = response?.data || [];
+
+        console.log("RAW CUSTOMER MENU:", rawMenus);
+
+        // =====================================================
+        // FORMAT MENU
+        // =====================================================
+
+        const formattedMenus = rawMenus
+          .filter((item) => item.is_active)
+          .map((item) => {
+            const categoryName =
+              item.category?.name?.toLowerCase() || "uncategorized";
+
+            return {
+              id: item.id,
+              name: item.name,
+              price: Number(item.price),
+              description: item.description || "",
+
+              // API sekarang menggunakan photo_url
+              image: item.photo_url || null,
+
+              category: categoryName,
+
+              categoryId: item.category?.id || item.category_id,
+
+              categoryName:
+                item.category?.name || "Lainnya",
+
+              bestseller: false,
+
+              addons: item.addons || [],
+            };
+          });
+
+        console.log(
+          "FORMATTED CUSTOMER MENU:",
+          formattedMenus
+        );
+
+        setMenuItems(formattedMenus);
+
+        // =====================================================
+        // BUILD CATEGORY DARI API
+        // =====================================================
+
+        const categoryMap = new Map();
+
+        formattedMenus.forEach((item) => {
+          if (
+            item.categoryId &&
+            item.categoryName
+          ) {
+            if (!categoryMap.has(item.categoryId)) {
+              categoryMap.set(item.categoryId, {
+                id: item.category,
+                name: item.categoryName,
+              });
+            }
+          }
+        });
+
+        const formattedCategories = [
+          {
+            id: "all",
+            name: "All",
+          },
+          ...Array.from(categoryMap.values()),
+        ];
+
+        console.log(
+          "FORMATTED CUSTOMER CATEGORIES:",
+          formattedCategories
+        );
+
+        setCategories(formattedCategories);
+      } catch (err) {
+        console.error(
+          "Gagal mengambil menu customer:",
+          err
+        );
+
+        setError(
+          "Gagal memuat menu. Silakan coba lagi."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMenus();
+  }, []);
+
+  // =========================================================
+  // FILTER MENU
+  // =========================================================
 
   const filteredItems = useMemo(() => {
     return menuItems.filter((item) => {
@@ -42,67 +161,115 @@ export default function MenuPage() {
 
       return categoryMatch && searchMatch;
     });
-  }, [activeCategory, search]);
+  }, [
+    menuItems,
+    activeCategory,
+    search,
+  ]);
 
-  /* =========================================
-     CATEGORY DATA
-  ========================================= */
+  // =========================================================
+  // GROUP MENU BERDASARKAN CATEGORY
+  // =========================================================
 
-  const comboItems = filteredItems.filter(
-    (item) => item.category === "combo"
-  );
+  const groupedItems = useMemo(() => {
+    const groups = {};
 
-  const burgerItems = filteredItems.filter(
-    (item) => item.category === "burger"
-  );
+    filteredItems.forEach((item) => {
+      const categoryKey =
+        item.categoryId || "uncategorized";
 
-  const drinkItems = filteredItems.filter(
-    (item) => item.category === "drink"
-  );
+      if (!groups[categoryKey]) {
+        groups[categoryKey] = {
+          id: categoryKey,
+          name: item.categoryName || "Lainnya",
+          items: [],
+        };
+      }
 
-  const snackItems = filteredItems.filter(
-    (item) => item.category === "snack"
-  );
+      groups[categoryKey].items.push(item);
+    });
 
-  /* =========================================
-     ADD TO CART
-  ========================================= */
+    return Object.values(groups);
+  }, [filteredItems]);
+
+  // =========================================================
+  // ADD TO CART
+  // =========================================================
 
   const handleAddToCart = (product) => {
     addToCart({
       ...product,
+
       costumizations: {
         cheese: false,
         onion: false,
       },
+
       notes: "",
+
       price: product.price,
     });
   };
 
-  /* =========================================
-     PRODUCT DETAIL
-  ========================================= */
+  // =========================================================
+  // PRODUCT DETAIL
+  // =========================================================
 
   const handleProductClick = (product) => {
     navigate(`/menu/${product.id}`);
   };
 
-  /* =========================================
-     CHANGE CATEGORY
-  ========================================= */
+  // =========================================================
+  // CHANGE CATEGORY
+  // =========================================================
 
   const handleCategoryChange = (categoryId) => {
     setActiveCategory(categoryId);
     setCategoryOpen(false);
   };
 
+  // =========================================================
+  // LOADING
+  // =========================================================
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-[#fffcf4] dark:bg-[#121212] transition-colors duration-300">
+        <p className="text-[15px] font-semibold text-[#777] dark:text-[#aaa]">
+          Memuat menu...
+        </p>
+      </div>
+    );
+  }
+
+  // =========================================================
+  // ERROR
+  // =========================================================
+
+  if (error) {
+    return (
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#fffcf4] px-6 text-center dark:bg-[#121212] transition-colors duration-300">
+        <p className="text-[15px] font-semibold text-[#777] dark:text-[#aaa]">
+          {error}
+        </p>
+
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-3 text-[13px] font-bold underline dark:text-white"
+        >
+          Coba lagi
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#fffcf4] dark:bg-[#121212] transition-colors duration-300">
-      {/* Komentar boleh ditaruh di dalam div ini */}
-      {/* =====================================
-         SCROLLABLE CONTENT
-      ===================================== */}
+
+      {/* =====================================================
+          SCROLLABLE CONTENT
+      ===================================================== */}
 
       <main
         className="
@@ -115,15 +282,15 @@ export default function MenuPage() {
         "
       >
 
-        {/* =====================================
+        {/* =====================================================
             TOP SPACING
-        ===================================== */}
+        ===================================================== */}
 
         <div className="h-[42px]" />
 
-        {/* =====================================
+        {/* =====================================================
             BANNER
-        ===================================== */}
+        ===================================================== */}
 
         <div className="px-[22px]">
           <img
@@ -133,9 +300,9 @@ export default function MenuPage() {
           />
         </div>
 
-        {/* =====================================
+        {/* =====================================================
             SEARCH
-        ===================================== */}
+        ===================================================== */}
 
         <div className="mt-[27px]">
           <SearchBar
@@ -144,158 +311,187 @@ export default function MenuPage() {
           />
         </div>
 
-        {/* =====================================
+        {/* =====================================================
             CHECKERBOARD
-        ===================================== */}
+        ===================================================== */}
 
-        {/* Menambahkan border yang lebih menyesuaikan saat dark mode */}
         <div className="relative z-0 mt-[14px] h-[44px] overflow-hidden border-y-2 border-[#292826] dark:border-[#333333]">
           <img
             src={checkerboard}
             alt=""
-            className="h-full w-full object-cover dark:opacity-80" 
+            className="h-full w-full object-cover dark:opacity-80"
           />
         </div>
 
-        {/* =====================================
-            COMBO
-            HORIZONTAL CARD
-        ===================================== */}
+        {/* =====================================================
+            MENU
+        ===================================================== */}
 
-        {(activeCategory === "all" ||
-          activeCategory === "combo") &&
-          comboItems.length > 0 && (
-            <section className="mt-[18px]">
+        {activeCategory === "all" ? (
+
+          /*
+           * ALL CATEGORY
+           *
+           * Tampilkan menu berdasarkan kategori
+           * yang dikirim backend.
+           */
+
+          groupedItems.map((group) => (
+            <section
+              key={group.id}
+              className="mt-[28px]"
+            >
 
               <div className="px-4">
-                {/* Mengubah teks menjadi putih saat dark mode */}
-                <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111] dark:text-white transition-colors duration-300">
-                  COMBO
+                <h2
+                  className="
+                    text-[22px]
+                    font-black
+                    uppercase
+                    leading-[26px]
+                    tracking-[-0.5px]
+                    text-[#111]
+                    dark:text-white
+                    transition-colors
+                    duration-300
+                  "
+                >
+                  {group.name}
                 </h2>
               </div>
 
-              <div className="mt-[14px] overflow-x-auto px-4 scrollbar-hide">
-                <div className="flex w-max gap-4">
-                  {comboItems.map((product) => (
-                    <ProductCard
+              {/* =================================================
+                  KALAU CATEGORY COMBO
+                  PAKAI HORIZONTAL CARD
+              ================================================= */}
+
+              {group.name.toLowerCase() === "combo" ? (
+
+                <div className="mt-[14px] overflow-x-auto px-4 scrollbar-hide">
+                  <div className="flex w-max gap-4">
+
+                    {group.items.map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        onAdd={() =>
+                          handleAddToCart(product)
+                        }
+                        onClick={() =>
+                          handleProductClick(product)
+                        }
+                      />
+                    ))}
+
+                  </div>
+                </div>
+
+              ) : (
+
+                /* =================================================
+                   CATEGORY BIASA
+                   PAKAI LIST
+                ================================================= */
+
+                <div className="mt-[6px] px-4">
+
+                  {group.items.map((product) => (
+                    <ProductListItem
                       key={product.id}
                       product={product}
-                      onAdd={() =>
-                        handleAddToCart(product)
-                      }
+                      onAdd={handleAddToCart}
                       onClick={() =>
                         handleProductClick(product)
                       }
                     />
                   ))}
+
                 </div>
-              </div>
+              )}
 
             </section>
-          )}
+          ))
 
-        {/* =====================================
-            BURGER
-            VERTICAL LIST
-        ===================================== */}
+        ) : (
 
-        {(activeCategory === "all" ||
-          activeCategory === "burger") &&
-          burgerItems.length > 0 && (
-            <section className="mt-[28px]">
+          /*
+           * CATEGORY TERTENTU
+           */
+
+          groupedItems.map((group) => (
+            <section
+              key={group.id}
+              className="mt-[28px]"
+            >
 
               <div className="px-4">
-                <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111] dark:text-white transition-colors duration-300">
-                  BURGER
+                <h2
+                  className="
+                    text-[22px]
+                    font-black
+                    uppercase
+                    leading-[26px]
+                    tracking-[-0.5px]
+                    text-[#111]
+                    dark:text-white
+                  "
+                >
+                  {group.name}
                 </h2>
               </div>
 
-              <div className="mt-[6px] px-4">
-                {burgerItems.map((product) => (
-                  <ProductListItem
-                    key={product.id}
-                    product={product}
-                    onAdd={handleAddToCart}
-                    onClick={() =>
-                      handleProductClick(product)
-                    }
-                  />
-                ))}
-              </div>
+              {group.name.toLowerCase() === "combo" ? (
+
+                <div className="mt-[14px] overflow-x-auto px-4 scrollbar-hide">
+                  <div className="flex w-max gap-4">
+
+                    {group.items.map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        onAdd={() =>
+                          handleAddToCart(product)
+                        }
+                        onClick={() =>
+                          handleProductClick(product)
+                        }
+                      />
+                    ))}
+
+                  </div>
+                </div>
+
+              ) : (
+
+                <div className="mt-[6px] px-4">
+
+                  {group.items.map((product) => (
+                    <ProductListItem
+                      key={product.id}
+                      product={product}
+                      onAdd={handleAddToCart}
+                      onClick={() =>
+                        handleProductClick(product)
+                      }
+                    />
+                  ))}
+
+                </div>
+
+              )}
 
             </section>
-          )}
+          ))
 
-        {/* =====================================
-            DRINK
-            VERTICAL LIST
-        ===================================== */}
+        )}
 
-        {(activeCategory === "all" ||
-          activeCategory === "drink") &&
-          drinkItems.length > 0 && (
-            <section className="mt-[28px]">
-
-              <div className="px-4">
-                <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111] dark:text-white transition-colors duration-300">
-                  DRINK
-                </h2>
-              </div>
-
-              <div className="mt-[6px] px-4">
-                {drinkItems.map((product) => (
-                  <ProductListItem
-                    key={product.id}
-                    product={product}
-                    onAdd={handleAddToCart}
-                    onClick={() =>
-                      handleProductClick(product)
-                    }
-                  />
-                ))}
-              </div>
-
-            </section>
-          )}
-
-        {/* =====================================
-            SNACK
-            VERTICAL LIST
-        ===================================== */}
-
-        {(activeCategory === "all" ||
-          activeCategory === "snack") &&
-          snackItems.length > 0 && (
-            <section className="mt-[28px]">
-
-              <div className="px-4">
-                <h2 className="text-[22px] font-black uppercase leading-[26px] tracking-[-0.5px] text-[#111] dark:text-white transition-colors duration-300">
-                  SNACK
-                </h2>
-              </div>
-
-              <div className="mt-[6px] px-4">
-                {snackItems.map((product) => (
-                  <ProductListItem
-                    key={product.id}
-                    product={product}
-                    onAdd={handleAddToCart}
-                    onClick={() =>
-                      handleProductClick(product)
-                    }
-                  />
-                ))}
-              </div>
-
-            </section>
-          )}
-
-        {/* =====================================
+        {/* =====================================================
             EMPTY RESULT
-        ===================================== */}
+        ===================================================== */}
 
         {filteredItems.length === 0 && (
           <div className="px-5 py-16 text-center">
+
             <p className="text-[15px] font-semibold text-[#777] dark:text-[#a1a1aa] transition-colors duration-300">
               Menu tidak ditemukan
             </p>
@@ -310,15 +506,15 @@ export default function MenuPage() {
             >
               Reset filter
             </button>
+
           </div>
         )}
 
       </main>
 
-      {/* =====================================
+      {/* =====================================================
           FIXED MENU + CART
-          TIDAK IKUT SCROLL
-      ===================================== */}
+      ===================================================== */}
 
       <div
         className="
@@ -331,6 +527,7 @@ export default function MenuPage() {
         "
       >
         <div className="pointer-events-auto">
+
           <CartBar
             itemCount={totalItems}
             total={totalPrice}
@@ -342,6 +539,7 @@ export default function MenuPage() {
             }
             onCategoryChange={handleCategoryChange}
           />
+
         </div>
       </div>
 

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 
@@ -14,13 +15,14 @@ export default function ModalMenu({
     harga: "",
     category_id: "",
     gambarUrl: "",
+    photo: null,
     isPromo: false,
     labelPromo: "Favorit!",
     isTersedia: true,
   });
 
-  const [imageInputType, setImageInputType] =
-    useState("file");
+  const [imageInputType, setImageInputType] = useState("file");
+  const [imagePreview, setImagePreview] = useState("");
 
   // =========================================================
   // RESET / EDIT FORM
@@ -29,20 +31,43 @@ export default function ModalMenu({
   useEffect(() => {
     if (editingItem) {
       setForm({
-        nama: editingItem.nama || "",
-        deskripsi: editingItem.deskripsi || "",
-        harga: editingItem.harga || "",
+        nama: editingItem.name || editingItem.nama || "",
+        deskripsi:
+          editingItem.description ||
+          editingItem.deskripsi ||
+          "",
+        harga:
+          editingItem.price ||
+          editingItem.harga ||
+          "",
         category_id:
           editingItem.category_id ||
           editingItem.category?.id ||
           "",
-        gambarUrl: editingItem.gambarUrl || "",
-        isPromo: editingItem.isPromo ?? false,
+        gambarUrl:
+          editingItem.photo_url ||
+          editingItem.gambarUrl ||
+          "",
+        photo: null,
+        isPromo:
+          editingItem.label ||
+          editingItem.isPromo ||
+          false,
         labelPromo:
-          editingItem.labelPromo || "Favorit!",
+          editingItem.label ||
+          editingItem.labelPromo ||
+          "Favorit!",
         isTersedia:
-          editingItem.isTersedia ?? true,
+          editingItem.is_active ??
+          editingItem.isTersedia ??
+          true,
       });
+
+      setImagePreview(
+        editingItem.photo_url ||
+          editingItem.gambarUrl ||
+          ""
+      );
     } else {
       setForm({
         nama: "",
@@ -53,10 +78,13 @@ export default function ModalMenu({
             ? categories[0].id
             : "",
         gambarUrl: "",
+        photo: null,
         isPromo: false,
         labelPromo: "Favorit!",
         isTersedia: true,
       });
+
+      setImagePreview("");
     }
   }, [editingItem, isOpen, categories]);
 
@@ -71,16 +99,53 @@ export default function ModalMenu({
 
     if (!file) return;
 
-    const reader = new FileReader();
+    // Validasi ukuran maksimal 2MB
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Ukuran foto maksimal 2MB.");
+      e.target.value = "";
+      return;
+    }
 
-    reader.onloadend = () => {
-      setForm((prev) => ({
-        ...prev,
-        gambarUrl: reader.result,
-      }));
-    };
+    // Validasi tipe file
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+      "image/webp",
+    ];
 
-    reader.readAsDataURL(file);
+    if (!allowedTypes.includes(file.type)) {
+      alert("Format foto harus JPG, JPEG, PNG, atau WEBP.");
+      e.target.value = "";
+      return;
+    }
+
+    // Simpan FILE asli untuk dikirim ke backend
+    setForm((prev) => ({
+      ...prev,
+      photo: file,
+      gambarUrl: "",
+    }));
+
+    // Preview hanya untuk tampilan FE
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+  };
+
+  // =========================================================
+  // URL IMAGE
+  // =========================================================
+
+  const handleImageUrlChange = (e) => {
+    const url = e.target.value;
+
+    setForm((prev) => ({
+      ...prev,
+      gambarUrl: url,
+      photo: null,
+    }));
+
+    setImagePreview(url);
   };
 
   // =========================================================
@@ -90,13 +155,23 @@ export default function ModalMenu({
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const finalImage =
-      form.gambarUrl ||
-      "https://via.placeholder.com/150";
-
     onSave({
-      ...form,
-      gambarUrl: finalImage,
+      nama: form.nama,
+      deskripsi: form.deskripsi,
+      harga: form.harga,
+      category_id: form.category_id || null,
+
+      // URL kalau user memilih URL
+      gambarUrl: form.gambarUrl || "",
+
+      // File asli kalau user upload file
+      photo: form.photo,
+
+      isPromo: form.isPromo,
+      labelPromo: form.isPromo
+        ? form.labelPromo
+        : null,
+      isTersedia: form.isTersedia,
     });
   };
 
@@ -124,6 +199,7 @@ export default function ModalMenu({
           >
             <X size={18} />
           </button>
+
         </div>
 
         <form
@@ -188,6 +264,7 @@ export default function ModalMenu({
           ================================================= */}
 
           <div>
+
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">
               KATEGORI
             </label>
@@ -221,8 +298,10 @@ export default function ModalMenu({
                       category.nama}
                   </button>
                 ))}
+
               </div>
             )}
+
           </div>
 
           {/* =================================================
@@ -266,49 +345,53 @@ export default function ModalMenu({
                 >
                   URL Link
                 </button>
+
               </div>
+
             </div>
 
             <div className="flex items-center gap-2">
 
-              {form.gambarUrl && (
+              {/* Preview */}
+              {imagePreview && (
                 <img
-                  src={form.gambarUrl}
+                  src={imagePreview}
                   alt="Preview"
                   className="w-9 h-9 object-cover rounded-lg border border-gray-200 shrink-0"
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src =
-                      "https://via.placeholder.com/150";
+                    e.target.style.display = "none";
                   }}
                 />
               )}
 
+              {/* Upload File */}
               {imageInputType === "file" ? (
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/jpg,image/webp"
                   onChange={handleImageUpload}
                   className="w-full text-[11px] text-gray-500 bg-white p-1 rounded-xl border border-gray-200 file:mr-2 file:py-0.5 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-gray-100 file:text-gray-700"
                 />
               ) : (
+
+                /* URL */
                 <input
                   type="text"
                   placeholder="Masukkan URL Gambar (https://...)"
-                  value={
-                    form.gambarUrl || ""
-                  }
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      gambarUrl:
-                        e.target.value,
-                    })
-                  }
+                  value={form.gambarUrl || ""}
+                  onChange={handleImageUrlChange}
                   className="w-full px-3 py-1.5 bg-white rounded-xl border border-gray-200 text-xs outline-none placeholder-gray-400"
                 />
+
               )}
+
             </div>
+
+            <p className="text-[9px] text-gray-400">
+              Upload: JPG, PNG, WEBP · Maks. 2MB
+            </p>
+
           </div>
 
           {/* =================================================
@@ -337,6 +420,7 @@ export default function ModalMenu({
                     : "bg-gray-300"
                 }`}
               >
+
                 <div
                   className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${
                     form.isPromo
@@ -344,7 +428,9 @@ export default function ModalMenu({
                       : "translate-x-0"
                   }`}
                 />
+
               </button>
+
             </div>
 
             {form.isPromo && (
@@ -362,6 +448,7 @@ export default function ModalMenu({
                 className="w-full px-3 py-1 bg-white rounded-lg border border-gray-200 text-xs font-medium outline-none text-[#222222]"
               />
             )}
+
           </div>
 
           {/* =================================================
@@ -389,6 +476,7 @@ export default function ModalMenu({
                   : "bg-gray-300"
               }`}
             >
+
               <div
                 className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${
                   form.isTersedia
@@ -396,7 +484,9 @@ export default function ModalMenu({
                     : "translate-x-0"
                 }`}
               />
+
             </button>
+
           </div>
 
           {/* =================================================
@@ -411,7 +501,9 @@ export default function ModalMenu({
           </button>
 
         </form>
+
       </div>
     </div>
   );
 }
+

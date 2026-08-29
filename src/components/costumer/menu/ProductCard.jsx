@@ -2,7 +2,9 @@ import { Plus } from "lucide-react";
 import bestsellerImage from "../../../assets/costumer/bestseller.png";
 
 function formatPrice(price) {
-  return `Rp.${price.toLocaleString("id-ID")}`;
+  const numericPrice = Number(price) || 0;
+
+  return `Rp${numericPrice.toLocaleString("id-ID")}`;
 }
 
 export default function ProductCard({
@@ -27,10 +29,7 @@ export default function ProductCard({
       "
     >
 
-      {/* =================================
-          IMAGE
-      ================================= */}
-
+      {/* IMAGE */}
       <div
         className="
           relative
@@ -42,8 +41,6 @@ export default function ProductCard({
           bg-[#f5f5f5]
         "
       >
-
-        {/* BEST SELLER */}
 
         {product.bestseller && (
           <img
@@ -60,8 +57,6 @@ export default function ProductCard({
             "
           />
         )}
-
-        {/* CHECKER DECORATION */}
 
         <div
           className="
@@ -85,26 +80,28 @@ export default function ProductCard({
           }}
         />
 
-        {/* PRODUCT IMAGE */}
+        {product.image ? (
+          <img
+            src={product.image}
+            alt={product.name}
+            className="
+              relative
+              z-10
+              h-full
+              w-full
+              object-contain
+              drop-shadow-[0_8px_8px_rgba(0,0,0,0.18)]
+            "
+          />
+        ) : (
+          <div className="relative z-10 text-[12px] text-[#999]">
+            No Image
+          </div>
+        )}
 
-        <img
-          src={product.image}
-          alt={product.name}
-          className="
-            relative
-            z-10
-            h-full
-            w-full
-            object-contain
-            drop-shadow-[0_8px_8px_rgba(0,0,0,0.18)]
-          "
-        />
       </div>
 
-      {/* =================================
-          BOTTOM
-      ================================= */}
-
+      {/* BOTTOM */}
       <div
         className="
           relative
@@ -115,7 +112,6 @@ export default function ProductCard({
           text-white
         "
       >
-        {/* PRODUCT NAME */}
 
         <h3
           className="
@@ -128,8 +124,6 @@ export default function ProductCard({
           {product.name}
         </h3>
 
-        {/* PRICE + ADD */}
-
         <div
           className="
             mt-[18px]
@@ -138,6 +132,7 @@ export default function ProductCard({
             justify-between
           "
         >
+
           <span
             className="
               text-[14px]
@@ -148,8 +143,6 @@ export default function ProductCard({
           >
             {formatPrice(product.price)}
           </span>
-
-          {/* ADD BUTTON */}
 
           <button
             type="button"
@@ -169,15 +162,16 @@ export default function ProductCard({
               transition
               active:scale-90
             "
-            aria-label={`Tambah ${product.name}`}
           >
             <Plus
               size={21}
               strokeWidth={2.4}
             />
           </button>
+
         </div>
       </div>
+
     </div>
   );
 }
