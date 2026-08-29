@@ -167,7 +167,7 @@ export default function MenuDetail() {
      * datanya sudah ada di sessionStorage.
      */
 
-    navigate("/menu", {
+    navigate("/", {
       state: {
         skipLoading: true,
       },
