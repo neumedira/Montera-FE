@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+
+import { useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import CostumizationOption from "../../../components/costumer/menu/CostumizationOption";
-import { getCustomerMenus } from "../../../api/costumer";
 
 import { useCart } from "../../../context/CartContext";
 
@@ -14,67 +14,32 @@ export default function MenuDetail() {
   const { addToCart } = useCart();
 
   // =========================================================
-  // STATE
+  // GET MENU DARI SESSION STORAGE
   // =========================================================
 
-  const [menuItems, setMenuItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const menuItems = useMemo(() => {
+    try {
+      const cachedMenu = sessionStorage.getItem(
+        "customer_menu"
+      );
 
-  const [selectedAddons, setSelectedAddons] = useState({});
-  const [notes, setNotes] = useState("");
-
-  // =========================================================
-  // FETCH CUSTOMER MENU
-  // =========================================================
-
-  useEffect(() => {
-    const fetchMenus = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const response = await getCustomerMenus();
-
-        console.log("CUSTOMER MENU DETAIL API:", response);
-
-        const rawMenus = response?.data || [];
-
-        const formattedMenus = rawMenus
-          .filter((item) => item.is_active)
-          .map((item) => ({
-            id: item.id,
-            name: item.name,
-            price: Number(item.price),
-            description: item.description || "",
-            image: item.photo_url || null,
-
-            category: item.category || null,
-            categoryId: item.category_id,
-
-            addons: (item.addons || []).map((addon) => ({
-              id: addon.id,
-              name: addon.name,
-              price: Number(addon.price),
-            })),
-          }));
-
-        setMenuItems(formattedMenus);
-      } catch (err) {
-        console.error(
-          "Gagal mengambil detail menu:",
-          err
-        );
-
-        setError(
-          "Gagal memuat detail menu. Silakan coba lagi."
-        );
-      } finally {
-        setLoading(false);
+      if (!cachedMenu) {
+        return [];
       }
-    };
 
-    fetchMenus();
+      const parsedMenu = JSON.parse(cachedMenu);
+
+      return Array.isArray(parsedMenu)
+        ? parsedMenu
+        : [];
+    } catch (error) {
+      console.error(
+        "Gagal membaca cache menu:",
+        error
+      );
+
+      return [];
+    }
   }, []);
 
   // =========================================================
@@ -88,19 +53,57 @@ export default function MenuDetail() {
   }, [menuItems, id]);
 
   // =========================================================
+  // STATE
+  // =========================================================
+
+  const [selectedAddons, setSelectedAddons] =
+    useState({});
+
+  const [notes, setNotes] = useState("");
+
+  // =========================================================
+  // PRODUCT NOT FOUND
+  // =========================================================
+
+  if (!product) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-[#fffcf4] px-6 text-center dark:bg-[#121212]">
+
+        <p className="font-semibold text-[#111] dark:text-white">
+          Menu tidak ditemukan.
+        </p>
+
+        <button
+          type="button"
+          onClick={() => navigate("/menu")}
+          className="mt-3 text-[13px] font-bold underline dark:text-white"
+        >
+          Kembali ke menu
+        </button>
+
+      </main>
+    );
+  }
+
+  // =========================================================
   // ADDON PRICE
   // =========================================================
 
   const extraPrice = useMemo(() => {
-    if (!product?.addons) return 0;
+    if (!product?.addons) {
+      return 0;
+    }
 
-    return product.addons.reduce((total, addon) => {
-      if (selectedAddons[addon.id]) {
-        return total + addon.price;
-      }
+    return product.addons.reduce(
+      (total, addon) => {
+        if (selectedAddons[addon.id]) {
+          return total + addon.price;
+        }
 
-      return total;
-    }, 0);
+        return total;
+      },
+      0
+    );
   }, [product, selectedAddons]);
 
   // =========================================================
@@ -108,7 +111,7 @@ export default function MenuDetail() {
   // =========================================================
 
   const totalPrice =
-    (product?.price || 0) + extraPrice;
+    product.price + extraPrice;
 
   // =========================================================
   // TOGGLE ADDON
@@ -126,26 +129,24 @@ export default function MenuDetail() {
   // =========================================================
 
   const handleAddToCart = () => {
-    if (!product) return;
-
-    const selectedAddonList = product.addons.filter(
-      (addon) => selectedAddons[addon.id]
-    );
+    const selectedAddonList =
+      product.addons?.filter(
+        (addon) => selectedAddons[addon.id]
+      ) || [];
 
     const cartItem = {
       ...product,
 
       addons: selectedAddonList,
 
-      // Tetap simpan customization supaya
-      // CartContext lama tidak error
-      costumizations: selectedAddonList.reduce(
-        (result, addon) => {
-          result[addon.id] = true;
-          return result;
-        },
-        {}
-      ),
+      costumizations:
+        selectedAddonList.reduce(
+          (result, addon) => {
+            result[addon.id] = true;
+            return result;
+          },
+          {}
+        ),
 
       notes,
 
@@ -159,62 +160,19 @@ export default function MenuDetail() {
 
     addToCart(cartItem);
 
-    navigate("/", {
+    /*
+     * Balik ke menu.
+     *
+     * MenuPage tidak fetch ulang karena
+     * datanya sudah ada di sessionStorage.
+     */
+
+    navigate("/menu", {
       state: {
         skipLoading: true,
       },
     });
   };
-
-  // =========================================================
-  // LOADING
-  // =========================================================
-
-  if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#fffcf4] dark:bg-[#121212] transition-colors duration-300">
-        <p className="text-[15px] font-semibold text-[#777] dark:text-[#aaa]">
-          Memuat menu...
-        </p>
-      </main>
-    );
-  }
-
-  // =========================================================
-  // ERROR
-  // =========================================================
-
-  if (error) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-[#fffcf4] px-6 text-center dark:bg-[#121212]">
-        <p className="text-[15px] font-semibold text-[#777] dark:text-[#aaa]">
-          {error}
-        </p>
-
-        <button
-          type="button"
-          onClick={() => window.location.reload()}
-          className="mt-3 text-[13px] font-bold underline dark:text-white"
-        >
-          Coba lagi
-        </button>
-      </main>
-    );
-  }
-
-  // =========================================================
-  // PRODUCT NOT FOUND
-  // =========================================================
-
-  if (!product) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#fffcf4] dark:bg-[#121212]">
-        <p className="font-semibold text-[#111] dark:text-white">
-          Menu tidak ditemukan.
-        </p>
-      </main>
-    );
-  }
 
   // =========================================================
   // RENDER
@@ -275,7 +233,9 @@ export default function MenuDetail() {
             pt-[45px]
           "
         >
+
           {product.image ? (
+
             <img
               src={product.image}
               alt={product.name}
@@ -285,12 +245,17 @@ export default function MenuDetail() {
                 object-contain
               "
             />
+
           ) : (
+
             <div className="flex h-[320px] w-[360px] items-center justify-center text-[14px] text-[#999]">
               Tidak ada foto
             </div>
+
           )}
+
         </div>
+
       </section>
 
       {/* =====================================================
@@ -377,7 +342,9 @@ export default function MenuDetail() {
             ADDONS
         =================================================== */}
 
-        {product.addons.length > 0 && (
+        {product.addons &&
+          product.addons.length > 0 && (
+
           <div className="mt-[26px]">
 
             <h2
@@ -398,17 +365,27 @@ export default function MenuDetail() {
 
             <div className="mt-[24px] space-y-[24px]">
 
-              {product.addons.map((addon) => (
-                <CostumizationOption
-                  key={addon.id}
-                  label={addon.name}
-                  price={addon.price}
-                  checked={!!selectedAddons[addon.id]}
-                  onChange={() =>
-                    toggleAddon(addon.id)
-                  }
-                />
-              ))}
+              {product.addons.map(
+                (addon) => (
+
+                  <CostumizationOption
+                    key={addon.id}
+                    label={addon.name}
+                    price={addon.price}
+                    checked={
+                      !!selectedAddons[
+                        addon.id
+                      ]
+                    }
+                    onChange={() =>
+                      toggleAddon(
+                        addon.id
+                      )
+                    }
+                  />
+
+                )
+              )}
 
             </div>
 
@@ -419,7 +396,9 @@ export default function MenuDetail() {
             NO ADDON
         =================================================== */}
 
-        {product.addons.length === 0 && (
+        {(!product.addons ||
+          product.addons.length === 0) && (
+
           <div className="mt-[26px]">
 
             <h2
@@ -526,7 +505,9 @@ export default function MenuDetail() {
             "
           >
             Rp{" "}
-            {totalPrice.toLocaleString("id-ID")}
+            {totalPrice.toLocaleString(
+              "id-ID"
+            )}
           </span>
 
         </button>
@@ -536,3 +517,4 @@ export default function MenuDetail() {
     </main>
   );
 }
+

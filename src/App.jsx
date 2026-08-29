@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import {
   BrowserRouter,
@@ -51,26 +52,28 @@ import NewOrderModal from "./components/modal/NewOrderModal";
 // =========================================================
 
 function CustomerMenuWrapper() {
-  const location = useLocation();
-
-  const [isLoading, setIsLoading] = useState(
-    !location.state?.skipLoading
-  );
+  const [isLoading, setIsLoading] = useState(() => {
+    // Cek apakah loading customer menu
+    // sudah pernah ditampilkan dalam sesi ini.
+    return sessionStorage.getItem("montera_menu_loaded") !== "true";
+  });
 
   useEffect(() => {
-    // Kalau kembali dari detail menu,
-    // langsung tampilkan menu tanpa loading
-    if (location.state?.skipLoading) {
-      setIsLoading(false);
-      return;
-    }
+    if (!isLoading) return;
 
     const timer = setTimeout(() => {
       setIsLoading(false);
+
+      // Tandai bahwa customer menu
+      // sudah pernah selesai loading.
+      sessionStorage.setItem(
+        "montera_menu_loaded",
+        "true"
+      );
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [isLoading]);
 
   if (isLoading) {
     return <LoadingScreen />;
@@ -114,11 +117,6 @@ function App() {
 
           {/* ===============================================
               CUSTOMER MENU DETAIL
-
-              Contoh:
-              /menu/1
-              /menu/2
-              /menu/3
           =============================================== */}
 
           <Route
@@ -130,7 +128,6 @@ function App() {
               ADMIN LOGIN
           =============================================== */}
 
-          {/* Login tidak membutuhkan token */}
           <Route
             path="/login"
             element={<Login />}
@@ -224,3 +221,4 @@ function App() {
 }
 
 export default App;
+
