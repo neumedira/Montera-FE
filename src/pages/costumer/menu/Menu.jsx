@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -5,12 +6,15 @@ import SearchBar from "../../../components/costumer/menu/SearchBar";
 import ProductCard from "../../../components/costumer/menu/ProductCard";
 import ProductListItem from "../../../components/costumer/menu/ProductListItem";
 import CartBar from "../../../components/costumer/menu/CartBar";
+import Footer from "../../../components/costumer/menu/Footer";
 
 import bannerburger from "../../../assets/costumer/bannerburger.png";
 import checkerboard from "../../../assets/costumer/checkerboard.png";
 
 import { useCart } from "../../../context/CartContext";
 import { getCustomerMenus } from "../../../api/costumer";
+
+import echo from "../../../echo";
 
 export default function MenuPage() {
   const navigate = useNavigate();
@@ -44,24 +48,35 @@ export default function MenuPage() {
   };
 
   // =========================================================
-  // INITIAL DATA & CATEGORIES FIX
+  // BUILD CATEGORIES
   // =========================================================
-
-  const cachedMenu = getCachedMenu();
 
   const buildCategories = (menus) => {
     const categoryMap = new Map();
 
     menus.forEach((item) => {
+      // Menu yang memiliki label tidak dijadikan
+      // bagian dari kategori biasa.
+      if (item.label) {
+        return;
+      }
+
       if (
         item.categoryId &&
         item.categoryName
       ) {
-        if (!categoryMap.has(item.categoryId)) {
-          categoryMap.set(item.categoryId, {
-            id: item.categoryId, // Diperbaiki agar sesuai dengan id kategori asli
-            name: item.categoryName,
-          });
+        if (
+          !categoryMap.has(
+            item.categoryId
+          )
+        ) {
+          categoryMap.set(
+            item.categoryId,
+            {
+              id: item.categoryId,
+              name: item.categoryName,
+            }
+          );
         }
       }
     });
@@ -71,9 +86,79 @@ export default function MenuPage() {
         id: "all",
         name: "All",
       },
-      ...Array.from(categoryMap.values()),
+      ...Array.from(
+        categoryMap.values()
+      ),
     ];
   };
+
+  // =========================================================
+  // FORMAT MENU ITEM
+  // =========================================================
+
+  const formatMenuItem = (item) => {
+    const categoryName =
+      item.category?.name?.toLowerCase() ||
+      "uncategorized";
+
+    return {
+      id: item.id,
+
+      name: item.name,
+
+      // =====================================================
+      // LABEL
+      // =====================================================
+
+      label:
+        item.label || null,
+
+      price: Number(
+        item.price
+      ),
+
+      description:
+        item.description || "",
+
+      image:
+        item.photo_url ||
+        null,
+
+      category:
+        categoryName,
+
+      categoryId:
+        item.category?.id ||
+        item.category_id,
+
+      categoryName:
+        item.category?.name ||
+        "Lainnya",
+
+      // Menu yang memiliki label otomatis
+      // dianggap sebagai Best Seller.
+      bestseller:
+        Boolean(item.label),
+
+      addons:
+        (item.addons || []).map(
+          (addon) => ({
+            id: addon.id,
+            name: addon.name,
+            price: Number(
+              addon.price
+            ),
+          })
+        ),
+    };
+  };
+
+  // =========================================================
+  // INITIAL DATA
+  // =========================================================
+
+  const cachedMenu =
+    getCachedMenu();
 
   // =========================================================
   // STATE
@@ -97,7 +182,9 @@ export default function MenuPage() {
     useState(false);
 
   const [loading, setLoading] =
-    useState(cachedMenu.length === 0);
+    useState(
+      cachedMenu.length === 0
+    );
 
   const [error, setError] =
     useState("");
@@ -109,211 +196,428 @@ export default function MenuPage() {
   } = useCart();
 
   // =========================================================
+  // UPDATE MENU STATE + CACHE
+  // =========================================================
+
+  const updateMenuState = (
+    menus
+  ) => {
+    setMenuItems(menus);
+
+    setCategories(
+      buildCategories(menus)
+    );
+
+    sessionStorage.setItem(
+      "customer_menu",
+      JSON.stringify(menus)
+    );
+  };
+
+  // =========================================================
   // FETCH CUSTOMER MENU
   // =========================================================
 
-  useEffect(() => {
-    const fetchMenus = async () => {
-      try {
-        // Jika belum ada cache sama sekali, aktifkan loading
-        if (cachedMenu.length === 0) {
-          setLoading(true);
-        }
-        setError("");
+  const fetchMenus = async () => {
+    try {
+      setError("");
 
-        const response =
-          await getCustomerMenus();
+      const response =
+        await getCustomerMenus();
 
-        console.log(
-          "CUSTOMER MENU API:",
-          response
-        );
+      console.log(
+        "CUSTOMER MENU API:",
+        response
+      );
 
-        const rawMenus =
-          response?.data || [];
+      const rawMenus =
+        response?.data || [];
 
-        console.log(
-          "RAW CUSTOMER MENU:",
-          rawMenus
-        );
+      console.log(
+        "RAW CUSTOMER MENU:",
+        rawMenus
+      );
 
-        // =====================================================
-        // FORMAT MENU
-        // =====================================================
+      // =====================================================
+      // FORMAT MENU
+      // =====================================================
 
-        const formattedMenus =
-          rawMenus
-            .filter(
-              (item) => item.is_active
-            )
-            .map((item) => {
-              const categoryName =
-                item.category?.name?.toLowerCase() ||
-                "uncategorized";
-
-              return {
-                id: item.id,
-
-                name: item.name,
-
-                price: Number(
-                  item.price
-                ),
-
-                description:
-                  item.description ||
-                  "",
-
-                image:
-                  item.photo_url ||
-                  null,
-
-                category:
-                  categoryName,
-
-                categoryId:
-                  item.category?.id ||
-                  item.category_id,
-
-                categoryName:
-                  item.category?.name ||
-                  "Lainnya",
-
-                bestseller: false,
-
-                addons:
-                  (item.addons || []).map(
-                    (addon) => ({
-                      id: addon.id,
-                      name: addon.name,
-                      price: Number(
-                        addon.price
-                      ),
-                    })
-                  ),
-              };
-            });
-
-        console.log(
-          "FORMATTED CUSTOMER MENU:",
-          formattedMenus
-        );
-
-        // =====================================================
-        // SAVE STATE
-        // =====================================================
-
-        setMenuItems(
-          formattedMenus
-        );
-
-        // =====================================================
-        // SAVE CACHE
-        // =====================================================
-
-        sessionStorage.setItem(
-          "customer_menu",
-          JSON.stringify(
-            formattedMenus
+      const formattedMenus =
+        rawMenus
+          .filter(
+            (item) =>
+              item.is_active
           )
-        );
-
-        // =====================================================
-        // BUILD CATEGory
-        // =====================================================
-
-        const formattedCategories =
-          buildCategories(
-            formattedMenus
+          .map(
+            formatMenuItem
           );
 
-        console.log(
-          "FORMATTED CUSTOMER CATEGORIES:",
-          formattedCategories
-        );
+      console.log(
+        "FORMATTED CUSTOMER MENU:",
+        formattedMenus
+      );
 
-        setCategories(
-          formattedCategories
-        );
-      } catch (err) {
-        console.error(
-          "Gagal mengambil menu customer:",
-          err
-        );
+      // =====================================================
+      // SAVE STATE + CACHE
+      // =====================================================
 
-        setError(
-          "Gagal memuat menu. Silakan coba lagi."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
+      updateMenuState(
+        formattedMenus
+      );
 
+      console.log(
+        "FORMATTED CUSTOMER CATEGORIES:",
+        buildCategories(
+          formattedMenus
+        )
+      );
+    } catch (err) {
+      console.error(
+        "Gagal mengambil menu customer:",
+        err
+      );
+
+      setError(
+        "Gagal memuat menu. Silakan coba lagi."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // =========================================================
+  // INITIAL FETCH
+  // =========================================================
+
+  useEffect(() => {
     fetchMenus();
+  }, []);
+
+  // =========================================================
+  // REALTIME CUSTOMER MENU
+  // =========================================================
+
+  useEffect(() => {
+    console.log(
+      "🔌 Connecting to customer-menu..."
+    );
+
+    const channel =
+      echo.channel(
+        "customer-menu"
+      );
+
+    channel.listen(
+      ".menu.updated",
+      (event) => {
+        console.log(
+          "🔥 REALTIME MENU UPDATED:",
+          event
+        );
+
+        const menu =
+          event?.menu;
+
+        if (!menu) {
+          console.warn(
+            "⚠️ Payload menu.updated tidak memiliki menu."
+          );
+
+          return;
+        }
+
+        // =====================================================
+        // DELETE
+        // =====================================================
+
+        if (menu.deleted) {
+          setMenuItems(
+            (currentMenus) => {
+              const updatedMenus =
+                currentMenus.filter(
+                  (item) =>
+                    item.id !==
+                    menu.id
+                );
+
+              // Update cache
+              sessionStorage.setItem(
+                "customer_menu",
+                JSON.stringify(
+                  updatedMenus
+                )
+              );
+
+              // Update categories
+              setCategories(
+                buildCategories(
+                  updatedMenus
+                )
+              );
+
+              return updatedMenus;
+            }
+          );
+
+          console.log(
+            "🗑️ Menu dihapus dari customer:",
+            menu.id
+          );
+
+          return;
+        }
+
+        // =====================================================
+        // TAMBAH / UPDATE
+        // =====================================================
+
+        const formattedMenu =
+          formatMenuItem(menu);
+
+        // =====================================================
+        // CEK DATA REALTIME
+        // =====================================================
+
+        if (
+          !menu.category &&
+          !menu.category_id
+        ) {
+          console.log(
+            "⚠️ Payload realtime kurang lengkap. Fetch ulang API..."
+          );
+
+          fetchMenus();
+
+          return;
+        }
+
+        setMenuItems(
+          (currentMenus) => {
+            const existingIndex =
+              currentMenus.findIndex(
+                (item) =>
+                  item.id ===
+                  formattedMenu.id
+              );
+
+            let updatedMenus;
+
+            // =================================================
+            // MENU SUDAH ADA → UPDATE
+            // =================================================
+
+            if (
+              existingIndex !== -1
+            ) {
+              updatedMenus =
+                [...currentMenus];
+
+              updatedMenus[
+                existingIndex
+              ] =
+                formattedMenu;
+
+              console.log(
+                "✏️ Menu diperbarui:",
+                formattedMenu
+              );
+            }
+
+            // =================================================
+            // MENU BELUM ADA → TAMBAH
+            // =================================================
+
+            else {
+              updatedMenus = [
+                ...currentMenus,
+                formattedMenu,
+              ];
+
+              console.log(
+                "➕ Menu baru ditambahkan:",
+                formattedMenu
+              );
+            }
+
+            // =================================================
+            // UPDATE CACHE
+            // =================================================
+
+            sessionStorage.setItem(
+              "customer_menu",
+              JSON.stringify(
+                updatedMenus
+              )
+            );
+
+            // =================================================
+            // UPDATE CATEGORY
+            // =================================================
+
+            setCategories(
+              buildCategories(
+                updatedMenus
+              )
+            );
+
+            return updatedMenus;
+          }
+        );
+      }
+    );
+
+    // =======================================================
+    // CLEANUP
+    // =======================================================
+
+    return () => {
+      console.log(
+        "🔌 Leaving customer-menu..."
+      );
+
+      echo.leave(
+        "customer-menu"
+      );
+    };
   }, []);
 
   // =========================================================
   // FILTER MENU
   // =========================================================
 
-  const filteredItems = useMemo(() => {
-    return menuItems.filter(
-      (item) => {
-        const categoryMatch =
-          activeCategory === "all" ||
-          item.categoryId === activeCategory ||
-          String(item.categoryId) === String(activeCategory);
+  const filteredItems =
+    useMemo(() => {
+      return menuItems.filter(
+        (item) => {
+          const categoryMatch =
+            activeCategory ===
+              "all" ||
+            item.categoryId ===
+              activeCategory ||
+            String(
+              item.categoryId
+            ) ===
+              String(
+                activeCategory
+              );
 
-        const searchMatch =
-          item.name
-            .toLowerCase()
-            .includes(
-              search.toLowerCase()
-            );
+          const searchMatch =
+            item.name
+              .toLowerCase()
+              .includes(
+                search.toLowerCase()
+              );
 
-        return (
-          categoryMatch &&
-          searchMatch
-        );
-      }
-    );
-  }, [
-    menuItems,
-    activeCategory,
-    search,
-  ]);
-
-  // =========================================================
-  // GROUP MENU
-  // =========================================================
-
-  const groupedItems = useMemo(() => {
-    const groups = {};
-
-    filteredItems.forEach(
-      (item) => {
-        const categoryKey =
-          item.categoryId ||
-          "uncategorized";
-
-        if (!groups[categoryKey]) {
-          groups[categoryKey] = {
-            id: categoryKey,
-            name:
-              item.categoryName ||
-              "Lainnya",
-            items: [],
-          };
+          return (
+            categoryMatch &&
+            searchMatch
+          );
         }
+      );
+    }, [
+      menuItems,
+      activeCategory,
+      search,
+    ]);
 
-        groups[
-          categoryKey
-        ].items.push(item);
-      }
-    );
+  // =========================================================
+  // LABELED MENU GROUPS
+  // =========================================================
 
-    return Object.values(groups);
-  }, [filteredItems]);
+  const labeledGroups =
+    useMemo(() => {
+      const groups = {};
+
+      filteredItems
+        .filter(
+          (item) =>
+            item.label
+        )
+        .forEach(
+          (item) => {
+            const label =
+              item.label.trim();
+
+            if (!groups[label]) {
+              groups[label] = [];
+            }
+
+            groups[label].push(
+              item
+            );
+          }
+        );
+
+      return Object.entries(
+        groups
+      ).map(
+        ([label, items]) => ({
+          label,
+          items,
+        })
+      );
+    }, [
+      filteredItems,
+    ]);
+
+  // =========================================================
+  // REGULAR MENU
+  // =========================================================
+
+  const regularItems =
+    useMemo(() => {
+      return filteredItems.filter(
+        (item) =>
+          !item.label
+      );
+    }, [
+      filteredItems,
+    ]);
+
+  // =========================================================
+  // GROUP MENU BY CATEGORY
+  // =========================================================
+
+  const groupedItems =
+    useMemo(() => {
+      const groups = {};
+
+      regularItems.forEach(
+        (item) => {
+          const categoryKey =
+            item.categoryId ||
+            "uncategorized";
+
+          if (
+            !groups[
+              categoryKey
+            ]
+          ) {
+            groups[
+              categoryKey
+            ] = {
+              id: categoryKey,
+
+              name:
+                item.categoryName ||
+                "Lainnya",
+
+              items: [],
+            };
+          }
+
+          groups[
+            categoryKey
+          ].items.push(item);
+        }
+      );
+
+      return Object.values(
+        groups
+      );
+    }, [
+      regularItems,
+    ]);
 
   // =========================================================
   // ADD TO CART
@@ -329,7 +633,8 @@ export default function MenuPage() {
 
       notes: "",
 
-      price: product.price,
+      price:
+        product.price,
     });
   };
 
@@ -363,7 +668,10 @@ export default function MenuPage() {
   // LOADING
   // =========================================================
 
-  if (loading && menuItems.length === 0) {
+  if (
+    loading &&
+    menuItems.length === 0
+  ) {
     return null;
   }
 
@@ -373,7 +681,7 @@ export default function MenuPage() {
 
   if (error) {
     return (
-      <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#fffcf4] px-6 text-center dark:bg-[#121212] transition-colors duration-300">
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#fffcf4] px-6 text-center transition-colors duration-300 dark:bg-[#121212]">
 
         <p className="text-[15px] font-semibold text-[#777] dark:text-[#aaa]">
           {error}
@@ -402,7 +710,7 @@ export default function MenuPage() {
   // =========================================================
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-[#fffcf4] dark:bg-[#121212] transition-colors duration-300">
+    <div className="fixed inset-0 overflow-hidden bg-[#fffcf4] transition-colors duration-300 dark:bg-[#121212]">
 
       {/* =====================================================
           SCROLLABLE CONTENT
@@ -419,11 +727,15 @@ export default function MenuPage() {
         "
       >
 
-        {/* TOP SPACING */}
+        {/* ===================================================
+            TOP SPACING
+        =================================================== */}
 
         <div className="h-[42px]" />
 
-        {/* BANNER */}
+        {/* ===================================================
+            BANNER
+        =================================================== */}
 
         <div className="px-[22px]">
 
@@ -435,7 +747,9 @@ export default function MenuPage() {
 
         </div>
 
-        {/* SEARCH */}
+        {/* ===================================================
+            SEARCH
+        =================================================== */}
 
         <div className="mt-[27px]">
 
@@ -446,7 +760,9 @@ export default function MenuPage() {
 
         </div>
 
-        {/* CHECKERBOARD */}
+        {/* ===================================================
+            CHECKERBOARD
+        =================================================== */}
 
         <div className="relative z-0 mt-[14px] h-[44px] overflow-hidden border-y-2 border-[#292826] dark:border-[#333333]">
 
@@ -458,17 +774,19 @@ export default function MenuPage() {
 
         </div>
 
-        {/* =====================================================
-            MENU
-        ===================================================== */}
+        {/* ===================================================
+            LABELED MENU
+        =================================================== */}
 
-        {groupedItems.map(
+        {labeledGroups.map(
           (group) => (
 
             <section
-              key={group.id}
+              key={group.label}
               className="mt-[28px]"
             >
+
+              {/* LABEL TITLE */}
 
               <div className="px-4">
 
@@ -480,73 +798,36 @@ export default function MenuPage() {
                     leading-[26px]
                     tracking-[-0.5px]
                     text-[#111]
-                    dark:text-white
                     transition-colors
                     duration-300
+                    dark:text-white
                   "
                 >
-                  {group.name}
+                  {group.label}
                 </h2>
 
               </div>
 
-              {/* COMBO */}
+              {/* HORIZONTAL CARDS */}
 
-              {group.name
-                .toLowerCase() ===
-              "combo" ? (
+              <div className="mt-[14px] overflow-x-auto px-4 scrollbar-hide">
 
-                <div className="mt-[14px] overflow-x-auto px-4 scrollbar-hide">
-
-                  <div className="flex w-max gap-4">
-
-                    {group.items.map(
-                      (product) => (
-
-                        <ProductCard
-                          key={
-                            product.id
-                          }
-                          product={
-                            product
-                          }
-                          onAdd={() =>
-                            handleAddToCart(
-                              product
-                            )
-                          }
-                          onClick={() =>
-                            handleProductClick(
-                              product
-                            )
-                          }
-                        />
-
-                      )
-                    )}
-
-                  </div>
-
-                </div>
-
-              ) : (
-
-                /* CATEGORY BIASA */
-
-                <div className="mt-[6px] px-4">
+                <div className="flex w-max gap-4">
 
                   {group.items.map(
                     (product) => (
 
-                      <ProductListItem
+                      <ProductCard
                         key={
                           product.id
                         }
                         product={
                           product
                         }
-                        onAdd={
-                          handleAddToCart
+                        onAdd={() =>
+                          handleAddToCart(
+                            product
+                          )
                         }
                         onClick={() =>
                           handleProductClick(
@@ -560,35 +841,106 @@ export default function MenuPage() {
 
                 </div>
 
-              )}
+              </div>
 
             </section>
 
           )
         )}
 
-        {/* =====================================================
+        {/* ===================================================
+            REGULAR CATEGORY MENU
+        =================================================== */}
+
+        {groupedItems.map(
+          (group) => (
+
+            <section
+              key={group.id}
+              className="mt-[28px]"
+            >
+
+              {/* CATEGORY TITLE */}
+
+              <div className="px-4">
+
+                <h2
+                  className="
+                    text-[22px]
+                    font-black
+                    uppercase
+                    leading-[26px]
+                    tracking-[-0.5px]
+                    text-[#111]
+                    transition-colors
+                    duration-300
+                    dark:text-white
+                  "
+                >
+                  {group.name}
+                </h2>
+
+              </div>
+
+              {/* CATEGORY ITEMS */}
+
+              <div className="mt-[6px] px-4">
+
+                {group.items.map(
+                  (product) => (
+
+                    <ProductListItem
+                      key={
+                        product.id
+                      }
+                      product={
+                        product
+                      }
+                      onAdd={
+                        handleAddToCart
+                      }
+                      onClick={() =>
+                        handleProductClick(
+                          product
+                        )
+                      }
+                    />
+
+                  )
+                )}
+
+              </div>
+
+            </section>
+
+          )
+        )}
+
+        {/* ===================================================
             EMPTY RESULT
-        ===================================================== */}
+        =================================================== */}
 
         {filteredItems.length ===
           0 && (
 
           <div className="px-5 py-16 text-center">
 
-            <p className="text-[15px] font-semibold text-[#777] dark:text-[#a1a1aa] transition-colors duration-300">
+            <p className="text-[15px] font-semibold text-[#777] transition-colors duration-300 dark:text-[#a1a1aa]">
+
               Menu tidak ditemukan
+
             </p>
 
             <button
               type="button"
               onClick={() => {
                 setSearch("");
+
                 setActiveCategory(
                   "all"
                 );
               }}
-              className="mt-3 text-[13px] font-bold underline dark:text-white transition-colors duration-300"
+              className="mt-3 text-[13px] font-bold underline transition-colors duration-300 dark:text-white"
             >
               Reset filter
             </button>
@@ -597,10 +949,19 @@ export default function MenuPage() {
 
         )}
 
+        {/* ===================================================
+            FOOTER
+            FOOTER SEKARANG ADA DI DALAM MAIN
+            JADI IKUT SCROLL DAN BERADA SETELAH SEMUA MENU
+        =================================================== */}
+
+        <Footer />
+
       </main>
 
       {/* =====================================================
           FIXED CART
+          TETAP NEMPEL DI BAWAH LAYAR
       ===================================================== */}
 
       <div
@@ -650,3 +1011,4 @@ export default function MenuPage() {
     </div>
   );
 }
+
