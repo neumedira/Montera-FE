@@ -16,6 +16,7 @@ export default function PaymentMethodModal({
   initialData,
   onClose,
   onSave,
+  saving = false,
 }) {
   const [form, setForm] = useState({
     method: "tunai",
@@ -28,6 +29,30 @@ export default function PaymentMethodModal({
   const [preview, setPreview] = useState(null);
 
   // =========================================================
+  // QR IMAGE URL
+  // =========================================================
+
+  const getQrImageUrl = (url) => {
+    if (!url) return null;
+
+    // Sudah berupa URL lengkap
+    if (
+      url.startsWith("http://") ||
+      url.startsWith("https://") ||
+      url.startsWith("blob:")
+    ) {
+      return url;
+    }
+
+    // Backend menyimpan contoh:
+    // qris/abc123.jpg
+    //
+    // Maka arahkan ke Laravel public storage:
+    // http://localhost:8000/storage/qris/abc123.jpg
+    return `http://localhost:8000/storage/${url}`;
+  };
+
+  // =========================================================
   // LOAD DATA EDIT
   // =========================================================
 
@@ -38,11 +63,13 @@ export default function PaymentMethodModal({
         initialData.type ||
         "tunai";
 
-      const qrImageUrl =
-        initialData.qr_image_url || null;
+      const qrImageUrl = getQrImageUrl(
+        initialData.qr_image_url
+      );
 
       setForm({
         method,
+
         is_active:
           initialData.is_active ??
           initialData.enabled ??
@@ -54,7 +81,9 @@ export default function PaymentMethodModal({
           "",
 
         qr_image: null,
-        qr_image_url: qrImageUrl,
+
+        qr_image_url:
+          qrImageUrl,
       });
 
       setPreview(qrImageUrl);
@@ -92,6 +121,7 @@ export default function PaymentMethodModal({
 
     setForm((prev) => ({
       ...prev,
+
       method,
 
       qr_image:
@@ -106,6 +136,13 @@ export default function PaymentMethodModal({
     }));
 
     if (method !== "qris") {
+      if (
+        preview &&
+        preview.startsWith("blob:")
+      ) {
+        URL.revokeObjectURL(preview);
+      }
+
       setPreview(null);
     }
   };
@@ -115,21 +152,26 @@ export default function PaymentMethodModal({
   // =========================================================
 
   const handleQrUpload = (event) => {
-    const file = event.target.files?.[0];
+    const file =
+      event.target.files?.[0];
 
     if (!file) return;
 
+    // Validasi tipe file
     if (!file.type.startsWith("image/")) {
       alert("File harus berupa gambar.");
+      event.target.value = "";
       return;
     }
 
+    // Validasi ukuran
     if (file.size > 5 * 1024 * 1024) {
       alert("Ukuran gambar maksimal 5 MB.");
+      event.target.value = "";
       return;
     }
 
-    // Hapus preview blob sebelumnya jika ada
+    // Hapus preview blob sebelumnya
     if (
       preview &&
       preview.startsWith("blob:")
@@ -137,12 +179,17 @@ export default function PaymentMethodModal({
       URL.revokeObjectURL(preview);
     }
 
+    // Buat preview lokal
     const objectUrl =
       URL.createObjectURL(file);
 
     setForm((prev) => ({
       ...prev,
+
       qr_image: file,
+
+      // Karena menggunakan file baru,
+      // URL lama tidak digunakan lagi.
       qr_image_url: null,
     }));
 
@@ -166,6 +213,7 @@ export default function PaymentMethodModal({
 
     setForm((prev) => ({
       ...prev,
+
       qr_image: null,
       qr_image_url: null,
     }));
@@ -189,11 +237,75 @@ export default function PaymentMethodModal({
   }, [preview]);
 
   // =========================================================
+  // CREATE UNIQUE METHOD
+  //
+  // Contoh:
+  //
+  // E-Wallet + DANA
+  // -> ewallet_dana
+  //
+  // E-Wallet + GoPay
+  // -> ewallet_gopay
+  //
+  // Transfer Bank + BNI
+  // -> tf_bank_bni
+  //
+  // Transfer Bank + BCA
+  // -> tf_bank_bca
+  //
+  // Kartu + BCA Debit
+  // -> kartu_bca_debit
+  //
+  // Saat EDIT method tidak disentuh.
+  // =========================================================
+
+  const createUniqueMethod = (
+    baseMethod,
+    providerNote
+  ) => {
+    if (
+      baseMethod !== "ewallet" &&
+      baseMethod !== "tf_bank" &&
+      baseMethod !== "kartu"
+    ) {
+      return baseMethod;
+    }
+
+    if (!providerNote) {
+      return baseMethod;
+    }
+
+    // Ambil bagian pertama sebelum "•"
+    //
+    // "DANA • 08123456789"
+    // -> "DANA"
+    //
+    // "BNI • 1234567890 • a.n. Montera"
+    // -> "BNI"
+
+    const providerName =
+      providerNote
+        .split("•")[0]
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "");
+
+    if (!providerName) {
+      return baseMethod;
+    }
+
+    return `${baseMethod}_${providerName}`;
+  };
+
+  // =========================================================
   // SAVE
   // =========================================================
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (saving) return;
 
     // -------------------------------------------------------
     // VALIDASI METODE
@@ -208,36 +320,106 @@ export default function PaymentMethodModal({
 
     // -------------------------------------------------------
     // PROVIDER / NOTE
-    //
-    // Field ini SELALU ada.
-    // Tidak diwajibkan supaya Tunai juga tetap bisa
-    // disimpan tanpa isi provider.
     // -------------------------------------------------------
 
-    const paymentData = {
-      method: form.method,
+    const providerNote =
+      form.provider_note.trim();
 
-      is_active: form.is_active,
+    // -------------------------------------------------------
+    // VALIDASI PROVIDER
+    //
+    // Saat tambah:
+    // E-Wallet
+    // Transfer Bank
+    // Kartu
+    //
+    // wajib memiliki provider / note.
+    // -------------------------------------------------------
+
+    if (
+      !editingId &&
+      (
+        form.method === "ewallet" ||
+        form.method === "tf_bank" ||
+        form.method === "kartu"
+      ) &&
+      !providerNote
+    ) {
+      alert(
+        "Provider / Note wajib diisi."
+      );
+      return;
+    }
+
+    // -------------------------------------------------------
+    // METHOD FINAL
+    //
+    // TAMBAH:
+    // ewallet + DANA
+    // -> ewallet_dana
+    //
+    // EDIT:
+    // method database tetap digunakan.
+    // -------------------------------------------------------
+
+    const finalMethod = editingId
+      ? form.method
+      : createUniqueMethod(
+          form.method,
+          providerNote
+        );
+
+    const paymentData = {
+      method: finalMethod,
+
+      is_active:
+        form.is_active,
 
       provider_note:
-        form.provider_note.trim(),
+        providerNote,
 
-      qr_image: form.qr_image,
+      qr_image:
+        form.qr_image,
 
       qr_image_url:
         form.qr_image_url,
     };
 
     console.log(
+      "========================================"
+    );
+
+    console.log(
       "PAYMENT DATA:",
       paymentData
     );
 
-    try {
-      const result =
-        await onSave(paymentData);
+    console.log(
+      "METHOD ASLI:",
+      form.method
+    );
 
-      return result;
+    console.log(
+      "METHOD FINAL:",
+      finalMethod
+    );
+
+    console.log(
+      "QR IMAGE:",
+      form.qr_image
+    );
+
+    console.log(
+      "QR IMAGE URL:",
+      form.qr_image_url
+    );
+
+    console.log(
+      "========================================"
+    );
+
+    try {
+      await onSave(paymentData);
     } catch (error) {
       console.error(
         "Gagal menyimpan metode pembayaran:",
@@ -258,6 +440,7 @@ export default function PaymentMethodModal({
         "Pembayaran langsung dengan uang tunai",
       icon: Banknote,
     },
+
     {
       value: "qris",
       label: "QRIS",
@@ -265,6 +448,7 @@ export default function PaymentMethodModal({
         "Pembayaran menggunakan QRIS",
       icon: QrCode,
     },
+
     {
       value: "tf_bank",
       label: "Transfer Bank",
@@ -272,6 +456,7 @@ export default function PaymentMethodModal({
         "Pembayaran melalui transfer bank",
       icon: Building2,
     },
+
     {
       value: "ewallet",
       label: "E-Wallet",
@@ -279,6 +464,7 @@ export default function PaymentMethodModal({
         "GoPay, OVO, DANA, ShopeePay, dll",
       icon: WalletCards,
     },
+
     {
       value: "kartu",
       label: "Kartu",
@@ -301,9 +487,9 @@ export default function PaymentMethodModal({
 
       <div className="flex max-h-[90vh] w-full max-w-[500px] flex-col overflow-hidden rounded-[18px] bg-[#fffdf7] shadow-2xl">
 
-        {/* ===================================================
+        {/* =================================================
             HEADER
-        =================================================== */}
+        ================================================= */}
 
         <div className="flex shrink-0 items-center justify-between border-b border-[#e5e0d6] px-5 py-4">
 
@@ -324,16 +510,17 @@ export default function PaymentMethodModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-[#eeeae2] text-[#66625b] transition hover:bg-[#e2ded5] active:scale-95"
+            disabled={saving}
+            className="flex h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-[#eeeae2] text-[#66625b] transition hover:bg-[#e2ded5] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <X size={15} />
           </button>
 
         </div>
 
-        {/* ===================================================
+        {/* =================================================
             FORM
-        =================================================== */}
+        ================================================= */}
 
         <form
           onSubmit={handleSubmit}
@@ -355,8 +542,20 @@ export default function PaymentMethodModal({
               {methods.map((item) => {
                 const Icon = item.icon;
 
+                // Saat edit:
+                // ewallet_dana
+                // ewallet_gopay
+                // tf_bank_bni
+                // tf_bank_bca
+                //
+                // tetap menampilkan kategori
+                // yang sesuai sebagai aktif.
+
                 const active =
-                  form.method === item.value;
+                  form.method === item.value ||
+                  form.method.startsWith(
+                    `${item.value}_`
+                  );
 
                 const disabled =
                   !!editingId;
@@ -400,6 +599,7 @@ export default function PaymentMethodModal({
                     </div>
 
                     <div className="min-w-0">
+
                       <p className="text-[10.5px] font-bold">
                         {item.label}
                       </p>
@@ -413,6 +613,7 @@ export default function PaymentMethodModal({
                       >
                         {item.description}
                       </p>
+
                     </div>
 
                   </button>
@@ -427,12 +628,14 @@ export default function PaymentMethodModal({
 
             {editingId && (
               <div className="mt-2.5 rounded-[9px] bg-[#f3f0e8] px-3 py-2">
+
                 <p className="text-[8px] leading-3 text-[#858078]">
                   Metode pembayaran tidak dapat
                   diganti saat edit. Jika ingin
                   menggunakan metode lain, tambahkan
                   metode pembayaran baru.
                 </p>
+
               </div>
             )}
 
@@ -440,7 +643,6 @@ export default function PaymentMethodModal({
 
           {/* =================================================
               PROVIDER / NOTE
-              SELALU MUNCUL
           ================================================= */}
 
           <div className="mt-4">
@@ -461,27 +663,46 @@ export default function PaymentMethodModal({
                 )
               }
               placeholder={
-                form.method === "tf_bank"
+                form.method.startsWith(
+                  "tf_bank"
+                )
                   ? "Contoh: BNI • 1234567890 • a.n. Montera"
-                  : form.method === "ewallet"
+
+                  : form.method.startsWith(
+                      "ewallet"
+                    )
                   ? "Contoh: DANA • 08123456789"
+
                   : form.method === "qris"
                   ? "Contoh: BNI"
-                  : form.method === "kartu"
+
+                  : form.method.startsWith(
+                      "kartu"
+                    )
                   ? "Contoh: BCA Debit / Visa"
+
                   : "Contoh: Pembayaran langsung"
               }
-              className="h-[40px] w-full rounded-[11px] border border-[#dcd7cd] bg-[#fffdf7] px-3.5 text-[11px] font-medium text-[#292725] outline-none transition placeholder:text-[#b8b3aa] focus:border-[#252423]"
+              disabled={saving}
+              className="h-[40px] w-full rounded-[11px] border border-[#dcd7cd] bg-[#fffdf7] px-3.5 text-[11px] font-medium text-[#292725] outline-none transition placeholder:text-[#b8b3aa] focus:border-[#252423] disabled:cursor-not-allowed disabled:opacity-60"
             />
 
-            {form.method === "tf_bank" && (
+            {/* INFO TRANSFER BANK */}
+
+            {form.method.startsWith(
+              "tf_bank"
+            ) && (
               <p className="mt-1.5 text-[8px] leading-3 text-[#aaa59d]">
                 Bisa diisi nama bank, nomor
                 rekening, dan nama pemilik rekening.
               </p>
             )}
 
-            {form.method === "ewallet" && (
+            {/* INFO E-WALLET */}
+
+            {form.method.startsWith(
+              "ewallet"
+            ) && (
               <p className="mt-1.5 text-[8px] leading-3 text-[#aaa59d]">
                 Bisa diisi nama E-Wallet dan
                 nomor HP / ID akun.
@@ -505,17 +726,29 @@ export default function PaymentMethodModal({
                 <div className="relative overflow-hidden rounded-[12px] border border-[#ded9cf] bg-[#f7f4ec] p-3">
 
                   <div className="flex justify-center">
+
                     <img
                       src={preview}
                       alt="Preview QRIS"
                       className="h-[190px] w-[190px] rounded-[8px] bg-white object-contain"
+                      onError={(event) => {
+                        console.error(
+                          "Gagal menampilkan gambar QRIS:",
+                          preview
+                        );
+
+                        event.currentTarget.style.display =
+                          "none";
+                      }}
                     />
+
                   </div>
 
                   <button
                     type="button"
                     onClick={removeQr}
-                    className="absolute right-3 top-3 flex h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-[#f8dfdc] text-[#ed3044] transition hover:bg-[#f3d1ce]"
+                    disabled={saving}
+                    className="absolute right-3 top-3 flex h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-[#f8dfdc] text-[#ed3044] transition hover:bg-[#f3d1ce] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                     title="Hapus QR"
                   >
                     <Trash2 size={14} />
@@ -543,6 +776,7 @@ export default function PaymentMethodModal({
                     onChange={
                       handleQrUpload
                     }
+                    disabled={saving}
                     className="hidden"
                   />
 
@@ -566,6 +800,7 @@ export default function PaymentMethodModal({
                     onChange={
                       handleQrUpload
                     }
+                    disabled={saving}
                     className="hidden"
                   />
 
@@ -582,6 +817,7 @@ export default function PaymentMethodModal({
           <div className="mt-4 flex items-center justify-between rounded-[11px] bg-[#f7f4ec] px-3.5 py-3">
 
             <div>
+
               <p className="text-[10.5px] font-bold text-[#292725]">
                 Aktifkan metode pembayaran
               </p>
@@ -589,17 +825,19 @@ export default function PaymentMethodModal({
               <p className="mt-0.5 text-[8px] text-[#aaa59d]">
                 Metode aktif akan tersedia saat pembayaran.
               </p>
+
             </div>
 
             <button
               type="button"
+              disabled={saving}
               onClick={() =>
                 updateForm(
                   "is_active",
                   !form.is_active
                 )
               }
-              className={`relative h-[24px] w-[44px] rounded-full transition ${
+              className={`relative h-[24px] w-[44px] rounded-full transition disabled:cursor-not-allowed disabled:opacity-60 ${
                 form.is_active
                   ? "bg-[#252423]"
                   : "bg-[#d5d1c8]"
@@ -627,16 +865,20 @@ export default function PaymentMethodModal({
             <button
               type="button"
               onClick={onClose}
-              className="h-[36px] rounded-[10px] border border-[#dcd7cd] bg-[#fffdf7] px-4 text-[10px] font-bold text-[#68645d] transition hover:bg-[#f3f0e8]"
+              disabled={saving}
+              className="h-[36px] rounded-[10px] border border-[#dcd7cd] bg-[#fffdf7] px-4 text-[10px] font-bold text-[#68645d] transition hover:bg-[#f3f0e8] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Batal
             </button>
 
             <button
               type="submit"
-              className="h-[36px] rounded-[10px] bg-[#252423] px-4 text-[10px] font-bold text-white transition hover:bg-[#353331] active:scale-[0.98]"
+              disabled={saving}
+              className="h-[36px] rounded-[10px] bg-[#252423] px-4 text-[10px] font-bold text-white transition hover:bg-[#353331] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {editingId
+              {saving
+                ? "Menyimpan..."
+                : editingId
                 ? "Simpan Perubahan"
                 : "Tambah Metode"}
             </button>
@@ -644,8 +886,8 @@ export default function PaymentMethodModal({
           </div>
 
         </form>
+
       </div>
     </div>
   );
 }
-

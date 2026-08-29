@@ -1,3 +1,4 @@
+
 import api from "./axios";
 
 // =========================================================
@@ -138,6 +139,18 @@ export const updateSettings = async (data) => {
         "Content-Type": "multipart/form-data",
       },
     }
+  );
+
+  return response.data;
+};
+
+// =========================================================
+// DELETE PAYMENT METHOD
+// =========================================================
+
+export const deletePaymentMethod = async (id) => {
+  const response = await api.delete(
+    `/admin/settings/payment-methods/${id}`
   );
 
   return response.data;
@@ -455,3 +468,4 @@ export const deleteBundle = async (id) => {
 
   return response.data;
 };
+
