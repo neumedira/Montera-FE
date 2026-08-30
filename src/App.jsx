@@ -4,7 +4,6 @@ import {
   BrowserRouter,
   Routes,
   Route,
-  useLocation,
 } from "react-router-dom";
 
 import { CartProvider } from "./context/CartContext";
@@ -19,8 +18,11 @@ import ProtectedRoute from "./components/ProtectedRoute";
 // ==============================
 // CUSTOMER
 // ==============================
+import ScanPage from "./pages/ScanPage";
+
 import Menu from "./pages/costumer/menu/Menu";
 import MenuDetail from "./pages/costumer/menu/MenuDetail";
+import BundleDetail from "./pages/costumer/menu/BundleDetail";
 import LoadingScreen from "./components/costumer/menu/LoadingScreen";
 
 // ==============================
@@ -39,8 +41,7 @@ import Laporan from "./pages/Laporan";
 // ==============================
 import CartPage from "./pages/CartPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
-import CashPaymentPage from "./pages/CashPaymentPage";
-import QrisPaymentPage from "./pages/QrisPaymentPage";
+import PaymentPage from "./pages/PaymentPage";
 
 // ==============================
 // MODAL
@@ -53,26 +54,30 @@ import NewOrderModal from "./components/modal/NewOrderModal";
 
 function CustomerMenuWrapper() {
   const [isLoading, setIsLoading] = useState(() => {
-    // Cek apakah loading customer menu
-    // sudah pernah ditampilkan dalam sesi ini.
-    return sessionStorage.getItem("montera_menu_loaded") !== "true";
+    return (
+      sessionStorage.getItem(
+        "montera_menu_loaded"
+      ) !== "true"
+    );
   });
 
   useEffect(() => {
-    if (!isLoading) return;
+    if (!isLoading) {
+      return;
+    }
 
     const timer = setTimeout(() => {
       setIsLoading(false);
 
-      // Tandai bahwa customer menu
-      // sudah pernah selesai loading.
       sessionStorage.setItem(
         "montera_menu_loaded",
         "true"
       );
     }, 1500);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [isLoading]);
 
   if (isLoading) {
@@ -87,7 +92,10 @@ function CustomerMenuWrapper() {
 // =========================================================
 
 function App() {
-  const [showNewOrder, setShowNewOrder] = useState(false);
+  const [
+    showNewOrder,
+    setShowNewOrder,
+  ] = useState(false);
 
   // =======================================================
   // GLOBAL NEW ORDER NOTIFICATION
@@ -98,8 +106,14 @@ function App() {
       setShowNewOrder(true);
     }, 5000);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, []);
+
+  // =======================================================
+  // RENDER
+  // =======================================================
 
   return (
     <BrowserRouter>
@@ -107,12 +121,23 @@ function App() {
         <Routes>
 
           {/* ===============================================
+              CUSTOMER SCAN QR TABLE
+          =============================================== */}
+
+          <Route
+            path="/scan/:token"
+            element={<ScanPage />}
+          />
+
+          {/* ===============================================
               CUSTOMER MENU
           =============================================== */}
 
           <Route
             path="/"
-            element={<CustomerMenuWrapper />}
+            element={
+              <CustomerMenuWrapper />
+            }
           />
 
           {/* ===============================================
@@ -122,6 +147,17 @@ function App() {
           <Route
             path="/menu/:id"
             element={<MenuDetail />}
+          />
+
+          {/* ===============================================
+              CUSTOMER BUNDLE DETAIL
+          =============================================== */}
+
+          <Route
+            path="/menu/bundle/:id"
+            element={
+              <BundleDetail />
+            }
           />
 
           {/* ===============================================
@@ -137,7 +173,11 @@ function App() {
               PROTECTED ADMIN ROUTES
           =============================================== */}
 
-          <Route element={<ProtectedRoute />}>
+          <Route
+            element={
+              <ProtectedRoute />
+            }
+          >
 
             <Route
               path="/admin"
@@ -186,21 +226,18 @@ function App() {
 
           <Route
             path="/order-details"
-            element={<OrderDetailPage />}
+            element={
+              <OrderDetailPage />
+            }
           />
 
           {/* ===============================================
-              PAYMENT
+              GLOBAL PAYMENT
           =============================================== */}
 
           <Route
-            path="/cash-payment"
-            element={<CashPaymentPage />}
-          />
-
-          <Route
-            path="/qris-payment"
-            element={<QrisPaymentPage />}
+            path="/payment"
+            element={<PaymentPage />}
           />
 
         </Routes>
@@ -211,7 +248,9 @@ function App() {
 
         <NewOrderModal
           isOpen={showNewOrder}
-          onClose={() => setShowNewOrder(false)}
+          onClose={() =>
+            setShowNewOrder(false)
+          }
           orderId="MTR-1001"
         />
 

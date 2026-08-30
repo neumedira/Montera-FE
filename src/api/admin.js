@@ -1,4 +1,3 @@
-
 import api from "./axios";
 
 // =========================================================
@@ -41,10 +40,6 @@ export const getSettings = async () => {
 export const updateSettings = async (data) => {
   const formData = new FormData();
 
-  // =======================================================
-  // BUSINESS PROFILE
-  // =======================================================
-
   if (data.business_profile) {
     formData.append(
       "business_profile[cafe_name]",
@@ -70,11 +65,14 @@ export const updateSettings = async (data) => {
       "business_profile[tiktok]",
       data.business_profile.tiktok ?? ""
     );
-  }
 
-  // =======================================================
-  // TAX SETTING
-  // =======================================================
+    if (data.bannerImage instanceof File) {
+      formData.append(
+        "business_profile[banner_image]",
+        data.bannerImage
+      );
+    }
+  }
 
   if (data.tax_setting) {
     formData.append(
@@ -87,10 +85,6 @@ export const updateSettings = async (data) => {
       data.tax_setting.service_charge_percentage ?? 0
     );
   }
-
-  // =======================================================
-  // PAYMENT SETTINGS
-  // =======================================================
 
   if (Array.isArray(data.payment_settings)) {
     data.payment_settings.forEach((payment, index) => {
@@ -120,13 +114,7 @@ export const updateSettings = async (data) => {
           ""
       );
 
-      // =====================================================
-      // QR IMAGE
-      // =====================================================
-
-      if (
-        payment.qr_image instanceof File
-      ) {
+      if (payment.qr_image instanceof File) {
         formData.append(
           `payment_settings[${index}][qr_image]`,
           payment.qr_image
@@ -135,13 +123,27 @@ export const updateSettings = async (data) => {
     });
   }
 
+  console.log("UPDATE SETTINGS FORMDATA:");
+
+  for (const [key, value] of formData.entries()) {
+    console.log(
+      key,
+      value instanceof File
+        ? {
+            name: value.name,
+            type: value.type,
+            size: value.size,
+          }
+        : value
+    );
+  }
+
   const response = await api.post(
     "/admin/settings",
     formData,
     {
       headers: {
-        "Content-Type":
-          "multipart/form-data",
+        "Content-Type": "multipart/form-data",
       },
     }
   );
@@ -153,9 +155,7 @@ export const updateSettings = async (data) => {
 // DELETE PAYMENT METHOD
 // =========================================================
 
-export const deletePaymentMethod = async (
-  id
-) => {
+export const deletePaymentMethod = async (id) => {
   const response = await api.delete(
     `/admin/settings/payment-methods/${id}`
   );
@@ -175,9 +175,7 @@ export const getMenuCategories = async () => {
   return response.data;
 };
 
-export const createMenuCategory = async (
-  data
-) => {
+export const createMenuCategory = async (data) => {
   const response = await api.post(
     "/admin/menu-categories",
     data
@@ -186,10 +184,7 @@ export const createMenuCategory = async (
   return response.data;
 };
 
-export const updateMenuCategory = async (
-  id,
-  data
-) => {
+export const updateMenuCategory = async (id, data) => {
   const response = await api.put(
     `/admin/menu-categories/${id}`,
     data
@@ -198,9 +193,7 @@ export const updateMenuCategory = async (
   return response.data;
 };
 
-export const deleteMenuCategory = async (
-  id
-) => {
+export const deleteMenuCategory = async (id) => {
   const response = await api.delete(
     `/admin/menu-categories/${id}`
   );
@@ -220,9 +213,7 @@ export const getMenuItems = async () => {
   return response.data;
 };
 
-export const getMenuItem = async (
-  id
-) => {
+export const getMenuItem = async (id) => {
   const response = await api.get(
     `/admin/menu-items/${id}`
   );
@@ -234,14 +225,8 @@ export const getMenuItem = async (
 // CREATE MENU ITEM
 // =========================================================
 
-export const createMenuItem = async (
-  data
-) => {
+export const createMenuItem = async (data) => {
   const formData = new FormData();
-
-  // =======================================================
-  // BASIC DATA
-  // =======================================================
 
   formData.append(
     "name",
@@ -252,10 +237,6 @@ export const createMenuItem = async (
     "price",
     data.price ?? 0
   );
-
-  // =======================================================
-  // CATEGORY
-  // =======================================================
 
   if (
     data.category_id !== null &&
@@ -268,26 +249,10 @@ export const createMenuItem = async (
     );
   }
 
-  // =======================================================
-  // LABEL
-  // =======================================================
-  // Kalau label aktif:
-  //     "Favorit!"
-  //
-  // Kalau label tidak aktif:
-  //     ""
-  //
-  // Ini dibuat konsisten dengan update.
-  // =======================================================
-
   formData.append(
     "label",
     data.label ?? ""
   );
-
-  // =======================================================
-  // DESCRIPTION
-  // =======================================================
 
   formData.append(
     "description",
@@ -295,12 +260,10 @@ export const createMenuItem = async (
   );
 
   // =======================================================
-  // FOTO FILE
+  // FOTO BARU
   // =======================================================
 
-  if (
-    data.photo instanceof File
-  ) {
+  if (data.photo instanceof File) {
     formData.append(
       "photo",
       data.photo
@@ -312,7 +275,8 @@ export const createMenuItem = async (
   // =======================================================
 
   if (
-    data.photo_url
+    data.photo_url &&
+    typeof data.photo_url === "string"
   ) {
     formData.append(
       "photo_url",
@@ -321,55 +285,48 @@ export const createMenuItem = async (
   }
 
   // =======================================================
-  // STATUS
+  // STATUS MENU
   // =======================================================
 
   formData.append(
     "is_active",
-    data.is_active
-      ? "1"
-      : "0"
+    data.is_active ? "1" : "0"
   );
 
   // =======================================================
-  // ADDON IDS
+  // ADDONS
   // =======================================================
 
-  if (
-    Array.isArray(data.addon_ids)
-  ) {
-    data.addon_ids.forEach(
-      (addonId) => {
-        formData.append(
-          "addon_ids[]",
-          addonId
-        );
-      }
-    );
+  if (Array.isArray(data.addon_ids)) {
+    data.addon_ids.forEach((addonId) => {
+      formData.append(
+        "addon_ids[]",
+        addonId
+      );
+    });
   }
 
-  // =======================================================
-  // DEBUG
-  // =======================================================
+  console.log("CREATE MENU FORMDATA:");
 
-  console.log(
-    "CREATE MENU FORMDATA:",
-    Object.fromEntries(
-      formData.entries()
-    )
-  );
-
-  // =======================================================
-  // REQUEST
-  // =======================================================
+  for (const [key, value] of formData.entries()) {
+    console.log(
+      key,
+      value instanceof File
+        ? {
+            name: value.name,
+            type: value.type,
+            size: value.size,
+          }
+        : value
+    );
+  }
 
   const response = await api.post(
     "/admin/menu-items",
     formData,
     {
       headers: {
-        "Content-Type":
-          "multipart/form-data",
+        "Content-Type": "multipart/form-data",
       },
     }
   );
@@ -381,15 +338,8 @@ export const createMenuItem = async (
 // UPDATE MENU ITEM
 // =========================================================
 
-export const updateMenuItem = async (
-  id,
-  data
-) => {
+export const updateMenuItem = async (id, data) => {
   const formData = new FormData();
-
-  // =======================================================
-  // BASIC DATA
-  // =======================================================
 
   formData.append(
     "name",
@@ -400,10 +350,6 @@ export const updateMenuItem = async (
     "price",
     data.price ?? 0
   );
-
-  // =======================================================
-  // CATEGORY
-  // =======================================================
 
   if (
     data.category_id !== null &&
@@ -416,39 +362,10 @@ export const updateMenuItem = async (
     );
   }
 
-  // =======================================================
-  // LABEL
-  // =======================================================
-  //
-  // INI BAGIAN PENTING.
-  //
-  // Jangan menggunakan:
-  //
-  // if (data.label) {
-  //   formData.append("label", data.label);
-  // }
-  //
-  // Karena kalau toggle OFF:
-  //
-  // data.label = null
-  //
-  // maka field label tidak dikirim sama sekali.
-  //
-  // Sekarang:
-  //
-  // ON  → "Favorit!"
-  // OFF → ""
-  //
-  // =======================================================
-
   formData.append(
     "label",
     data.label ?? ""
   );
-
-  // =======================================================
-  // DESCRIPTION
-  // =======================================================
 
   formData.append(
     "description",
@@ -456,12 +373,12 @@ export const updateMenuItem = async (
   );
 
   // =======================================================
-  // FOTO FILE BARU
+  // FOTO BARU
+  //
+  // Kalau memilih foto baru, kirim File.
   // =======================================================
 
-  if (
-    data.photo instanceof File
-  ) {
+  if (data.photo instanceof File) {
     formData.append(
       "photo",
       data.photo
@@ -469,11 +386,16 @@ export const updateMenuItem = async (
   }
 
   // =======================================================
-  // FOTO URL
+  // FOTO LAMA / URL
+  //
+  // Kalau tidak memilih foto baru tetapi masih memiliki
+  // URL foto lama, kirim URL tersebut.
   // =======================================================
 
   if (
-    data.photo_url
+    !(data.photo instanceof File) &&
+    data.photo_url &&
+    typeof data.photo_url === "string"
   ) {
     formData.append(
       "photo_url",
@@ -482,32 +404,45 @@ export const updateMenuItem = async (
   }
 
   // =======================================================
-  // STATUS
+  // STATUS MENU
   // =======================================================
 
   formData.append(
     "is_active",
-    data.is_active
-      ? "1"
-      : "0"
+    data.is_active ? "1" : "0"
   );
 
   // =======================================================
-  // ADDON IDS
+  // ADDONS
+  //
+  // PENTING:
+  //
+  // Jangan lagi menggunakan:
+  //
+  // addon_ids[]
+  //
+  // karena ketika array kosong tidak ada field yang
+  // terkirim.
+  //
+  // Sekarang kita selalu kirim addon_ids sebagai JSON.
+  //
+  // Contoh:
+  //
+  // [1, 2] -> "[1,2]"
+  // []     -> "[]"
+  //
+  // UpdateMenuItemRequest akan mengubah JSON tersebut
+  // kembali menjadi array PHP.
   // =======================================================
 
-  if (
-    Array.isArray(data.addon_ids)
-  ) {
-    data.addon_ids.forEach(
-      (addonId) => {
-        formData.append(
-          "addon_ids[]",
-          addonId
-        );
-      }
-    );
-  }
+  const addonIds = Array.isArray(data.addon_ids)
+    ? data.addon_ids
+    : [];
+
+  formData.append(
+    "addon_ids",
+    JSON.stringify(addonIds)
+  );
 
   // =======================================================
   // LARAVEL METHOD SPOOFING
@@ -522,12 +457,20 @@ export const updateMenuItem = async (
   // DEBUG
   // =======================================================
 
-  console.log(
-    "UPDATE MENU FORMDATA:",
-    Object.fromEntries(
-      formData.entries()
-    )
-  );
+  console.log("UPDATE MENU FORMDATA:");
+
+  for (const [key, value] of formData.entries()) {
+    console.log(
+      key,
+      value instanceof File
+        ? {
+            name: value.name,
+            type: value.type,
+            size: value.size,
+          }
+        : value
+    );
+  }
 
   // =======================================================
   // REQUEST
@@ -538,8 +481,7 @@ export const updateMenuItem = async (
     formData,
     {
       headers: {
-        "Content-Type":
-          "multipart/form-data",
+        "Content-Type": "multipart/form-data",
       },
     }
   );
@@ -551,9 +493,7 @@ export const updateMenuItem = async (
 // DELETE MENU ITEM
 // =========================================================
 
-export const deleteMenuItem = async (
-  id
-) => {
+export const deleteMenuItem = async (id) => {
   const response = await api.delete(
     `/admin/menu-items/${id}`
   );
@@ -573,9 +513,7 @@ export const getAddons = async () => {
   return response.data;
 };
 
-export const createAddon = async (
-  data
-) => {
+export const createAddon = async (data) => {
   const response = await api.post(
     "/admin/addons",
     data
@@ -584,10 +522,7 @@ export const createAddon = async (
   return response.data;
 };
 
-export const updateAddon = async (
-  id,
-  data
-) => {
+export const updateAddon = async (id, data) => {
   const response = await api.put(
     `/admin/addons/${id}`,
     data
@@ -596,9 +531,7 @@ export const updateAddon = async (
   return response.data;
 };
 
-export const deleteAddon = async (
-  id
-) => {
+export const deleteAddon = async (id) => {
   const response = await api.delete(
     `/admin/addons/${id}`
   );
@@ -618,32 +551,217 @@ export const getBundles = async () => {
   return response.data;
 };
 
-export const createBundle = async (
-  data
-) => {
+// =========================================================
+// CREATE BUNDLE
+// =========================================================
+
+export const createBundle = async (data) => {
+  const formData = new FormData();
+
+  formData.append(
+    "name",
+    data.name ?? ""
+  );
+
+  formData.append(
+    "normal_price",
+    data.normal_price ?? 0
+  );
+
+  formData.append(
+    "bundle_price",
+    data.bundle_price ?? 0
+  );
+
+  formData.append(
+    "is_active",
+    data.is_active ? "1" : "0"
+  );
+
+  // =======================================================
+  // FOTO BARU
+  // =======================================================
+
+  if (data.photo instanceof File) {
+    formData.append(
+      "photo",
+      data.photo
+    );
+  }
+
+  // =======================================================
+  // FOTO URL
+  // =======================================================
+
+  if (
+    data.photo_url &&
+    typeof data.photo_url === "string"
+  ) {
+    formData.append(
+      "photo_url",
+      data.photo_url
+    );
+  }
+
+  // =======================================================
+  // ITEMS
+  // =======================================================
+
+  if (Array.isArray(data.items)) {
+    data.items.forEach((item, index) => {
+      formData.append(
+        `items[${index}][menu_item_id]`,
+        item.menu_item_id
+      );
+
+      formData.append(
+        `items[${index}][quantity]`,
+        item.quantity ?? 1
+      );
+    });
+  }
+
+  console.log("CREATE BUNDLE FORMDATA:");
+
+  for (const [key, value] of formData.entries()) {
+    console.log(
+      key,
+      value instanceof File
+        ? {
+            name: value.name,
+            type: value.type,
+            size: value.size,
+          }
+        : value
+    );
+  }
+
   const response = await api.post(
     "/admin/bundles",
-    data
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
   );
 
   return response.data;
 };
 
-export const updateBundle = async (
-  id,
-  data
-) => {
-  const response = await api.put(
+// =========================================================
+// UPDATE BUNDLE
+// =========================================================
+
+export const updateBundle = async (id, data) => {
+  const formData = new FormData();
+
+  formData.append(
+    "name",
+    data.name ?? ""
+  );
+
+  formData.append(
+    "normal_price",
+    data.normal_price ?? 0
+  );
+
+  formData.append(
+    "bundle_price",
+    data.bundle_price ?? 0
+  );
+
+  formData.append(
+    "is_active",
+    data.is_active ? "1" : "0"
+  );
+
+  // =======================================================
+  // FOTO BARU
+  // =======================================================
+
+  if (data.photo instanceof File) {
+    formData.append(
+      "photo",
+      data.photo
+    );
+  }
+
+  // =======================================================
+  // FOTO LAMA
+  // =======================================================
+
+  if (
+    !(data.photo instanceof File) &&
+    data.photo_url &&
+    typeof data.photo_url === "string"
+  ) {
+    formData.append(
+      "photo_url",
+      data.photo_url
+    );
+  }
+
+  // =======================================================
+  // ITEMS
+  // =======================================================
+
+  if (Array.isArray(data.items)) {
+    data.items.forEach((item, index) => {
+      formData.append(
+        `items[${index}][menu_item_id]`,
+        item.menu_item_id
+      );
+
+      formData.append(
+        `items[${index}][quantity]`,
+        item.quantity ?? 1
+      );
+    });
+  }
+
+  // =======================================================
+  // LARAVEL METHOD SPOOFING
+  // =======================================================
+
+  formData.append(
+    "_method",
+    "PUT"
+  );
+
+  console.log("UPDATE BUNDLE FORMDATA:");
+
+  for (const [key, value] of formData.entries()) {
+    console.log(
+      key,
+      value instanceof File
+        ? {
+            name: value.name,
+            type: value.type,
+            size: value.size,
+          }
+        : value
+    );
+  }
+
+  const response = await api.post(
     `/admin/bundles/${id}`,
-    data
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
   );
 
   return response.data;
 };
 
-export const deleteBundle = async (
-  id
-) => {
+// =========================================================
+// DELETE BUNDLE
+// =========================================================
+
+export const deleteBundle = async (id) => {
   const response = await api.delete(
     `/admin/bundles/${id}`
   );
@@ -651,3 +769,38 @@ export const deleteBundle = async (
   return response.data;
 };
 
+// =========================================================
+// TABLES / QR TABLE
+// =========================================================
+
+export const getTables = async () => {
+  const response = await api.get("/admin/tables");
+
+  return response.data;
+};
+
+export const createTable = async (data) => {
+  const response = await api.post(
+    "/admin/tables",
+    data
+  );
+
+  return response.data;
+};
+
+export const updateTable = async (id, data) => {
+  const response = await api.put(
+    `/admin/tables/${id}`,
+    data
+  );
+
+  return response.data;
+};
+
+export const deleteTable = async (id) => {
+  const response = await api.delete(
+    `/admin/tables/${id}`
+  );
+
+  return response.data;
+};

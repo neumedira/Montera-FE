@@ -1,9 +1,11 @@
+
 import { useEffect, useState } from "react";
 
 import Navbar from "../components/layout/Navbar";
 import BottomNavigation from "../components/layout/BottomNavigation";
 
 import BusinessProfile from "../components/settings/BusinessProfile";
+import CustomerBanner from "../components/settings/CustomerBanner";
 import TaxSettings from "../components/settings/TaxSettings";
 import PaymentMethods from "../components/settings/PaymentMethods";
 
@@ -25,6 +27,16 @@ export default function Settings() {
       whatsapp: "",
       instagram: "",
       tiktok: "",
+
+      // =======================================================
+      // CUSTOMER BANNER
+      // =======================================================
+
+      // File baru yang dipilih admin
+      bannerImage: null,
+
+      // URL/path banner dari backend atau preview lokal
+      bannerImageUrl: "",
     },
 
     tax: {
@@ -35,8 +47,7 @@ export default function Settings() {
     paymentMethods: [],
   });
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
   // =========================================================
   // LOAD SETTINGS
@@ -46,8 +57,7 @@ export default function Settings() {
     try {
       setLoading(true);
 
-      const response =
-        await getSettings();
+      const response = await getSettings();
 
       console.log(
         "========================================"
@@ -63,17 +73,11 @@ export default function Settings() {
         response?.data
       );
 
-      const data =
-        response?.data || {};
+      const data = response?.data || {};
 
-      const business =
-        data.business_profile;
-
-      const tax =
-        data.tax_setting;
-
-      const payments =
-        data.payment_settings;
+      const business = data.business_profile;
+      const tax = data.tax_setting;
+      const payments = data.payment_settings;
 
       console.log(
         "BUSINESS PROFILE:",
@@ -94,6 +98,10 @@ export default function Settings() {
         "========================================"
       );
 
+      // =======================================================
+      // SET STATE
+      // =======================================================
+
       setSettings({
         business: {
           cafeName:
@@ -110,6 +118,19 @@ export default function Settings() {
 
           tiktok:
             business?.tiktok || "",
+
+          // ===================================================
+          // CUSTOMER BANNER
+          // ===================================================
+
+          // Tidak ada File saat pertama kali load.
+          // Karena file berada di server.
+          bannerImage: null,
+
+          // Path dari database:
+          // banners/xxxx.png
+          bannerImageUrl:
+            business?.banner_image_url || "",
         },
 
         tax: {
@@ -150,90 +171,125 @@ export default function Settings() {
   }, []);
 
   // =========================================================
-  // SAVE BUSINESS + TAX
+  // SAVE BUSINESS + TAX + BANNER
   // =========================================================
 
-  const handleSaveSettings =
-    async () => {
-      try {
-        const payload = {
-          business_profile: {
-            cafe_name:
-              settings.business.cafeName,
+  const handleSaveSettings = async () => {
+    try {
+      // =======================================================
+      // BUSINESS PROFILE
+      // =======================================================
 
-            address:
-              settings.business.address,
+      const businessProfile = {
+        cafe_name:
+          settings.business.cafeName,
 
-            whatsapp_number:
-              settings.business.whatsapp,
+        address:
+          settings.business.address,
 
-            instagram:
-              settings.business.instagram,
+        whatsapp_number:
+          settings.business.whatsapp,
 
-            tiktok:
-              settings.business.tiktok,
-          },
+        instagram:
+          settings.business.instagram,
 
-          tax_setting: {
-            tax_percentage:
-              settings.tax.regionalTax ||
-              0,
+        tiktok:
+          settings.business.tiktok,
+      };
 
-            service_charge_percentage:
-              settings.tax.serviceCharge ||
-              0,
-          },
+      // =======================================================
+      // TAX SETTING
+      // =======================================================
 
-          payment_settings:
-            settings.paymentMethods || [],
-        };
+      const taxSetting = {
+        tax_percentage:
+          settings.tax.regionalTax || 0,
 
-        console.log(
-          "========================================"
-        );
+        service_charge_percentage:
+          settings.tax.serviceCharge || 0,
+      };
 
-        console.log(
-          "SAVE SETTINGS PAYLOAD:",
-          payload
-        );
+      // =======================================================
+      // PAYLOAD
+      // =======================================================
 
-        const response =
-          await updateSettings(
-            payload
-          );
+      const payload = {
+        business_profile:
+          businessProfile,
 
-        console.log(
-          "SAVE SETTINGS RESPONSE:",
-          response
-        );
+        tax_setting:
+          taxSetting,
 
-        console.log(
-          "========================================"
-        );
+        payment_settings:
+          settings.paymentMethods || [],
 
-        // Ambil data terbaru dari database
-        await loadSettings();
+        // =====================================================
+        // CUSTOMER BANNER
+        // =====================================================
+        //
+        // File hanya dikirim kalau admin memilih
+        // banner baru.
+        //
+        bannerImage:
+          settings.business.bannerImage || null,
+      };
 
-        alert(
-          "Pengaturan berhasil disimpan."
-        );
-      } catch (error) {
-        console.error(
-          "Gagal menyimpan settings:",
-          error
-        );
+      console.log(
+        "========================================"
+      );
 
-        console.error(
-          "ERROR RESPONSE:",
-          error.response?.data
-        );
+      console.log(
+        "SAVE SETTINGS PAYLOAD:",
+        payload
+      );
 
-        alert(
-          error.response?.data?.message ||
-            "Gagal menyimpan pengaturan."
-        );
-      }
-    };
+      console.log(
+        "BANNER FILE:",
+        settings.business.bannerImage
+      );
+
+      console.log(
+        "========================================"
+      );
+
+      // =======================================================
+      // SAVE
+      // =======================================================
+
+      const response =
+        await updateSettings(payload);
+
+      console.log(
+        "SAVE SETTINGS RESPONSE:",
+        response
+      );
+
+      // =======================================================
+      // LOAD ULANG DATA DARI DATABASE
+      // =======================================================
+
+      await loadSettings();
+
+      alert(
+        "Pengaturan berhasil disimpan."
+      );
+    } catch (error) {
+      console.error(
+        "Gagal menyimpan settings:",
+        error
+      );
+
+      console.error(
+        "ERROR RESPONSE:",
+        error.response?.data
+      );
+
+      alert(
+        error.response?.data?.message ||
+          "Gagal menyimpan pengaturan."
+      );
+    }
+  };
 
   // =========================================================
   // SAVE PAYMENT
@@ -273,9 +329,7 @@ export default function Settings() {
                 ...paymentData,
 
                 // Backend
-                // Method TIDAK diganti saat edit.
-                // PaymentMethodModal sudah
-                // mengirim method lama.
+                // method tidak diganti
                 method:
                   paymentData.method,
 
@@ -340,6 +394,17 @@ export default function Settings() {
 
         payment_settings:
           paymentSettings,
+
+        // =====================================================
+        // BANNER
+        // =====================================================
+        //
+        // Kalau saat menyimpan payment ada banner baru
+        // yang belum disimpan, tetap ikut dikirim.
+        //
+
+        bannerImage:
+          settings.business.bannerImage || null,
       };
 
       console.log(
@@ -353,6 +418,14 @@ export default function Settings() {
         payload
       );
 
+      console.log(
+        "========================================"
+      );
+
+      // =====================================================
+      // SAVE
+      // =====================================================
+
       const response =
         await updateSettings(
           payload
@@ -363,19 +436,14 @@ export default function Settings() {
         response
       );
 
-      console.log(
-        "========================================"
-      );
-
       // =====================================================
-      // GET ULANG DARI DATABASE
+      // GET ULANG
       // =====================================================
 
       await loadSettings();
 
       // =====================================================
       // RETURN TRUE
-      // PaymentMethods akan menutup modal
       // =====================================================
 
       return true;
@@ -420,7 +488,7 @@ export default function Settings() {
         );
 
         // ===================================================
-        // Ambil ulang data dari database
+        // GET ULANG
         // ===================================================
 
         await loadSettings();
@@ -511,17 +579,39 @@ export default function Settings() {
 
         <div className="space-y-[17px]">
 
+          {/* =================================================
+              BUSINESS PROFILE
+          ================================================= */}
+
           <BusinessProfile
             data={settings}
             setData={setSettings}
             onSave={handleSaveSettings}
           />
 
+          {/* =================================================
+              CUSTOMER BANNER
+          ================================================= */}
+
+          <CustomerBanner
+            data={settings}
+            setData={setSettings}
+            onSave={handleSaveSettings}
+          />
+
+          {/* =================================================
+              TAX SETTINGS
+          ================================================= */}
+
           <TaxSettings
             data={settings}
             setData={setSettings}
             onSave={handleSaveSettings}
           />
+
+          {/* =================================================
+              PAYMENT METHODS
+          ================================================= */}
 
           <PaymentMethods
             data={settings}
@@ -543,3 +633,4 @@ export default function Settings() {
     </div>
   );
 }
+

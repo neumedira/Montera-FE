@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from "react";
 
 import Navbar from "../components/layout/Navbar";
@@ -6,7 +7,6 @@ import BottomNavigation from "../components/layout/BottomNavigation";
 import OrderCard from "../components/orders/OrderCard";
 import OrderFilters from "../components/orders/OrderFilters";
 
-// SESUAIKAN PATH INI DENGAN LOKASI api.js KAMU
 import api from "../api/axios";
 
 export default function OrderPage() {
@@ -31,222 +31,411 @@ export default function OrderPage() {
   // Pesanan yang sedang dibuka
   const [openOrder, setOpenOrder] = useState(null);
 
-  // ID pesanan Cash yang sudah Done
-  const [doneOrders, setDoneOrders] = useState([]);
-
   // ==========================================
   // AMBIL PESANAN DARI BACKEND
   // ==========================================
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        setError("");
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-        const response = await api.get("admin/orders");
+      // --------------------------------------------------
+      // FILTER "DONE"
+      // --------------------------------------------------
+      const params = {};
 
-        console.log("Response orders:", response.data);
+      if (activeFilter === "Done") {
+        params.status = "done";
+      }
 
-        // Struktur response backend:
-        //
-        // {
-        //   success: true,
-        //   message: "...",
-        //   data: {
-        //     current_page: 1,
-        //     data: [...pesanan],
-        //     per_page: 15,
-        //     total: 1,
-        //     last_page: 1
-        //   }
-        // }
+      // --------------------------------------------------
+      // FILTER ORDER TYPE
+      // --------------------------------------------------
+      else if (activeFilter === "Dine-In") {
+        params.order_type = "dine-in";
+      }
 
-        const apiOrders = response.data?.data?.data || [];
+      else if (activeFilter === "Take Away") {
+        params.order_type = "takeaway";
+      }
 
-        // ======================================
-        // MAPPING DATA BACKEND → FORMAT FE
-        // ======================================
+      // --------------------------------------------------
+      // FILTER DATE
+      // --------------------------------------------------
+      if (startDate) {
+        params.start_date = startDate;
+      }
 
-        const mappedOrders = apiOrders.map((order) => ({
+      if (endDate) {
+        params.end_date = endDate;
+      }
+
+      console.log("ORDER FETCH PARAMS:", params);
+
+      const response = await api.get(
+        "admin/orders",
+        {
+          params,
+        }
+      );
+
+      console.log(
+        "Response orders:",
+        response.data
+      );
+
+      const apiOrders =
+        response.data?.data?.data || [];
+
+      // ======================================
+      // MAPPING DATA BACKEND → FORMAT FE
+      // ======================================
+
+      const mappedOrders =
+        apiOrders.map((order) => ({
           ...order,
 
           // Backend:
-          // "dine-in"
+          // dine-in
+          // takeaway
           //
-          // FE lama:
-          // "Dine-In"
+          // FE:
+          // Dine-In
+          // Take Away
           type:
             order.order_type === "dine-in"
               ? "Dine-In"
               : "Take Away",
 
-          // Untuk sementara.
-          // Nanti bisa disesuaikan dengan created_at
-          // kalau backend mengirim field tanggal.
-          dateValue: order.created_at
-            ? order.created_at.slice(0, 10)
-            : "",
+          // Date untuk kebutuhan filter/local UI
+          dateValue:
+            order.created_at
+              ? order.created_at.slice(
+                  0,
+                  10
+                )
+              : "",
 
-          // Supaya OrderCard yang mungkin masih
-          // menggunakan customerName tetap bisa membaca
-          customerName: order.customer_name,
+          // Customer
+          customerName:
+            order.customer_name,
 
-          // Nomor order dari backend
-          orderNumber: order.order_number,
+          // Nomor order
+          orderNumber:
+            order.order_number,
 
-          // Payment method
-          paymentMethod: order.payment_method,
+          // Payment
+          paymentMethod:
+            order.payment_method,
 
-          // Payment status
-          paymentStatus: order.payment_status,
+          paymentStatus:
+            order.payment_status,
+
+          // STATUS BACKEND
+          status:
+            order.status,
         }));
 
-        setOrders(mappedOrders);
-      } catch (err) {
-        console.error("Gagal mengambil pesanan:", err);
+      console.log(
+        "Mapped orders:",
+        mappedOrders
+      );
 
-        console.error(
-          "Response error:",
-          err.response?.data
-        );
+      setOrders(
+        mappedOrders
+      );
 
-        setError(
-          err.response?.data?.message ||
-          "Gagal mengambil data pesanan."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
+    } catch (err) {
+      console.error(
+        "Gagal mengambil pesanan:",
+        err
+      );
 
+      console.error(
+        "Response error:",
+        err.response?.data
+      );
+
+      setError(
+        err.response?.data?.message ||
+        "Gagal mengambil data pesanan."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ==========================================
+  // INITIAL / FILTER FETCH
+  // ==========================================
+  useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [
+    activeFilter,
+    startDate,
+    endDate,
+  ]);
 
   // ==========================================
   // SET DATE RANGE
   // ==========================================
-  const setDateRange = (start, end) => {
+  const setDateRange = (
+    start,
+    end
+  ) => {
     setStartDate(start);
     setEndDate(end);
   };
 
   // ==========================================
-  // FILTER PESANAN
+  // FILTER PESANAN DI FRONTEND
   // ==========================================
-  const filteredOrders = useMemo(() => {
-    let result = [...orders];
+  //
+  // Backend sudah melakukan filter utama.
+  // FE tetap filter ulang supaya aman.
+  //
+  // ==========================================
 
-    // ------------------------------------------
-    // FILTER DONE
-    // ------------------------------------------
-    if (activeFilter === "Done") {
-      result = result.filter((order) =>
-        doneOrders.includes(order.id)
-      );
-    }
+  const filteredOrders =
+    useMemo(() => {
+      let result = [...orders];
 
-    // ------------------------------------------
-    // FILTER DINE-IN
-    // ------------------------------------------
-    else if (activeFilter === "Dine-In") {
-      result = result.filter(
-        (order) =>
-          order.type === "Dine-In" &&
-          !doneOrders.includes(order.id)
-      );
-    }
+      // ------------------------------------------
+      // DONE
+      // ------------------------------------------
 
-    // ------------------------------------------
-    // FILTER TAKE AWAY
-    // ------------------------------------------
-    else if (activeFilter === "Take Away") {
-      result = result.filter(
-        (order) =>
-          order.type === "Take Away" &&
-          !doneOrders.includes(order.id)
-      );
-    }
-
-    // ------------------------------------------
-    // FILTER SEMUA
-    // ------------------------------------------
-    else if (activeFilter === "Semua") {
-      result = result.filter(
-        (order) =>
-          !doneOrders.includes(order.id)
-      );
-    }
-
-    // ------------------------------------------
-    // FILTER RANGE TANGGAL
-    // ------------------------------------------
-    if (startDate || endDate) {
-      result = result.filter((order) => {
-        if (!order.dateValue) {
-          return false;
-        }
-
-        // Hanya tanggal mulai
-        if (startDate && !endDate) {
-          return order.dateValue >= startDate;
-        }
-
-        // Hanya tanggal akhir
-        if (!startDate && endDate) {
-          return order.dateValue <= endDate;
-        }
-
-        // Range tanggal lengkap
-        if (startDate && endDate) {
-          return (
-            order.dateValue >= startDate &&
-            order.dateValue <= endDate
+      if (
+        activeFilter === "Done"
+      ) {
+        result =
+          result.filter(
+            (order) =>
+              order.status === "done"
           );
-        }
+      }
 
-        return true;
-      });
-    }
+      // ------------------------------------------
+      // DINE-IN
+      // ------------------------------------------
 
-    return result;
-  }, [
-    orders,
-    activeFilter,
-    startDate,
-    endDate,
-    doneOrders,
-  ]);
+      else if (
+        activeFilter === "Dine-In"
+      ) {
+        result =
+          result.filter(
+            (order) =>
+              order.type ===
+                "Dine-In" &&
+              order.status !==
+                "done"
+          );
+      }
+
+      // ------------------------------------------
+      // TAKE AWAY
+      // ------------------------------------------
+
+      else if (
+        activeFilter ===
+        "Take Away"
+      ) {
+        result =
+          result.filter(
+            (order) =>
+              order.type ===
+                "Take Away" &&
+              order.status !==
+                "done"
+          );
+      }
+
+      // ------------------------------------------
+      // SEMUA
+      // ------------------------------------------
+
+      else if (
+        activeFilter ===
+        "Semua"
+      ) {
+        result =
+          result.filter(
+            (order) =>
+              order.status !==
+              "done"
+          );
+      }
+
+      // ------------------------------------------
+      // RANGE TANGGAL
+      // ------------------------------------------
+
+      if (
+        startDate ||
+        endDate
+      ) {
+        result =
+          result.filter(
+            (order) => {
+              if (
+                !order.dateValue
+              ) {
+                return false;
+              }
+
+              // Hanya tanggal mulai
+              if (
+                startDate &&
+                !endDate
+              ) {
+                return (
+                  order.dateValue >=
+                  startDate
+                );
+              }
+
+              // Hanya tanggal akhir
+              if (
+                !startDate &&
+                endDate
+              ) {
+                return (
+                  order.dateValue <=
+                  endDate
+                );
+              }
+
+              // Range lengkap
+              if (
+                startDate &&
+                endDate
+              ) {
+                return (
+                  order.dateValue >=
+                    startDate &&
+                  order.dateValue <=
+                    endDate
+                );
+              }
+
+              return true;
+            }
+          );
+      }
+
+      return result;
+    }, [
+      orders,
+      activeFilter,
+      startDate,
+      endDate,
+    ]);
 
   // ==========================================
   // BUKA / TUTUP DETAIL
   // ==========================================
-  const toggleOrder = (id) => {
-    setOpenOrder((prev) =>
-      prev === id ? null : id
+  const toggleOrder = (
+    id
+  ) => {
+    setOpenOrder(
+      (prev) =>
+        prev === id
+          ? null
+          : id
     );
   };
 
   // ==========================================
-  // SELESAIKAN PESANAN CASH
+  // SELESAIKAN PESANAN
   // ==========================================
-  const handleDoneOrder = (id) => {
-    setDoneOrders((prev) => {
-      if (prev.includes(id)) {
-        return prev;
+  const handleDoneOrder =
+    async (id) => {
+      try {
+        console.log(
+          "MARK ORDER AS DONE:",
+          id
+        );
+
+        // ========================================
+        // UPDATE BACKEND
+        // ========================================
+
+        const response =
+          await api.patch(
+            `admin/orders/${id}/status`,
+            {
+              status: "done",
+            }
+          );
+
+        console.log(
+          "DONE ORDER RESPONSE:",
+          response.data
+        );
+
+        // ========================================
+        // UPDATE STATE LOKAL
+        // ========================================
+
+        setOrders(
+          (prev) =>
+            prev.map(
+              (order) =>
+                Number(
+                  order.id
+                ) ===
+                Number(id)
+                  ? {
+                      ...order,
+                      status:
+                        "done",
+                    }
+                  : order
+            )
+        );
+
+        // ========================================
+        // TUTUP DETAIL
+        // ========================================
+
+        setOpenOrder(
+          null
+        );
+
+        // ========================================
+        // MASUK TAB DONE
+        // ========================================
+
+        setActiveFilter(
+          "Done"
+        );
+
+        // ========================================
+        // RESET DATE FILTER
+        // ========================================
+
+        setDateRange(
+          "",
+          ""
+        );
+
+      } catch (error) {
+        console.error(
+          "Gagal menyelesaikan pesanan:",
+          error
+        );
+
+        console.error(
+          "Response error:",
+          error.response?.data
+        );
+
+        alert(
+          error.response?.data
+            ?.message ||
+          "Gagal menyelesaikan pesanan."
+        );
       }
-
-      return [...prev, id];
-    });
-
-    // Tutup detail
-    setOpenOrder(null);
-
-    // Otomatis pindah ke filter Done
-    setActiveFilter("Done");
-
-    // Reset filter tanggal
-    setDateRange("", "");
-  };
+    };
 
   // ==========================================
   // LOADING
@@ -254,12 +443,15 @@ export default function OrderPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F6F3ED]">
+
         <Navbar />
 
         <main className="px-5 pb-28 pt-7 md:px-8 lg:px-10">
+
           <div className="mx-auto max-w-[1100px]">
 
             <div className="mb-4">
+
               <h1
                 className="
                   text-[27px]
@@ -274,12 +466,15 @@ export default function OrderPage() {
               <p className="mt-0.5 text-[14px] text-[#A3A09A]">
                 Memuat pesanan...
               </p>
+
             </div>
 
           </div>
+
         </main>
 
         <BottomNavigation />
+
       </div>
     );
   }
@@ -290,9 +485,11 @@ export default function OrderPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-[#F6F3ED]">
+
         <Navbar />
 
         <main className="px-5 pb-28 pt-7 md:px-8 lg:px-10">
+
           <div className="mx-auto max-w-[1100px]">
 
             <div
@@ -304,6 +501,7 @@ export default function OrderPage() {
                 text-center
               "
             >
+
               <p className="text-sm font-semibold text-red-500">
                 Gagal mengambil pesanan
               </p>
@@ -311,12 +509,29 @@ export default function OrderPage() {
               <p className="mt-1 text-xs text-[#AAA69F]">
                 {error}
               </p>
+
+              <button
+                type="button"
+                onClick={fetchOrders}
+                className="
+                  mt-3
+                  text-xs
+                  font-bold
+                  underline
+                  text-[#292825]
+                "
+              >
+                Coba lagi
+              </button>
+
             </div>
 
           </div>
+
         </main>
 
         <BottomNavigation />
+
       </div>
     );
   }
@@ -335,7 +550,7 @@ export default function OrderPage() {
       <Navbar />
 
       {/* ===================================== */}
-      {/* CONTENT PESANAN */}
+      {/* CONTENT */}
       {/* ===================================== */}
 
       <main className="px-5 pb-28 pt-7 md:px-8 lg:px-10">
@@ -368,35 +583,58 @@ export default function OrderPage() {
           <div className="mb-4">
 
             <OrderFilters
-              activeFilter={activeFilter}
-              setActiveFilter={setActiveFilter}
-              startDate={startDate}
-              endDate={endDate}
-              setDateRange={setDateRange}
+              activeFilter={
+                activeFilter
+              }
+              setActiveFilter={
+                setActiveFilter
+              }
+              startDate={
+                startDate
+              }
+              endDate={
+                endDate
+              }
+              setDateRange={
+                setDateRange
+              }
             />
 
           </div>
 
-          {/* LIST PESANAN */}
+          {/* LIST */}
 
           <div className="space-y-3">
 
-            {filteredOrders.length > 0 ? (
+            {filteredOrders.length >
+            0 ? (
 
-              filteredOrders.map((order) => (
+              filteredOrders.map(
+                (order) => (
 
-                <OrderCard
-                  key={order.id}
-                  order={order}
-                  open={openOrder === order.id}
-                  onToggle={() =>
-                    toggleOrder(order.id)
-                  }
-                  onDone={handleDoneOrder}
-                  isDone={doneOrders.includes(order.id)}
-                />
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    open={
+                      openOrder ===
+                      order.id
+                    }
+                    onToggle={() =>
+                      toggleOrder(
+                        order.id
+                      )
+                    }
+                    onDone={
+                      handleDoneOrder
+                    }
+                    isDone={
+                      order.status ===
+                      "done"
+                    }
+                  />
 
-              ))
+                )
+              )
 
             ) : (
 
@@ -437,3 +675,4 @@ export default function OrderPage() {
     </div>
   );
 }
+

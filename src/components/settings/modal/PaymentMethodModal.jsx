@@ -49,7 +49,7 @@ export default function PaymentMethodModal({
     //
     // Maka arahkan ke Laravel public storage:
     // http://localhost:8000/storage/qris/abc123.jpg
-    return `http://localhost:8000/storage/${url}`;
+    return `http://10.174.91.209:8000/storage/${url}`;
   };
 
   // =========================================================

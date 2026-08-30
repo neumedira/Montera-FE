@@ -1,9 +1,16 @@
+
 import {
   ChevronDown,
   ChevronUp,
   CreditCard,
   Smartphone,
+  Building2,
+  WalletCards,
 } from "lucide-react";
+
+// =========================================================
+// FORMAT RUPIAH
+// =========================================================
 
 function formatRupiah(value) {
   const number = Number(value) || 0;
@@ -14,6 +21,119 @@ function formatRupiah(value) {
     maximumFractionDigits: 0,
   }).format(number);
 }
+
+// =========================================================
+// NORMALIZE PAYMENT METHOD
+// =========================================================
+
+function normalizePaymentMethod(method) {
+  return String(method || "")
+    .trim()
+    .toLowerCase();
+}
+
+// =========================================================
+// PAYMENT LABEL
+// =========================================================
+
+function getPaymentLabel(method) {
+  const value = normalizePaymentMethod(method);
+
+  if (value === "cash" || value === "tunai") {
+    return "Cash";
+  }
+
+  if (value === "qris") {
+    return "QRIS";
+  }
+
+  if (
+    value === "tf_bank" ||
+    value.startsWith("tf_bank_")
+  ) {
+    return "Transfer Bank";
+  }
+
+  if (
+    value === "ewallet" ||
+    value.startsWith("ewallet_")
+  ) {
+    return "E-Wallet";
+  }
+
+  if (
+    value === "kartu" ||
+    value.startsWith("kartu_")
+  ) {
+    return "Kartu";
+  }
+
+  return String(method || "Payment");
+}
+
+// =========================================================
+// PAYMENT ICON
+// =========================================================
+
+function getPaymentIcon(method) {
+  const value = normalizePaymentMethod(method);
+
+  if (
+    value === "cash" ||
+    value === "tunai"
+  ) {
+    return (
+      <CreditCard
+        size={12}
+        strokeWidth={1.8}
+      />
+    );
+  }
+
+  if (value === "qris") {
+    return (
+      <Smartphone
+        size={12}
+        strokeWidth={1.8}
+      />
+    );
+  }
+
+  if (
+    value === "tf_bank" ||
+    value.startsWith("tf_bank_")
+  ) {
+    return (
+      <Building2
+        size={12}
+        strokeWidth={1.8}
+      />
+    );
+  }
+
+  if (
+    value === "ewallet" ||
+    value.startsWith("ewallet_")
+  ) {
+    return (
+      <WalletCards
+        size={12}
+        strokeWidth={1.8}
+      />
+    );
+  }
+
+  return (
+    <CreditCard
+      size={12}
+      strokeWidth={1.8}
+    />
+  );
+}
+
+// =========================================================
+// COMPONENT
+// =========================================================
 
 export default function OrderCard({
   order,
@@ -26,35 +146,90 @@ export default function OrderCard({
   // ORDER TYPE
   // =========================================================
 
-  const isTakeAway = order.order_type === "takeaway";
+  const isTakeAway =
+    order.order_type === "takeaway";
 
-  const orderType = isTakeAway
-    ? "Take Away"
-    : "Dine-In";
+  const orderType =
+    isTakeAway
+      ? "Take Away"
+      : "Dine-In";
+
+  // =========================================================
+  // TABLE
+  // =========================================================
+  //
+  // Backend:
+  //
+  // order.table.table_number
+  //
+  // Contoh:
+  // {
+  //   table: {
+  //      id: 1,
+  //      table_number: "1"
+  //   }
+  // }
+  //
+  // =========================================================
+
+  const tableNumber =
+    order.table?.table_number ??
+    order.table_number ??
+    null;
 
   // =========================================================
   // PAYMENT
   // =========================================================
 
-  const isCash = order.payment_method === "cash";
+  const paymentMethod =
+    getPaymentLabel(
+      order.payment_method
+    );
 
-  const paymentMethod = isCash
-    ? "Cash"
-    : "QRIS";
+  const normalizedPaymentMethod =
+    normalizePaymentMethod(
+      order.payment_method
+    );
+
+  const isCash =
+    normalizedPaymentMethod === "cash" ||
+    normalizedPaymentMethod === "tunai";
 
   // =========================================================
   // TOTAL
   // =========================================================
+  //
+  // Backend sudah mengirim:
+  // order.total_amount
+  //
+  // Jadi gunakan itu terlebih dahulu.
+  //
+  // Fallback:
+  // subtotal + tax + service charge
+  // =========================================================
 
-  const subtotal = Number(order.subtotal) || 0;
-  const tax = Number(order.tax_amount) || 0;
+  const subtotal =
+    Number(order.subtotal) || 0;
+
+  const tax =
+    Number(order.tax_amount) || 0;
+
   const serviceCharge =
-    Number(order.service_charge_amount) || 0;
+    Number(
+      order.service_charge_amount
+    ) || 0;
+
+  const backendTotal =
+    Number(
+      order.total_amount
+    ) || 0;
 
   const total =
-    subtotal +
-    tax +
-    serviceCharge;
+    backendTotal > 0
+      ? backendTotal
+      : subtotal +
+        tax +
+        serviceCharge;
 
   // =========================================================
   // DATE & TIME
@@ -65,26 +240,57 @@ export default function OrderCard({
     : null;
 
   const date = createdAt
-    ? createdAt.toLocaleDateString("id-ID", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      })
+    ? createdAt.toLocaleDateString(
+        "id-ID",
+        {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        }
+      )
     : "-";
 
   const time = createdAt
-    ? createdAt.toLocaleTimeString("id-ID", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
+    ? createdAt.toLocaleTimeString(
+        "id-ID",
+        {
+          hour: "2-digit",
+          minute: "2-digit",
+        }
+      )
     : "-";
+
+  // =========================================================
+  // STATUS
+  // =========================================================
+
+  const backendStatus =
+    String(
+      order.status || ""
+    )
+      .trim()
+      .toLowerCase();
+
+  const closedByBackend =
+    backendStatus === "done" ||
+    backendStatus === "completed" ||
+    backendStatus === "closed";
+
+  const closed =
+    Boolean(isDone) ||
+    closedByBackend;
+
+  // =========================================================
+  // RENDER
+  // =========================================================
 
   return (
     <div
       className="
         overflow-hidden
         rounded-2xl
-        border border-[#E7E1D5]
+        border
+        border-[#E7E1D5]
         bg-[#FFFCF4]
         shadow-[0_1px_3px_rgba(0,0,0,0.03)]
       "
@@ -98,39 +304,85 @@ export default function OrderCard({
         type="button"
         onClick={onToggle}
         className="
-          flex w-full items-center justify-between
-          px-4 py-4 text-left
-          transition-colors hover:bg-[#FAF7EF]
+          flex
+          w-full
+          items-center
+          justify-between
+          px-4
+          py-4
+          text-left
+          transition-colors
+          hover:bg-[#FAF7EF]
         "
       >
 
+        {/* =================================================== */}
         {/* LEFT */}
+        {/* =================================================== */}
 
-        <div className="flex min-w-0 items-center gap-3">
+        <div
+          className="
+            flex
+            min-w-0
+            items-center
+            gap-3
+          "
+        >
 
-          {/* TABLE */}
+          {/* =================================================
+              TABLE NUMBER
+          ================================================= */}
 
           <div
             className="
-              flex h-10 w-10 shrink-0
-              items-center justify-center
-              rounded-xl bg-[#272624]
+              flex
+              h-10
+              w-10
+              shrink-0
+              items-center
+              justify-center
+              rounded-xl
+              bg-[#272624]
               text-[10px]
               font-bold
               text-white
             "
           >
-            {order.table?.name || "-"}
+            {tableNumber
+              ? `T${tableNumber}`
+              : "TA"}
           </div>
 
-          {/* CUSTOMER */}
+          {/* =================================================
+              CUSTOMER
+          ================================================= */}
 
-          <div className="min-w-0">
+          <div
+            className="
+              min-w-0
+            "
+          >
 
-            <div className="flex flex-wrap items-center gap-2">
+            {/* CUSTOMER + ORDER TYPE */}
 
-              <h3 className="text-[15px] font-bold text-[#292825]">
-                {order.customer_name || "Customer"}
+            <div
+              className="
+                flex
+                flex-wrap
+                items-center
+                gap-2
+              "
+            >
+
+              <h3
+                className="
+                  text-[15px]
+                  font-bold
+                  text-[#292825]
+                "
+              >
+                {order.customer_name ||
+                  "Customer"}
               </h3>
 
               <span
@@ -153,7 +405,9 @@ export default function OrderCard({
 
             </div>
 
-            {/* INFO */}
+            {/* =================================================
+                INFO
+            ================================================= */}
 
             <div
               className="
@@ -170,10 +424,13 @@ export default function OrderCard({
               {/* ORDER NUMBER */}
 
               <span>
-                {order.order_number}
+                {order.order_number ||
+                  "-"}
               </span>
 
-              <span>•</span>
+              <span>
+                •
+              </span>
 
               {/* DATE */}
 
@@ -181,7 +438,9 @@ export default function OrderCard({
                 {date}, {time}
               </span>
 
-              <span>•</span>
+              <span>
+                •
+              </span>
 
               {/* PAYMENT */}
 
@@ -191,6 +450,7 @@ export default function OrderCard({
                   items-center
                   gap-1
                   font-semibold
+
                   ${
                     isCash
                       ? "text-[#F3A34E]"
@@ -199,16 +459,8 @@ export default function OrderCard({
                 `}
               >
 
-                {isCash ? (
-                  <CreditCard
-                    size={12}
-                    strokeWidth={1.8}
-                  />
-                ) : (
-                  <Smartphone
-                    size={12}
-                    strokeWidth={1.8}
-                  />
+                {getPaymentIcon(
+                  order.payment_method
                 )}
 
                 {paymentMethod}
@@ -221,11 +473,27 @@ export default function OrderCard({
 
         </div>
 
+        {/* =================================================== */}
         {/* RIGHT */}
+        {/* =================================================== */}
 
-        <div className="ml-4 flex shrink-0 items-center gap-4">
+        <div
+          className="
+            ml-4
+            flex
+            shrink-0
+            items-center
+            gap-4
+          "
+        >
 
-          <p className="text-[15px] font-bold text-[#292825]">
+          <p
+            className="
+              text-[15px]
+              font-bold
+              text-[#292825]
+            "
+          >
             {formatRupiah(total)}
           </p>
 
@@ -252,9 +520,19 @@ export default function OrderCard({
       {/* ===================================================== */}
 
       {open && (
-        <div className="border-t border-[#E9E4D9]">
+        <div
+          className="
+            border-t
+            border-[#E9E4D9]
+          "
+        >
 
-          <div className="px-4 py-4">
+          <div
+            className="
+              px-4
+              py-4
+            "
+          >
 
             {/* DETAIL TITLE */}
 
@@ -271,55 +549,160 @@ export default function OrderCard({
               Detail Pesanan
             </p>
 
-            {/* ================================================= */}
-            {/* ITEMS */}
-            {/* ================================================= */}
+            {/* =================================================
+                TABLE INFO
+            ================================================= */}
 
-            <div className="space-y-2">
+            {tableNumber && (
+              <div
+                className="
+                  mb-4
+                  flex
+                  items-center
+                  justify-between
+                  rounded-xl
+                  bg-[#F5F1E8]
+                  px-3
+                  py-2.5
+                "
+              >
+
+                <span
+                  className="
+                    text-[11px]
+                    font-semibold
+                    text-[#8F8A80]
+                  "
+                >
+                  Nomor Meja
+                </span>
+
+                <span
+                  className="
+                    text-[12px]
+                    font-bold
+                    text-[#292825]
+                  "
+                >
+                  Meja {tableNumber}
+                </span>
+
+              </div>
+            )}
+
+            {/* =================================================
+                ITEMS
+            ================================================= */}
+
+            <div
+              className="
+                space-y-2
+              "
+            >
 
               {order.items?.length > 0 ? (
 
-                order.items.map((item) => {
+                order.items.map(
+                  (item, index) => {
 
-                  const itemName =
-                    item.menu_item?.name ||
-                    "Menu";
+                    const itemName =
+                      item.item_name ||
+                      item.menu_item?.name ||
+                      "Menu";
 
-                  const quantity =
-                    Number(item.quantity) || 0;
+                    const quantity =
+                      Number(
+                        item.quantity
+                      ) || 0;
 
-                  const price =
-                    Number(item.price) || 0;
+                    const unitPrice =
+                      Number(
+                        item.unit_price ??
+                        item.price ??
+                        0
+                      );
 
-                  const itemTotal =
-                    price * quantity;
+                    const itemSubtotal =
+                      Number(
+                        item.subtotal
+                      ) ||
+                      unitPrice *
+                        quantity;
 
-                  return (
-                    <div
-                      key={item.id}
-                      className="
-                        flex
-                        items-center
-                        justify-between
-                        gap-4
-                      "
-                    >
+                    return (
+                      <div
+                        key={
+                          item.id ??
+                          `${itemName}-${index}`
+                        }
+                        className="
+                          flex
+                          items-start
+                          justify-between
+                          gap-4
+                        "
+                      >
 
-                      <p className="text-[14px] font-medium text-[#32302C]">
-                        {itemName} ×{quantity}
-                      </p>
+                        <div
+                          className="
+                            min-w-0
+                          "
+                        >
 
-                      <p className="text-[14px] font-semibold text-[#32302C]">
-                        {formatRupiah(itemTotal)}
-                      </p>
+                          <p
+                            className="
+                              text-[14px]
+                              font-medium
+                              text-[#32302C]
+                            "
+                          >
+                            {itemName} ×
+                            {quantity}
+                          </p>
 
-                    </div>
-                  );
-                })
+                          {/* ITEM NOTE */}
+
+                          {item.notes && (
+                            <p
+                              className="
+                                mt-0.5
+                                text-[10px]
+                                text-[#A7A39B]
+                              "
+                            >
+                              Note:{" "}
+                              {item.notes}
+                            </p>
+                          )}
+
+                        </div>
+
+                        <p
+                          className="
+                            shrink-0
+                            text-[14px]
+                            font-semibold
+                            text-[#32302C]
+                          "
+                        >
+                          {formatRupiah(
+                            itemSubtotal
+                          )}
+                        </p>
+
+                      </div>
+                    );
+                  }
+                )
 
               ) : (
 
-                <p className="text-[13px] text-[#A7A39B]">
+                <p
+                  className="
+                    text-[13px]
+                    text-[#A7A39B]
+                  "
+                >
                   Tidak ada item.
                 </p>
 
@@ -327,9 +710,9 @@ export default function OrderCard({
 
             </div>
 
-            {/* ================================================= */}
-            {/* PRICE BREAKDOWN */}
-            {/* ================================================= */}
+            {/* =================================================
+                PRICE BREAKDOWN
+            ================================================= */}
 
             <div
               className="
@@ -341,47 +724,107 @@ export default function OrderCard({
               "
             >
 
-              <div className="flex justify-between">
+              {/* SUBTOTAL */}
 
-                <span className="text-[11px] text-[#A7A39B]">
+              <div
+                className="
+                  flex
+                  justify-between
+                "
+              >
+
+                <span
+                  className="
+                    text-[11px]
+                    text-[#A7A39B]
+                  "
+                >
                   Subtotal
                 </span>
 
-                <span className="text-[11px] font-medium text-[#57544F]">
-                  {formatRupiah(subtotal)}
+                <span
+                  className="
+                    text-[11px]
+                    font-medium
+                    text-[#57544F]
+                  "
+                >
+                  {formatRupiah(
+                    subtotal
+                  )}
                 </span>
 
               </div>
 
-              <div className="flex justify-between">
+              {/* TAX */}
 
-                <span className="text-[11px] text-[#A7A39B]">
+              <div
+                className="
+                  flex
+                  justify-between
+                "
+              >
+
+                <span
+                  className="
+                    text-[11px]
+                    text-[#A7A39B]
+                  "
+                >
                   Pajak
                 </span>
 
-                <span className="text-[11px] font-medium text-[#57544F]">
-                  {formatRupiah(tax)}
+                <span
+                  className="
+                    text-[11px]
+                    font-medium
+                    text-[#57544F]
+                  "
+                >
+                  {formatRupiah(
+                    tax
+                  )}
                 </span>
 
               </div>
 
-              <div className="flex justify-between">
+              {/* SERVICE CHARGE */}
 
-                <span className="text-[11px] text-[#A7A39B]">
+              <div
+                className="
+                  flex
+                  justify-between
+                "
+              >
+
+                <span
+                  className="
+                    text-[11px]
+                    text-[#A7A39B]
+                  "
+                >
                   Service Charge
                 </span>
 
-                <span className="text-[11px] font-medium text-[#57544F]">
-                  {formatRupiah(serviceCharge)}
+                <span
+                  className="
+                    text-[11px]
+                    font-medium
+                    text-[#57544F]
+                  "
+                >
+                  {formatRupiah(
+                    serviceCharge
+                  )}
                 </span>
 
               </div>
 
             </div>
 
-            {/* ================================================= */}
-            {/* TOTAL */}
-            {/* ================================================= */}
+            {/* =================================================
+                TOTAL + DONE
+            ================================================= */}
 
             <div
               className="
@@ -411,17 +854,24 @@ export default function OrderCard({
                   Total
                 </p>
 
-                <p className="mt-0.5 text-[17px] font-bold text-white">
-                  {formatRupiah(total)}
+                <p
+                  className="
+                    mt-0.5
+                    text-[17px]
+                    font-bold
+                    text-white
+                  "
+                >
+                  {formatRupiah(
+                    total
+                  )}
                 </p>
 
               </div>
 
-              {/* ================================================= */}
               {/* DONE / CLOSED */}
-              {/* ================================================= */}
 
-              {isDone ? (
+              {closed ? (
 
                 <span
                   className="
@@ -443,7 +893,14 @@ export default function OrderCard({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onDone(order.id);
+
+                    if (
+                      onDone
+                    ) {
+                      onDone(
+                        order.id
+                      );
+                    }
                   }}
                   className="
                     rounded-full
