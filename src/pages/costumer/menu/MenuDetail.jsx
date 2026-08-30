@@ -1,5 +1,4 @@
-
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -7,87 +6,382 @@ import CostumizationOption from "../../../components/costumer/menu/Costumization
 
 import { useCart } from "../../../context/CartContext";
 
+import echo from "../../../echo";
+
+// =========================================================
+// IMAGE HELPER
+// =========================================================
+
+const BACKEND_URL = "http://10.174.91.209:8000";
+
+const getImageUrl = (photo) => {
+  if (!photo) {
+    return "";
+  }
+
+  const value = String(photo).trim();
+
+  if (!value) {
+    return "";
+  }
+
+  if (
+    value.startsWith("http://") ||
+    value.startsWith("https://") ||
+    value.startsWith("blob:") ||
+    value.startsWith("data:")
+  ) {
+    return value;
+  }
+
+  if (value.startsWith("/storage/")) {
+    return `${BACKEND_URL}${value}`;
+  }
+
+  if (value.startsWith("storage/")) {
+    return `${BACKEND_URL}/${value}`;
+  }
+
+  if (value.startsWith("/")) {
+    return `${BACKEND_URL}${value}`;
+  }
+
+  return `${BACKEND_URL}/storage/${value}`;
+};
+
+// =========================================================
+// GET CACHED MENU
+// =========================================================
+
+const getCachedMenu = () => {
+  try {
+    const cachedMenu =
+      sessionStorage.getItem("customer_menu");
+
+    if (!cachedMenu) {
+      return [];
+    }
+
+    const parsedMenu = JSON.parse(cachedMenu);
+
+    return Array.isArray(parsedMenu)
+      ? parsedMenu
+      : [];
+  } catch (error) {
+    console.error(
+      "Gagal membaca cache menu:",
+      error
+    );
+
+    return [];
+  }
+};
+
+// =========================================================
+// UPDATE MENU CACHE
+// =========================================================
+
+const updateMenuCache = (menus) => {
+  try {
+    sessionStorage.setItem(
+      "customer_menu",
+      JSON.stringify(menus)
+    );
+
+    const cachedCatalog =
+      sessionStorage.getItem(
+        "customer_catalog"
+      );
+
+    const parsedCatalog = cachedCatalog
+      ? JSON.parse(cachedCatalog)
+      : {
+          menus: [],
+          bundles: [],
+        };
+
+    sessionStorage.setItem(
+      "customer_catalog",
+      JSON.stringify({
+        menus,
+        bundles: Array.isArray(
+          parsedCatalog?.bundles
+        )
+          ? parsedCatalog.bundles
+          : [],
+      })
+    );
+  } catch (error) {
+    console.error(
+      "Gagal update cache menu:",
+      error
+    );
+  }
+};
+
+// =========================================================
+// FORMAT MENU REALTIME
+// =========================================================
+
+const formatRealtimeMenu = (menu) => {
+  return {
+    ...menu,
+
+    id: Number(menu.id),
+
+    price: Number(
+      menu.price ?? 0
+    ),
+
+    image:
+      getImageUrl(
+        menu.photo_url ??
+          menu.image ??
+          menu.photo
+      ) || null,
+
+    description:
+      menu.description || "",
+
+    addons: Array.isArray(
+      menu.addons
+    )
+      ? menu.addons.map((addon) => ({
+          ...addon,
+
+          id: Number(addon.id),
+
+          price: Number(
+            addon.price ?? 0
+          ),
+        }))
+      : [],
+  };
+};
+
+// =========================================================
+// COMPONENT
+// =========================================================
+
 export default function MenuDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
 
   const { addToCart } = useCart();
 
-  // =========================================================
-  // GET MENU DARI SESSION STORAGE
-  // =========================================================
+  // =======================================================
+  // MENU STATE
+  // =======================================================
 
-  const menuItems = useMemo(() => {
-    try {
-      const cachedMenu = sessionStorage.getItem(
-        "customer_menu"
-      );
+  const [menuItems, setMenuItems] =
+    useState(() => getCachedMenu());
 
-      if (!cachedMenu) {
-        return [];
-      }
-
-      const parsedMenu = JSON.parse(cachedMenu);
-
-      return Array.isArray(parsedMenu)
-        ? parsedMenu
-        : [];
-    } catch (error) {
-      console.error(
-        "Gagal membaca cache menu:",
-        error
-      );
-
-      return [];
-    }
-  }, []);
-
-  // =========================================================
+  // =======================================================
   // FIND PRODUCT
-  // =========================================================
+  // =======================================================
 
   const product = useMemo(() => {
     return menuItems.find(
-      (item) => item.id === Number(id)
+      (item) =>
+        Number(item.id) === Number(id)
     );
   }, [menuItems, id]);
 
-  // =========================================================
+  // =======================================================
   // STATE
-  // =========================================================
+  // =======================================================
 
   const [selectedAddons, setSelectedAddons] =
     useState({});
 
   const [notes, setNotes] = useState("");
 
-  // =========================================================
+  // =======================================================
+  // REALTIME MENU
+  // =======================================================
+
+  useEffect(() => {
+    console.log(
+      "🔌 MenuDetail connecting to customer-menu..."
+    );
+
+    const channel =
+      echo.channel("customer-menu");
+
+    // =====================================================
+    // MENU UPDATED
+    // =====================================================
+
+    channel.listen(
+      ".menu.updated",
+      (event) => {
+        console.log(
+          "🔥 MenuDetail REALTIME MENU UPDATED:",
+          event
+        );
+
+        const menu =
+          event?.menu;
+
+        if (!menu) {
+          console.warn(
+            "⚠️ Payload menu.updated tidak memiliki menu."
+          );
+
+          return;
+        }
+
+        // Pastikan hanya menu yang sedang dibuka
+        // yang diproses.
+
+        if (
+          Number(menu.id) !==
+          Number(id)
+        ) {
+          return;
+        }
+
+        // =================================================
+        // MENU DIHAPUS
+        // =================================================
+
+        if (menu.deleted) {
+          setMenuItems(
+            (currentMenus) => {
+              const updatedMenus =
+                currentMenus.filter(
+                  (item) =>
+                    Number(item.id) !==
+                    Number(menu.id)
+                );
+
+              updateMenuCache(
+                updatedMenus
+              );
+
+              return updatedMenus;
+            }
+          );
+
+          return;
+        }
+
+        // =================================================
+        // MENU NONAKTIF
+        // =================================================
+
+        if (
+          menu.is_active === false ||
+          menu.is_active === 0 ||
+          menu.is_active === "0"
+        ) {
+          setMenuItems(
+            (currentMenus) => {
+              const updatedMenus =
+                currentMenus.filter(
+                  (item) =>
+                    Number(item.id) !==
+                    Number(menu.id)
+                );
+
+              updateMenuCache(
+                updatedMenus
+              );
+
+              return updatedMenus;
+            }
+          );
+
+          return;
+        }
+
+        // =================================================
+        // MENU AKTIF / UPDATED
+        // =================================================
+
+        const formattedMenu =
+          formatRealtimeMenu(menu);
+
+        setMenuItems(
+          (currentMenus) => {
+            const existingIndex =
+              currentMenus.findIndex(
+                (item) =>
+                  Number(item.id) ===
+                  Number(
+                    formattedMenu.id
+                  )
+              );
+
+            let updatedMenus;
+
+            if (
+              existingIndex !== -1
+            ) {
+              updatedMenus =
+                [...currentMenus];
+
+              updatedMenus[
+                existingIndex
+              ] =
+                formattedMenu;
+            } else {
+              updatedMenus = [
+                ...currentMenus,
+                formattedMenu,
+              ];
+            }
+
+            updateMenuCache(
+              updatedMenus
+            );
+
+            return updatedMenus;
+          }
+        );
+      }
+    );
+
+    // =====================================================
+    // CLEANUP
+    // =====================================================
+
+    return () => {
+      console.log(
+        "🔌 MenuDetail leaving customer-menu..."
+      );
+
+      echo.leave(
+        "customer-menu"
+      );
+    };
+  }, [id]);
+
+  // =======================================================
   // PRODUCT NOT FOUND
-  // =========================================================
+  // =======================================================
 
   if (!product) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-[#fffcf4] px-6 text-center dark:bg-[#121212]">
-
         <p className="font-semibold text-[#111] dark:text-white">
           Menu tidak ditemukan.
         </p>
 
         <button
           type="button"
-          onClick={() => navigate("/menu")}
+          onClick={() => navigate("/")}
           className="mt-3 text-[13px] font-bold underline dark:text-white"
         >
           Kembali ke menu
         </button>
-
       </main>
     );
   }
 
-  // =========================================================
+  // =======================================================
   // ADDON PRICE
-  // =========================================================
+  // =======================================================
 
   const extraPrice = useMemo(() => {
     if (!product?.addons) {
@@ -97,7 +391,12 @@ export default function MenuDetail() {
     return product.addons.reduce(
       (total, addon) => {
         if (selectedAddons[addon.id]) {
-          return total + addon.price;
+          return (
+            total +
+            Number(
+              addon.price ?? 0
+            )
+          );
         }
 
         return total;
@@ -106,43 +405,56 @@ export default function MenuDetail() {
     );
   }, [product, selectedAddons]);
 
-  // =========================================================
+  // =======================================================
   // TOTAL PRICE
-  // =========================================================
+  // =======================================================
 
   const totalPrice =
-    product.price + extraPrice;
+    Number(product.price ?? 0) +
+    extraPrice;
 
-  // =========================================================
+  // =======================================================
   // TOGGLE ADDON
-  // =========================================================
+  // =======================================================
 
-  const toggleAddon = (addonId) => {
-    setSelectedAddons((current) => ({
-      ...current,
-      [addonId]: !current[addonId],
-    }));
+  const toggleAddon = (
+    addonId
+  ) => {
+    setSelectedAddons(
+      (current) => ({
+        ...current,
+
+        [addonId]:
+          !current[addonId],
+      })
+    );
   };
 
-  // =========================================================
+  // =======================================================
   // ADD TO CART
-  // =========================================================
+  // =======================================================
 
   const handleAddToCart = () => {
     const selectedAddonList =
       product.addons?.filter(
-        (addon) => selectedAddons[addon.id]
+        (addon) =>
+          selectedAddons[
+            addon.id
+          ]
       ) || [];
 
     const cartItem = {
       ...product,
 
-      addons: selectedAddonList,
+      addons:
+        selectedAddonList,
 
       costumizations:
         selectedAddonList.reduce(
           (result, addon) => {
-            result[addon.id] = true;
+            result[addon.id] =
+              true;
+
             return result;
           },
           {}
@@ -160,13 +472,6 @@ export default function MenuDetail() {
 
     addToCart(cartItem);
 
-    /*
-     * Balik ke menu.
-     *
-     * MenuPage tidak fetch ulang karena
-     * datanya sudah ada di sessionStorage.
-     */
-
     navigate("/", {
       state: {
         skipLoading: true,
@@ -174,9 +479,9 @@ export default function MenuDetail() {
     });
   };
 
-  // =========================================================
+  // =======================================================
   // RENDER
-  // =========================================================
+  // =======================================================
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#fffcf4] dark:bg-[#121212] transition-colors duration-300">
@@ -233,11 +538,11 @@ export default function MenuDetail() {
             pt-[45px]
           "
         >
-
           {product.image ? (
-
             <img
-              src={product.image}
+              src={getImageUrl(
+                product.image
+              )}
               alt={product.name}
               className="
                 h-[320px]
@@ -245,15 +550,11 @@ export default function MenuDetail() {
                 object-contain
               "
             />
-
           ) : (
-
             <div className="flex h-[320px] w-[360px] items-center justify-center text-[14px] text-[#999]">
               Tidak ada foto
             </div>
-
           )}
-
         </div>
 
       </section>
@@ -282,9 +583,7 @@ export default function MenuDetail() {
         "
       >
 
-        {/* ===================================================
-            NAME + PRICE
-        =================================================== */}
+        {/* NAME + PRICE */}
 
         <div className="flex items-center justify-between gap-4">
 
@@ -315,14 +614,16 @@ export default function MenuDetail() {
             "
           >
             Rp{" "}
-            {product.price.toLocaleString("id-ID")}
+            {Number(
+              product.price ?? 0
+            ).toLocaleString(
+              "id-ID"
+            )}
           </span>
 
         </div>
 
-        {/* ===================================================
-            DESCRIPTION
-        =================================================== */}
+        {/* DESCRIPTION */}
 
         <p
           className="
@@ -338,67 +639,68 @@ export default function MenuDetail() {
           {product.description}
         </p>
 
-        {/* ===================================================
-            ADDONS
-        =================================================== */}
+        {/* ADDONS */}
 
         {product.addons &&
-          product.addons.length > 0 && (
+          product.addons.length >
+            0 && (
+            <div className="mt-[26px]">
 
-          <div className="mt-[26px]">
+              <h2
+                className="
+                  text-[17px]
+                  font-bold
+                  tracking-wide
+                  text-[#111]
+                  dark:text-white
+                  transition-colors
+                  duration-300
+                "
+              >
+                ADD ON
+              </h2>
 
-            <h2
-              className="
-                text-[17px]
-                font-bold
-                tracking-wide
-                text-[#111]
-                dark:text-white
-                transition-colors
-                duration-300
-              "
-            >
-              ADD ON
-            </h2>
+              <div className="mt-[7px] border-t border-[#e8e4dc] dark:border-[#333333]" />
 
-            <div className="mt-[7px] border-t border-[#e8e4dc] dark:border-[#333333]" />
+              <div className="mt-[24px] space-y-[24px]">
 
-            <div className="mt-[24px] space-y-[24px]">
-
-              {product.addons.map(
-                (addon) => (
-
-                  <CostumizationOption
-                    key={addon.id}
-                    label={addon.name}
-                    price={addon.price}
-                    checked={
-                      !!selectedAddons[
+                {product.addons.map(
+                  (addon) => (
+                    <CostumizationOption
+                      key={
                         addon.id
-                      ]
-                    }
-                    onChange={() =>
-                      toggleAddon(
-                        addon.id
-                      )
-                    }
-                  />
+                      }
+                      label={
+                        addon.name
+                      }
+                      price={Number(
+                        addon.price ??
+                          0
+                      )}
+                      checked={
+                        !!selectedAddons[
+                          addon.id
+                        ]
+                      }
+                      onChange={() =>
+                        toggleAddon(
+                          addon.id
+                        )
+                      }
+                    />
+                  )
+                )}
 
-                )
-              )}
+              </div>
 
             </div>
+          )}
 
-          </div>
-        )}
-
-        {/* ===================================================
-            NO ADDON
-        =================================================== */}
+        {/* NO ADDON */}
 
         {(!product.addons ||
-          product.addons.length === 0) && (
-
+          product.addons.length ===
+            0) && (
           <div className="mt-[26px]">
 
             <h2
@@ -416,15 +718,14 @@ export default function MenuDetail() {
             <div className="mt-[7px] border-t border-[#e8e4dc] dark:border-[#333333]" />
 
             <p className="mt-[18px] text-[14px] text-[#888] dark:text-[#999]">
-              Tidak ada add on untuk menu ini.
+              Tidak ada add on untuk
+              menu ini.
             </p>
 
           </div>
         )}
 
-        {/* ===================================================
-            NOTES
-        =================================================== */}
+        {/* NOTES */}
 
         <div className="mt-[24px]">
 
@@ -433,7 +734,9 @@ export default function MenuDetail() {
             placeholder="Notes (Optional)"
             value={notes}
             onChange={(e) =>
-              setNotes(e.target.value)
+              setNotes(
+                e.target.value
+              )
             }
             className="
               h-[59px]
@@ -460,13 +763,13 @@ export default function MenuDetail() {
 
         </div>
 
-        {/* ===================================================
-            ADD TO CART
-        =================================================== */}
+        {/* ADD TO CART */}
 
         <button
           type="button"
-          onClick={handleAddToCart}
+          onClick={
+            handleAddToCart
+          }
           className="
             mt-[31px]
             flex
@@ -517,4 +820,3 @@ export default function MenuDetail() {
     </main>
   );
 }
-

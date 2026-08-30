@@ -21,37 +21,131 @@ import Navbar from "../components/layout/Navbar";
 import BottomNavigation from "../components/layout/BottomNavigation";
 
 import {
-  // MENU
   getMenuItems,
   createMenuItem,
   updateMenuItem,
   deleteMenuItem,
 
-  // CATEGORY
   getMenuCategories,
   createMenuCategory,
   updateMenuCategory,
   deleteMenuCategory,
 
-  // BUNDLE
   getBundles,
   createBundle,
   updateBundle,
   deleteBundle,
 
-  // ADDON
   getAddons,
   createAddon,
   updateAddon,
   deleteAddon,
 } from "../api/admin";
 
+// =========================================================
+// BASE URL
+// =========================================================
+
+const BACKEND_URL = "http://10.174.91.209:8000";
+
+// =========================================================
+// HELPER FOTO
+// =========================================================
+
+const getImageUrl = (photo) => {
+  if (!photo) {
+    return "";
+  }
+
+  const value = String(photo).trim();
+
+  if (!value) {
+    return "";
+  }
+
+  // URL lengkap
+  if (
+    value.startsWith("http://") ||
+    value.startsWith("https://") ||
+    value.startsWith("blob:")
+  ) {
+    return value;
+  }
+
+  // /storage/xxx
+  if (value.startsWith("/storage/")) {
+    return `${BACKEND_URL}${value}`;
+  }
+
+  // storage/xxx
+  if (value.startsWith("storage/")) {
+    return `${BACKEND_URL}/${value}`;
+  }
+
+  // /xxx
+  if (value.startsWith("/")) {
+    return `${BACKEND_URL}/storage${value}`;
+  }
+
+  // xxx
+  return `${BACKEND_URL}/storage/${value}`;
+};
+
+// =========================================================
+// AMBIL FOTO
+// =========================================================
+
+const getPhotoFromItem = (item) => {
+  if (!item) {
+    return "";
+  }
+
+  const possiblePhotos = [
+    item.photo_url,
+    item.photoUrl,
+    item.photo,
+    item.image_url,
+    item.imageUrl,
+    item.gambarUrl,
+    item.image,
+  ];
+
+  for (const photo of possiblePhotos) {
+    if (
+      photo !== null &&
+      photo !== undefined &&
+      String(photo).trim() !== ""
+    ) {
+      return photo;
+    }
+  }
+
+  return "";
+};
+
+// =========================================================
+// NORMALISASI PHOTO
+// =========================================================
+
+const normalizePhoto = (item) => {
+  const rawPhoto = getPhotoFromItem(item);
+
+  return {
+    raw: rawPhoto,
+    url: getImageUrl(rawPhoto),
+  };
+};
+
+// =========================================================
+// COMPONENT
+// =========================================================
+
 export default function KelolaMenu() {
   const [activeTab, setActiveTab] = useState("menu");
   const [searchQuery, setSearchQuery] = useState("");
 
   // =========================================================
-  // DATA STATES
+  // DATA
   // =========================================================
 
   const [menuItems, setMenuItems] = useState([]);
@@ -65,7 +159,7 @@ export default function KelolaMenu() {
   const [categoryLoading, setCategoryLoading] = useState(false);
 
   // =========================================================
-  // MODAL STATES
+  // MODALS
   // =========================================================
 
   const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
@@ -78,7 +172,7 @@ export default function KelolaMenu() {
   const [editingKategoriItem, setEditingKategoriItem] = useState(null);
 
   // =========================================================
-  // FETCH ALL DATA
+  // FETCH
   // =========================================================
 
   useEffect(() => {
@@ -89,7 +183,7 @@ export default function KelolaMenu() {
   }, []);
 
   // =========================================================
-  // FETCH MENU ITEMS
+  // FETCH MENU
   // =========================================================
 
   const fetchMenuItems = async () => {
@@ -100,41 +194,88 @@ export default function KelolaMenu() {
 
       console.log("MENU ITEMS API:", response);
 
-      const data = response?.data || [];
-
-      console.log("RAW MENU DATA:", data);
+      const data = Array.isArray(response?.data)
+        ? response.data
+        : [];
 
       const formattedItems = data.map((item) => {
-        console.log("PHOTO URL:", item.photo_url);
+        const photo = normalizePhoto(item);
+
+        console.log("MENU FOTO:", {
+          id: item.id,
+          name: item.name,
+          raw: photo.raw,
+          url: photo.url,
+        });
 
         return {
           ...item,
 
-          // Frontend field mapping
-          nama: item.name,
-          harga: item.price,
-          deskripsi: item.description || "",
-          gambarUrl: item.photo_url || "",
-          labelPromo: item.label || "Favorit!",
-          isPromo: Boolean(item.label),
-          isTersedia: Boolean(item.is_active),
-          addons: item.addons || [], // Membawa relasi add-on dari backend
-          
+          id: item.id,
+
+          nama: item.name || item.nama || "",
+
+          harga:
+            item.price ??
+            item.harga ??
+            0,
+
+          deskripsi:
+            item.description ??
+            item.deskripsi ??
+            "",
+
+          // FOTO
+          gambarUrl: photo.url,
+
+          // simpan nilai asli
+          originalPhoto: photo.raw,
+
+          photo_url:
+            item.photo_url ??
+            null,
+
+          photo:
+            item.photo ??
+            null,
+
+          labelPromo:
+            item.label ??
+            item.labelPromo ??
+            "",
+
+          isPromo:
+            Boolean(
+              item.label ??
+              item.labelPromo
+            ),
+
+          isTersedia:
+            item.is_active !== undefined
+              ? Boolean(item.is_active)
+              : true,
+
+          addons:
+            Array.isArray(item.addons)
+              ? item.addons
+              : [],
+
           kategori:
-            item.category?.name ||
-            item.category?.nama ||
+            item.category?.name ??
+            item.category?.nama ??
             "",
         };
       });
 
-      console.log("FORMATTED MENU:", formattedItems);
-
       setMenuItems(formattedItems);
     } catch (error) {
-      console.error("Gagal mengambil menu:", error);
+      console.error(
+        "Gagal mengambil menu:",
+        error
+      );
 
       console.error(
-        "Response error:",
+        "Response:",
         error.response?.data
       );
     } finally {
@@ -143,18 +284,19 @@ export default function KelolaMenu() {
   };
 
   // =========================================================
-  // FETCH CATEGORIES
+  // FETCH CATEGORY
   // =========================================================
 
   const fetchMenuCategories = async () => {
     try {
       setCategoryLoading(true);
 
-      const response = await getMenuCategories();
+      const response =
+        await getMenuCategories();
 
-      console.log("MENU CATEGORIES API:", response);
-
-      const data = response?.data || [];
+      const data = Array.isArray(response?.data)
+        ? response.data
+        : [];
 
       setMenuCategories(data);
     } catch (error) {
@@ -168,58 +310,118 @@ export default function KelolaMenu() {
   };
 
   // =========================================================
-  // FETCH BUNDLES
+  // FETCH BUNDLE
   // =========================================================
 
   const fetchBundles = async () => {
     try {
       setBundleLoading(true);
 
-      const response = await getBundles();
-
-      console.log("BUNDLES API:", response);
-
-      const data = response?.data || [];
-
-      console.log("RAW BUNDLE DATA:", data);
-
-      const formattedBundles = data.map((item) => {
-        const selectedMenus =
-          item.selectedMenuItems ||
-          item.menu_items ||
-          item.menuItems ||
-          item.items ||
-          [];
-
-        return {
-          ...item,
-
-          nama:
-            item.name ||
-            item.nama ||
-            "",
-
-          harga:
-            item.price ??
-            item.harga ??
-            0,
-
-          gambarUrl:
-            item.photo_url ||
-            item.gambarUrl ||
-            item.photo ||
-            "",
-
-          selectedMenuItems: selectedMenus,
-        };
-      });
+      const response =
+        await getBundles();
 
       console.log(
-        "FORMATTED BUNDLES:",
-        formattedBundles
+        "BUNDLES API:",
+        response
       );
 
-      setBundleItems(formattedBundles);
+      const data = Array.isArray(response?.data)
+        ? response.data
+        : [];
+
+      const formattedBundles =
+        data.map((item) => {
+          const bundleItemsFromBackend =
+            item.items ??
+            item.menu_items ??
+            item.menuItems ??
+            [];
+
+          const selectedMenuItems =
+            bundleItemsFromBackend.map(
+              (bundleItem) => {
+                if (
+                  typeof bundleItem === "object" &&
+                  bundleItem !== null
+                ) {
+                  return (
+                    bundleItem.menu_item_id ??
+                    bundleItem.menuItemId ??
+                    bundleItem.menu_item?.id ??
+                    bundleItem.menuItem?.id ??
+                    bundleItem.id
+                  );
+                }
+
+                return bundleItem;
+              }
+            );
+
+          // FOTO
+          const photo = normalizePhoto(item);
+
+          console.log(
+            "BUNDLE FOTO:",
+            {
+              id: item.id,
+              name: item.name,
+              raw: photo.raw,
+              url: photo.url,
+            }
+          );
+
+          return {
+            ...item,
+
+            id: item.id,
+
+            nama:
+              item.name ??
+              item.nama ??
+              "",
+
+            harga:
+              item.bundle_price ??
+              item.price ??
+              item.harga ??
+              0,
+
+            normal_price:
+              item.normal_price ??
+              0,
+
+            bundle_price:
+              item.bundle_price ??
+              item.price ??
+              0,
+
+            // FOTO
+            gambarUrl:
+              photo.url,
+
+            originalPhoto:
+              photo.raw,
+
+            photo_url:
+              item.photo_url ??
+              null,
+
+            photo:
+              item.photo ??
+              null,
+
+            isTersedia:
+              item.is_active !== undefined
+                ? Boolean(item.is_active)
+                : true,
+
+            selectedMenuItems,
+          };
+        });
+
+      setBundleItems(
+        formattedBundles
+      );
     } catch (error) {
       console.error(
         "Gagal mengambil bundle:",
@@ -227,7 +429,7 @@ export default function KelolaMenu() {
       );
 
       console.error(
-        "Response error:",
+        "Response:",
         error.response?.data
       );
     } finally {
@@ -243,56 +445,48 @@ export default function KelolaMenu() {
     try {
       setAddonLoading(true);
 
-      const response = await getAddons();
+      const response =
+        await getAddons();
 
-      console.log("ADDONS API:", response);
+      const data = Array.isArray(response?.data)
+        ? response.data
+        : [];
 
-      const data = response?.data || [];
+      const formattedAddons =
+        data.map((item) => {
+          const photo =
+            normalizePhoto(item);
 
-      console.log("RAW ADDON DATA:", data);
+          return {
+            ...item,
 
-      const formattedAddons = data.map((item) => {
-        return {
-          ...item,
+            nama:
+              item.name ??
+              item.nama ??
+              "",
 
-          nama:
-            item.name ||
-            item.nama ||
-            "",
+            harga:
+              item.price ??
+              item.harga ??
+              0,
 
-          harga:
-            item.price ??
-            item.harga ??
-            0,
+            gambarUrl:
+              photo.url,
 
-          gambarUrl:
-            item.photo_url ||
-            item.gambarUrl ||
-            item.photo ||
-            "",
+            isTersedia:
+              item.is_active !== undefined
+                ? Boolean(item.is_active)
+                : true,
+          };
+        });
 
-          isTersedia:
-            item.is_active !== undefined
-              ? Boolean(item.is_active)
-              : true,
-        };
-      });
-
-      console.log(
-        "FORMATTED ADDONS:",
+      setAddonItems(
         formattedAddons
       );
-
-      setAddonItems(formattedAddons);
     } catch (error) {
       console.error(
         "Gagal mengambil add-on:",
         error
-      );
-
-      console.error(
-        "Response error:",
-        error.response?.data
       );
     } finally {
       setAddonLoading(false);
@@ -300,42 +494,130 @@ export default function KelolaMenu() {
   };
 
   // =========================================================
-  // SAVE MENU (DIPERBARUI DENGAN ADDON_IDS)
+  // SAVE MENU
   // =========================================================
 
   const handleSaveMenu = async (data) => {
     try {
+      /*
+       * PENTING:
+       *
+       * Kalau user tidak memilih foto baru,
+       * data.photo = null.
+       *
+       * Kita ambil foto lama dari editingMenuItem.
+       */
+
+      const oldPhoto =
+        editingMenuItem
+          ? getPhotoFromItem(
+              editingMenuItem
+            )
+          : "";
+
+      const newPhoto =
+        data.photo instanceof File
+          ? data.photo
+          : null;
+
+      /*
+       * Kalau ada File baru:
+       * photo = File
+       * photo_url tidak perlu.
+       *
+       * Kalau tidak ada File:
+       * photo = null
+       * photo_url = foto lama.
+       */
+
+      const photoUrlToKeep =
+        !newPhoto
+          ? oldPhoto ||
+            data.gambarUrl ||
+            ""
+          : "";
+
       const payload = {
-        category_id: data.category_id
-          ? Number(data.category_id)
-          : null,
+        category_id:
+          data.category_id
+            ? Number(
+                data.category_id
+              )
+            : null,
 
-        name: data.nama,
+        name:
+          data.nama ??
+          "",
 
-        label: data.isPromo
-          ? data.labelPromo
-          : null,
+        label:
+          data.isPromo &&
+          data.labelPromo?.trim()
+            ? data.labelPromo.trim()
+            : null,
 
-        price: Number(data.harga),
+        price:
+          Number(
+            data.harga
+          ),
 
         description:
-          data.deskripsi || null,
+          data.deskripsi ||
+          null,
 
-        photo: data.photo || null,
+        photo:
+          newPhoto,
 
         photo_url:
-          data.gambarUrl || null,
+          photoUrlToKeep,
 
         is_active:
-          Boolean(data.isTersedia),
+          Boolean(
+            data.isTersedia
+          ),
 
-        // Mengirim pilihan add-on ke backend (sesuaikan dengan key backend Anda: addon_ids atau addons)
-        addon_ids: data.selectedAddons || [],
+        addon_ids:
+          Array.isArray(
+            data.selectedAddons
+          )
+            ? data.selectedAddons
+            : [],
       };
 
       console.log(
-        "PAYLOAD MENU:",
+        "================================"
+      );
+
+      console.log(
+        "SAVE MENU"
+      );
+
+      console.log(
+        "EDITING:",
+        editingMenuItem
+      );
+
+      console.log(
+        "OLD PHOTO:",
+        oldPhoto
+      );
+
+      console.log(
+        "NEW PHOTO:",
+        newPhoto
+      );
+
+      console.log(
+        "PHOTO URL TO KEEP:",
+        photoUrlToKeep
+      );
+
+      console.log(
+        "PAYLOAD:",
         payload
+      );
+
+      console.log(
+        "================================"
       );
 
       if (editingMenuItem) {
@@ -344,7 +626,9 @@ export default function KelolaMenu() {
           payload
         );
       } else {
-        await createMenuItem(payload);
+        await createMenuItem(
+          payload
+        );
       }
 
       await fetchMenuItems();
@@ -358,7 +642,7 @@ export default function KelolaMenu() {
       );
 
       console.error(
-        "Response error:",
+        "Response:",
         error.response?.data
       );
 
@@ -405,29 +689,301 @@ export default function KelolaMenu() {
 
   const handleSaveBundle = async (data) => {
     try {
-      const selectedMenuItems =
-        data.selectedMenuItems || [];
+      const rawSelectedItems =
+        Array.isArray(
+          data?.selectedMenuItems
+        )
+          ? data.selectedMenuItems
+          : Array.isArray(data?.items)
+            ? data.items
+            : Array.isArray(
+                data?.menu_item_ids
+              )
+              ? data.menu_item_ids
+              : [];
+
+      // =====================================================
+      // NORMALISASI ITEMS
+      // =====================================================
+
+      const items =
+        rawSelectedItems
+          .map((selectedItem) => {
+            let menuId;
+            let quantity = 1;
+
+            if (
+              typeof selectedItem ===
+                "object" &&
+              selectedItem !== null
+            ) {
+              menuId =
+                selectedItem.menu_item_id ??
+                selectedItem.menuItemId ??
+                selectedItem.menu_item?.id ??
+                selectedItem.menuItem?.id ??
+                selectedItem.id;
+
+              if (
+                selectedItem.quantity !==
+                  undefined &&
+                selectedItem.quantity !==
+                  null &&
+                selectedItem.quantity !==
+                  ""
+              ) {
+                quantity =
+                  Number(
+                    selectedItem.quantity
+                  );
+              }
+            } else {
+              menuId =
+                selectedItem;
+            }
+
+            const normalizedId =
+              Number(menuId);
+
+            const normalizedQuantity =
+              Number.isFinite(
+                quantity
+              ) &&
+              quantity > 0
+                ? quantity
+                : 1;
+
+            if (
+              !Number.isFinite(
+                normalizedId
+              ) ||
+              normalizedId <= 0
+            ) {
+              return null;
+            }
+
+            return {
+              menu_item_id:
+                normalizedId,
+
+              quantity:
+                normalizedQuantity,
+            };
+          })
+          .filter(Boolean);
+
+      // =====================================================
+      // NORMAL PRICE
+      // =====================================================
+
+      const calculatedNormalPrice =
+        items.reduce(
+          (
+            total,
+            bundleItem
+          ) => {
+            const menu =
+              menuItems.find(
+                (item) =>
+                  Number(
+                    item.id
+                  ) ===
+                  Number(
+                    bundleItem.menu_item_id
+                  )
+              );
+
+            const menuPrice =
+              Number(
+                menu?.harga ??
+                menu?.price ??
+                0
+              );
+
+            return (
+              total +
+              menuPrice *
+                Number(
+                  bundleItem.quantity ||
+                    1
+                )
+            );
+          },
+          0
+        );
+
+      const normalPrice =
+        data?.normal_price !==
+          undefined &&
+        data?.normal_price !==
+          null &&
+        data?.normal_price !==
+          ""
+          ? Number(
+              data.normal_price
+            )
+          : calculatedNormalPrice;
+
+      const bundlePrice =
+        data?.bundle_price !==
+          undefined &&
+        data?.bundle_price !==
+          null &&
+        data?.bundle_price !==
+          ""
+          ? Number(
+              data.bundle_price
+            )
+          : Number(
+              data?.harga ??
+              data?.price ??
+              0
+            );
+
+      // =====================================================
+      // FOTO BUNDLE
+      // =====================================================
+
+      const oldPhoto =
+        editingBundleItem
+          ? getPhotoFromItem(
+              editingBundleItem
+            )
+          : "";
+
+      const newPhoto =
+        data?.photo instanceof File
+          ? data.photo
+          : null;
+
+      const photoUrlToKeep =
+        !newPhoto
+          ? oldPhoto ||
+            data?.gambarUrl ||
+            ""
+          : "";
+
+      // =====================================================
+      // PAYLOAD
+      // =====================================================
 
       const payload = {
-        name: data.nama,
+        name:
+          data?.name ??
+          data?.nama ??
+          "",
 
-        price: Number(data.harga),
+        normal_price:
+          Number.isFinite(
+            normalPrice
+          )
+            ? normalPrice
+            : 0,
+
+        bundle_price:
+          Number.isFinite(
+            bundlePrice
+          )
+            ? bundlePrice
+            : 0,
+
+        photo:
+          newPhoto,
 
         photo_url:
-          data.gambarUrl || null,
+          photoUrlToKeep,
 
-        menu_item_ids:
-          selectedMenuItems.map((item) =>
-            typeof item === "object"
-              ? item.id
-              : item
-          ),
+        is_active:
+          data?.is_active !==
+          undefined
+            ? Boolean(
+                data.is_active
+              )
+            : data?.isTersedia !==
+                undefined
+              ? Boolean(
+                  data.isTersedia
+                )
+              : true,
+
+        items,
       };
+
+      console.log(
+        "================================"
+      );
+
+      console.log(
+        "SAVE BUNDLE"
+      );
+
+      console.log(
+        "EDITING:",
+        editingBundleItem
+      );
+
+      console.log(
+        "OLD PHOTO:",
+        oldPhoto
+      );
+
+      console.log(
+        "NEW PHOTO:",
+        newPhoto
+      );
+
+      console.log(
+        "PHOTO URL TO KEEP:",
+        photoUrlToKeep
+      );
 
       console.log(
         "PAYLOAD BUNDLE:",
         payload
       );
+
+      console.log(
+        "================================"
+      );
+
+      // =====================================================
+      // VALIDASI
+      // =====================================================
+
+      if (
+        !payload.name.trim()
+      ) {
+        alert(
+          "Nama bundle wajib diisi."
+        );
+
+        return;
+      }
+
+      if (
+        payload.items.length ===
+        0
+      ) {
+        alert(
+          "Pilih minimal 1 menu untuk bundle."
+        );
+
+        return;
+      }
+
+      if (
+        payload.bundle_price < 0
+      ) {
+        alert(
+          "Harga bundle tidak valid."
+        );
+
+        return;
+      }
+
+      // =====================================================
+      // CREATE / UPDATE
+      // =====================================================
 
       if (editingBundleItem) {
         await updateBundle(
@@ -435,7 +991,9 @@ export default function KelolaMenu() {
           payload
         );
       } else {
-        await createBundle(payload);
+        await createBundle(
+          payload
+        );
       }
 
       await fetchBundles();
@@ -449,14 +1007,28 @@ export default function KelolaMenu() {
       );
 
       console.error(
-        "Response error:",
+        "Response:",
         error.response?.data
       );
 
-      alert(
-        error.response?.data?.message ||
-          "Gagal menyimpan bundle."
-      );
+      const validationErrors =
+        error.response?.data?.errors;
+
+      if (validationErrors) {
+        const messages =
+          Object.values(
+            validationErrors
+          )
+            .flat()
+            .join("\n");
+
+        alert(messages);
+      } else {
+        alert(
+          error.response?.data?.message ||
+            "Gagal menyimpan bundle."
+        );
+      }
     }
   };
 
@@ -483,11 +1055,6 @@ export default function KelolaMenu() {
         error
       );
 
-      console.error(
-        "Response error:",
-        error.response?.data
-      );
-
       alert(
         error.response?.data?.message ||
           "Gagal menghapus bundle."
@@ -502,20 +1069,22 @@ export default function KelolaMenu() {
   const handleSaveAddon = async (data) => {
     try {
       const payload = {
-        name: data.nama,
+        name:
+          data.nama,
 
-        price: Number(data.harga),
+        price:
+          Number(
+            data.harga
+          ),
 
         is_active:
-          data.isTersedia !== undefined
-            ? Boolean(data.isTersedia)
+          data.isTersedia !==
+          undefined
+            ? Boolean(
+                data.isTersedia
+              )
             : true,
       };
-
-      console.log(
-        "PAYLOAD ADDON:",
-        payload
-      );
 
       if (data.id) {
         await updateAddon(
@@ -523,7 +1092,9 @@ export default function KelolaMenu() {
           payload
         );
       } else {
-        await createAddon(payload);
+        await createAddon(
+          payload
+        );
       }
 
       await fetchAddons();
@@ -531,11 +1102,6 @@ export default function KelolaMenu() {
       console.error(
         "Gagal menyimpan add-on:",
         error
-      );
-
-      console.error(
-        "Response error:",
-        error.response?.data
       );
 
       alert(
@@ -568,11 +1134,6 @@ export default function KelolaMenu() {
         error
       );
 
-      console.error(
-        "Response error:",
-        error.response?.data
-      );
-
       alert(
         error.response?.data?.message ||
           "Gagal menghapus add-on."
@@ -581,94 +1142,87 @@ export default function KelolaMenu() {
   };
 
   // =========================================================
-  // SAVE KATEGORI
+  // SAVE CATEGORY
   // =========================================================
 
-  const handleSaveKategori = async (
-    data
-  ) => {
-    try {
-      const payload = {
-        name: data.nama,
-      };
+  const handleSaveKategori =
+    async (data) => {
+      try {
+        const payload = {
+          name:
+            data.nama,
+        };
 
-      console.log(
-        "PAYLOAD KATEGORI:",
-        payload
-      );
+        if (
+          editingKategoriItem
+        ) {
+          await updateMenuCategory(
+            editingKategoriItem.id,
+            payload
+          );
+        } else {
+          await createMenuCategory(
+            payload
+          );
+        }
 
-      if (editingKategoriItem) {
-        await updateMenuCategory(
-          editingKategoriItem.id,
-          payload
+        await fetchMenuCategories();
+
+        setIsKategoriModalOpen(
+          false
         );
-      } else {
-        await createMenuCategory(
-          payload
+
+        setEditingKategoriItem(
+          null
+        );
+      } catch (error) {
+        console.error(
+          "Gagal menyimpan kategori:",
+          error
+        );
+
+        alert(
+          error.response?.data?.message ||
+            "Gagal menyimpan kategori."
         );
       }
-
-      await fetchMenuCategories();
-
-      setIsKategoriModalOpen(false);
-      setEditingKategoriItem(null);
-    } catch (error) {
-      console.error(
-        "Gagal menyimpan kategori:",
-        error
-      );
-
-      console.error(
-        "Response error:",
-        error.response?.data
-      );
-
-      alert(
-        error.response?.data?.message ||
-          "Gagal menyimpan kategori."
-      );
-    }
-  };
+    };
 
   // =========================================================
-  // DELETE KATEGORI
+  // DELETE CATEGORY
   // =========================================================
 
-  const handleDeleteKategori = async (
-    id
-  ) => {
-    if (
-      !window.confirm(
-        "Yakin ingin menghapus kategori ini?"
-      )
-    ) {
-      return;
-    }
+  const handleDeleteKategori =
+    async (id) => {
+      if (
+        !window.confirm(
+          "Yakin ingin menghapus kategori ini?"
+        )
+      ) {
+        return;
+      }
 
-    try {
-      await deleteMenuCategory(id);
+      try {
+        await deleteMenuCategory(
+          id
+        );
 
-      await fetchMenuCategories();
-    } catch (error) {
-      console.error(
-        "Gagal menghapus kategori:",
-        error
-      );
+        await fetchMenuCategories();
+      } catch (error) {
+        console.error(
+          "Gagal menghapus kategori:",
+          error
+        );
 
-      console.error(
-        "Response error:",
-        error.response?.data
-      );
-
-      alert(
-        error.response?.data?.message ||
-          "Gagal menghapus kategori."
-      );
-    }
-  };
+        alert(
+          error.response?.data?.message ||
+            "Gagal menghapus kategori."
+        );
+      }
+    };
 
   // =========================================================
-  // SEARCH FILTER
+  // FILTER
   // =========================================================
 
   const filteredMenuItems =
@@ -724,16 +1278,13 @@ export default function KelolaMenu() {
 
       <main className="pt-6 pb-28 max-w-[1000px] mx-auto px-6">
 
-        {/* ===================================================
-            HEADER
-        =================================================== */}
+        {/* HEADER */}
 
         <div className="pt-0 pb-2">
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 
             <div>
-
               <h1 className="text-2xl font-extrabold tracking-tight text-[#222222]">
                 Kelola Menu
               </h1>
@@ -743,7 +1294,6 @@ export default function KelolaMenu() {
                 {bundleItems.length} bundle ·{" "}
                 {menuCategories.length} kategori
               </p>
-
             </div>
 
             {/* SEARCH */}
@@ -771,15 +1321,11 @@ export default function KelolaMenu() {
 
           </div>
 
-          {/* =================================================
-              TABS
-          ================================================= */}
+          {/* TABS */}
 
           <div className="flex items-center justify-between mt-4 overflow-x-auto pb-2">
 
             <div className="flex items-center space-x-2 bg-gray-200/60 p-1 rounded-full whitespace-nowrap">
-
-              {/* MENU */}
 
               <button
                 onClick={() =>
@@ -795,8 +1341,6 @@ export default function KelolaMenu() {
                 <span>Menu</span>
               </button>
 
-              {/* BUNDLE */}
-
               <button
                 onClick={() =>
                   setActiveTab("bundle")
@@ -811,8 +1355,6 @@ export default function KelolaMenu() {
                 <span>Bundle</span>
               </button>
 
-              {/* ADDON */}
-
               <button
                 onClick={() =>
                   setActiveTab("addon")
@@ -826,8 +1368,6 @@ export default function KelolaMenu() {
                 <PlusCircle size={14} />
                 <span>Add-on</span>
               </button>
-
-              {/* KATEGORI */}
 
               <button
                 onClick={() =>
@@ -845,9 +1385,7 @@ export default function KelolaMenu() {
 
             </div>
 
-            {/* =================================================
-                ACTION BUTTONS
-            ================================================= */}
+            {/* ACTION */}
 
             {activeTab === "menu" && (
               <button
@@ -891,15 +1429,11 @@ export default function KelolaMenu() {
           </div>
         </div>
 
-        {/* ===================================================
-            CONTENT
-        =================================================== */}
+        {/* CONTENT */}
 
         <div className="pt-2">
 
-          {/* =================================================
-              MENU
-          ================================================= */}
+          {/* MENU */}
 
           {activeTab === "menu" && (
             <>
@@ -916,17 +1450,13 @@ export default function KelolaMenu() {
                     setEditingMenuItem(item);
                     setIsMenuModalOpen(true);
                   }}
-                  onDelete={
-                    handleDeleteMenu
-                  }
+                  onDelete={handleDeleteMenu}
                 />
               )}
             </>
           )}
 
-          {/* =================================================
-              BUNDLE
-          ================================================= */}
+          {/* BUNDLE */}
 
           {activeTab === "bundle" && (
             <>
@@ -944,17 +1474,13 @@ export default function KelolaMenu() {
                     setEditingBundleItem(item);
                     setIsBundleModalOpen(true);
                   }}
-                  onDelete={
-                    handleDeleteBundle
-                  }
+                  onDelete={handleDeleteBundle}
                 />
               )}
             </>
           )}
 
-          {/* =================================================
-              ADDON
-          ================================================= */}
+          {/* ADDON */}
 
           {activeTab === "addon" && (
             <>
@@ -974,9 +1500,7 @@ export default function KelolaMenu() {
             </>
           )}
 
-          {/* =================================================
-              KATEGORI
-          ================================================= */}
+          {/* CATEGORY */}
 
           {activeTab === "kategori" && (
             <>
@@ -993,9 +1517,7 @@ export default function KelolaMenu() {
                     setEditingKategoriItem(item);
                     setIsKategoriModalOpen(true);
                   }}
-                  onDelete={
-                    handleDeleteKategori
-                  }
+                  onDelete={handleDeleteKategori}
                 />
               )}
             </>
@@ -1007,6 +1529,7 @@ export default function KelolaMenu() {
       {/* =====================================================
           MODAL MENU
       ===================================================== */}
+
       <ModalMenu
         isOpen={isMenuModalOpen}
         onClose={() => {
@@ -1035,7 +1558,7 @@ export default function KelolaMenu() {
       />
 
       {/* =====================================================
-          MODAL KATEGORI
+          MODAL CATEGORY
       ===================================================== */}
 
       <ModalKategori
