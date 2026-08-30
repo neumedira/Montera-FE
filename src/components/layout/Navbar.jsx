@@ -1,65 +1,408 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bell, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import NotificationModal from "../modal/NotificationModal";
+import NewOrderModal from "../modal/NewOrderModal";
+
 import logoBlack from "../../assets/logoblack.png";
+
 import api from "../../api/axios";
+import echo from "../../echo";
 
 export default function Navbar() {
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  // =========================================================
+  // NOTIFICATION MODAL
+  // =========================================================
 
-  const navigate = useNavigate();
+  const [
+    isNotificationOpen,
+    setIsNotificationOpen,
+  ] = useState(false);
 
-  // Sementara jumlah pesanan baru masih manual
-  const newOrderCount = 2;
+  // =========================================================
+  // NOTIFICATIONS
+  // =========================================================
+
+  const [
+    notifications,
+    setNotifications,
+  ] = useState([]);
+
+  // =========================================================
+  // NEW ORDER POPUP
+  // =========================================================
+
+  const [
+    newOrder,
+    setNewOrder,
+  ] = useState(null);
+
+  // =========================================================
+  // LOGOUT
+  // =========================================================
+
+  const [
+    isLoggingOut,
+    setIsLoggingOut,
+  ] = useState(false);
+
+  const navigate =
+    useNavigate();
+
+  // =========================================================
+  // FETCH UNREAD NOTIFICATIONS
+  // =========================================================
+
+  const fetchNotifications =
+    async () => {
+      try {
+        const response =
+          await api.get(
+            "admin/notifications"
+          );
+
+        console.log(
+          "🔔 NOTIFICATIONS API:",
+          response.data
+        );
+
+        const data =
+          response.data?.data;
+
+        setNotifications(
+          Array.isArray(data)
+            ? data
+            : []
+        );
+      } catch (error) {
+        console.error(
+          "❌ Gagal mengambil notifications:",
+          error
+        );
+
+        console.error(
+          "❌ Notification response:",
+          error.response?.data
+        );
+
+        setNotifications([]);
+      }
+    };
+
+  // =========================================================
+  // INITIAL FETCH
+  // =========================================================
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  // =========================================================
+  // REALTIME NOTIFICATION
+  // =========================================================
+
+  useEffect(() => {
+    console.log(
+      "🔔 Connecting to admin-notifications..."
+    );
+
+    const channel =
+      echo.channel(
+        "admin-notifications"
+      );
+
+    console.log(
+      "📡 ECHO CHANNEL CREATED:",
+      channel
+    );
+
+    // =======================================================
+    // SUBSCRIBED
+    // =======================================================
+
+    channel.subscribed(() => {
+      console.log(
+        "✅ SUBSCRIBED: admin-notifications"
+      );
+    });
+
+    // =======================================================
+    // LISTEN EVENT
+    // =======================================================
+
+    channel.listen(
+      ".notification.created",
+      (event) => {
+        console.log(
+          "🔥 REALTIME NOTIFICATION RECEIVED:",
+          event
+        );
+
+        console.log(
+          "📦 EVENT PAYLOAD:",
+          event?.notification
+        );
+
+        const notification =
+          event?.notification;
+
+        if (!notification) {
+          console.warn(
+            "⚠️ notification payload kosong:",
+            event
+          );
+
+          return;
+        }
+
+        // =================================================
+        // ADD TO NOTIFICATION LIST
+        // =================================================
+
+        setNotifications(
+          (current) => {
+            const exists =
+              current.some(
+                (item) =>
+                  Number(
+                    item.id
+                  ) ===
+                  Number(
+                    notification.id
+                  )
+              );
+
+            if (exists) {
+              return current;
+            }
+
+            return [
+              notification,
+              ...current,
+            ];
+          }
+        );
+
+        // =================================================
+        // SHOW NEW ORDER POPUP
+        // =================================================
+
+        setNewOrder(
+          notification
+        );
+      }
+    );
+
+    // =======================================================
+    // CLEANUP
+    // =======================================================
+
+    return () => {
+      console.log(
+        "🔔 Leaving admin-notifications..."
+      );
+
+      echo.leave(
+        "admin-notifications"
+      );
+    };
+  }, []);
+
+  // =========================================================
+  // AUTO CLOSE NEW ORDER POPUP
+  // =========================================================
+
+  useEffect(() => {
+    if (!newOrder) {
+      return;
+    }
+
+    console.log(
+      "📢 SHOW NEW ORDER POPUP:",
+      newOrder
+    );
+
+    const timer =
+      setTimeout(() => {
+        setNewOrder(null);
+      }, 5000);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [newOrder]);
+
+  // =========================================================
+  // AUTO MARK NOTIFICATIONS AS READ
+  // WHEN MODAL OPENS
+  // =========================================================
+
+  useEffect(() => {
+    if (
+      !isNotificationOpen ||
+      notifications.length === 0
+    ) {
+      return;
+    }
+
+    const unreadNotifications =
+      notifications.filter(
+        (notification) =>
+          notification?.is_read !==
+            true &&
+          notification?.is_read !==
+            1
+      );
+
+    if (
+      unreadNotifications.length ===
+      0
+    ) {
+      return;
+    }
+
+    const markOpenedAsRead =
+      async () => {
+        try {
+          await Promise.all(
+            unreadNotifications.map(
+              (notification) =>
+                api.patch(
+                  `admin/notifications/${notification.id}/read`
+                )
+            )
+          );
+
+          setNotifications(
+            (current) =>
+              current.map(
+                (notification) => ({
+                  ...notification,
+                  is_read: true,
+                })
+              )
+          );
+
+          console.log(
+            "✅ Notification otomatis ditandai read."
+          );
+        } catch (error) {
+          console.error(
+            "❌ Gagal menandai notification sebagai read:",
+            error
+          );
+        }
+      };
+
+    markOpenedAsRead();
+  }, [
+    isNotificationOpen,
+    notifications,
+  ]);
+
+  // =========================================================
+  // UNREAD COUNT
+  // =========================================================
+
+  const unreadCount =
+    notifications.filter(
+      (notification) =>
+        notification?.is_read !==
+          true &&
+        notification?.is_read !==
+          1
+    ).length;
+
+  // =========================================================
+  // CLOSE NEW ORDER POPUP
+  // =========================================================
+
+  const handleCloseNewOrder =
+    () => {
+      console.log(
+        "❌ CLOSE NEW ORDER POPUP"
+      );
+
+      setNewOrder(null);
+    };
+
+  // =========================================================
+  // CLOSE NOTIFICATION MODAL
+  // =========================================================
+
+  const handleCloseNotification =
+    () => {
+      setIsNotificationOpen(
+        false
+      );
+    };
+
+  // =========================================================
+  // OPEN NOTIFICATION MODAL
+  // =========================================================
+
+  const handleOpenNotification =
+    () => {
+      setIsNotificationOpen(
+        true
+      );
+    };
 
   // =========================================================
   // LOGOUT
   // =========================================================
 
   const handleLogout = async () => {
-    if (isLoggingOut) return;
+    if (isLoggingOut) {
+      return;
+    }
 
     setIsLoggingOut(true);
 
-    const token = localStorage.getItem("admin_token");
+    const token =
+      localStorage.getItem(
+        "admin_token"
+      );
 
     try {
-      // Kalau token masih ada, coba logout ke backend
       if (token) {
         await api.post(
           "/admin/logout",
           {},
           {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization:
+                `Bearer ${token}`,
             },
           }
         );
       }
     } catch (error) {
-      console.error("Logout API gagal:", error);
+      console.error(
+        "Logout API gagal:",
+        error
+      );
     } finally {
-      // =====================================================
-      // PENTING:
-      // Hapus token WALaupun API logout gagal.
-      // Jadi user tetap benar-benar keluar dari sisi frontend.
-      // =====================================================
+      localStorage.removeItem(
+        "admin_token"
+      );
 
-      localStorage.removeItem("admin_token");
-
-      // Kalau ada data admin lain yang disimpan,
-      // bisa ikut dibersihkan di sini.
-      // localStorage.removeItem("admin");
-
-      navigate("/login", { replace: true });
+      navigate(
+        "/login",
+        {
+          replace: true,
+        }
+      );
 
       setIsLoggingOut(false);
     }
   };
+
+  // =========================================================
+  // RENDER
+  // =========================================================
 
   return (
     <>
@@ -84,11 +427,18 @@ export default function Navbar() {
           md:px-8
         "
       >
+
         {/* ===================================================
             LOGO
         =================================================== */}
 
-        <div className="flex items-center gap-2">
+        <div
+          className="
+            flex
+            items-center
+            gap-2
+          "
+        >
           <div
             className="
               flex
@@ -104,16 +454,36 @@ export default function Navbar() {
             <img
               src={logoBlack}
               alt="Montera Logo"
-              className="h-[21px] w-[21px] object-contain"
+              className="
+                h-[21px]
+                w-[21px]
+                object-contain
+              "
             />
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-[18px] font-bold">
+          <div
+            className="
+              flex
+              items-center
+              gap-2
+            "
+          >
+            <span
+              className="
+                text-[18px]
+                font-bold
+              "
+            >
               Montera
             </span>
 
-            <span className="text-[13px] text-[#777572]">
+            <span
+              className="
+                text-[13px]
+                text-[#777572]
+              "
+            >
               Admin
             </span>
           </div>
@@ -123,7 +493,13 @@ export default function Navbar() {
             RIGHT
         =================================================== */}
 
-        <div className="flex items-center gap-5">
+        <div
+          className="
+            flex
+            items-center
+            gap-5
+          "
+        >
 
           {/* =================================================
               NOTIFICATION
@@ -131,7 +507,9 @@ export default function Navbar() {
 
           <button
             type="button"
-            onClick={() => setIsNotificationOpen(true)}
+            onClick={
+              handleOpenNotification
+            }
             className="
               relative
               text-[#b8b6b1]
@@ -142,8 +520,7 @@ export default function Navbar() {
           >
             <Bell size={18} />
 
-            {/* Badge */}
-            {newOrderCount > 0 && (
+            {unreadCount > 0 && (
               <span
                 className="
                   absolute
@@ -162,7 +539,9 @@ export default function Navbar() {
                   text-white
                 "
               >
-                {newOrderCount}
+                {unreadCount > 99
+                  ? "99+"
+                  : unreadCount}
               </span>
             )}
           </button>
@@ -173,8 +552,12 @@ export default function Navbar() {
 
           <button
             type="button"
-            onClick={handleLogout}
-            disabled={isLoggingOut}
+            onClick={
+              handleLogout
+            }
+            disabled={
+              isLoggingOut
+            }
             className="
               flex
               items-center
@@ -190,10 +573,11 @@ export default function Navbar() {
             <LogOut size={17} />
 
             <span>
-              {isLoggingOut ? "Keluar..." : "Keluar"}
+              {isLoggingOut
+                ? "Keluar..."
+                : "Keluar"}
             </span>
           </button>
-
         </div>
       </header>
 
@@ -204,14 +588,37 @@ export default function Navbar() {
       <div className="h-[66px]" />
 
       {/* =====================================================
-          NOTIFICATION MODAL
+          NOTIFICATION LIST
       ===================================================== */}
 
       <NotificationModal
-        isOpen={isNotificationOpen}
-        onClose={() => setIsNotificationOpen(false)}
+        isOpen={
+          isNotificationOpen
+        }
+        onClose={
+          handleCloseNotification
+        }
+        notifications={
+          notifications
+        }
+      />
+
+      {/* =====================================================
+          REALTIME NEW ORDER POPUP
+      ===================================================== */}
+
+      <NewOrderModal
+        isOpen={
+          Boolean(newOrder)
+        }
+        onClose={
+          handleCloseNewOrder
+        }
+        orderId={
+          newOrder?.order_number ||
+          "ORDER BARU"
+        }
       />
     </>
   );
 }
-

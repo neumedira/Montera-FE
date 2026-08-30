@@ -43,11 +43,6 @@ import CartPage from "./pages/CartPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
 import PaymentPage from "./pages/PaymentPage";
 
-// ==============================
-// MODAL
-// ==============================
-import NewOrderModal from "./components/modal/NewOrderModal";
-
 // =========================================================
 // CUSTOMER MENU WRAPPER
 // =========================================================
@@ -92,29 +87,6 @@ function CustomerMenuWrapper() {
 // =========================================================
 
 function App() {
-  const [
-    showNewOrder,
-    setShowNewOrder,
-  ] = useState(false);
-
-  // =======================================================
-  // GLOBAL NEW ORDER NOTIFICATION
-  // =======================================================
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowNewOrder(true);
-    }, 5000);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, []);
-
-  // =======================================================
-  // RENDER
-  // =======================================================
-
   return (
     <BrowserRouter>
       <CartProvider>
@@ -241,19 +213,6 @@ function App() {
           />
 
         </Routes>
-
-        {/* ===============================================
-            GLOBAL NEW ORDER MODAL
-        =============================================== */}
-
-        <NewOrderModal
-          isOpen={showNewOrder}
-          onClose={() =>
-            setShowNewOrder(false)
-          }
-          orderId="MTR-1001"
-        />
-
       </CartProvider>
     </BrowserRouter>
   );

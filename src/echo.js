@@ -32,4 +32,7 @@ const echo = new Echo({
   ],
 });
 
+// DEBUG
+window.echo = echo;
+
 export default echo;

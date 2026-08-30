@@ -10,139 +10,276 @@ import OrderFilters from "../components/orders/OrderFilters";
 import api from "../api/axios";
 
 export default function OrderPage() {
-  // ==========================================
-  // ORDERS DARI API
-  // ==========================================
+  // =========================================================
+  // ORDERS
+  // =========================================================
+
   const [orders, setOrders] = useState([]);
 
   const [loading, setLoading] = useState(true);
 
+  const [loadingMore, setLoadingMore] =
+    useState(false);
+
   const [error, setError] = useState("");
 
-  // ==========================================
+  // =========================================================
+  // PAGINATION
+  // =========================================================
+
+  const [currentPage, setCurrentPage] =
+    useState(1);
+
+  const [lastPage, setLastPage] =
+    useState(1);
+
+  // =========================================================
   // FILTER
-  // ==========================================
-  const [activeFilter, setActiveFilter] = useState("Semua");
+  // =========================================================
 
-  // DatePicker range
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [activeFilter, setActiveFilter] =
+    useState("Semua");
 
-  // Pesanan yang sedang dibuka
-  const [openOrder, setOpenOrder] = useState(null);
+  const [startDate, setStartDate] =
+    useState("");
 
-  // ==========================================
-  // AMBIL PESANAN DARI BACKEND
-  // ==========================================
-  const fetchOrders = async () => {
+  const [endDate, setEndDate] =
+    useState("");
+
+  // =========================================================
+  // OPEN ORDER
+  // =========================================================
+
+  const [openOrder, setOpenOrder] =
+    useState(null);
+
+  // =========================================================
+  // BUILD API PARAMS
+  // =========================================================
+
+  const buildParams = () => {
+    const params = {};
+
+    // -------------------------------------------------------
+    // STATUS
+    // -------------------------------------------------------
+
+    if (
+      activeFilter === "Done"
+    ) {
+      params.status = "done";
+    }
+
+    // -------------------------------------------------------
+    // ORDER TYPE
+    // -------------------------------------------------------
+
+    else if (
+      activeFilter === "Dine-In"
+    ) {
+      params.order_type = "dine-in";
+    }
+
+    else if (
+      activeFilter === "Take Away"
+    ) {
+      params.order_type = "takeaway";
+    }
+
+    // -------------------------------------------------------
+    // DATE
+    // -------------------------------------------------------
+
+    if (startDate) {
+      params.start_date =
+        startDate;
+    }
+
+    if (endDate) {
+      params.end_date =
+        endDate;
+    }
+
+    return params;
+  };
+
+  // =========================================================
+  // MAP API ORDER
+  // =========================================================
+
+  const mapOrder = (order) => ({
+    ...order,
+
+    // Backend:
+    // dine-in
+    // takeaway
+    //
+    // FE:
+    // Dine-In
+    // Take Away
+    type:
+      order.order_type === "dine-in"
+        ? "Dine-In"
+        : "Take Away",
+
+    // Date untuk kebutuhan filter/local UI
+    dateValue:
+      order.created_at
+        ? order.created_at.slice(
+            0,
+            10
+          )
+        : "",
+
+    // Customer
+    customerName:
+      order.customer_name,
+
+    // Nomor order
+    orderNumber:
+      order.order_number,
+
+    // Payment
+    paymentMethod:
+      order.payment_method,
+
+    paymentStatus:
+      order.payment_status,
+
+    // Status backend
+    status:
+      order.status,
+  });
+
+  // =========================================================
+  // FETCH ORDERS
+  // =========================================================
+  //
+  // page = 1  → replace list
+  // page > 1  → append list
+  //
+  // =========================================================
+
+  const fetchOrders = async (
+    page = 1,
+    append = false
+  ) => {
     try {
-      setLoading(true);
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+
       setError("");
 
-      // --------------------------------------------------
-      // FILTER "DONE"
-      // --------------------------------------------------
-      const params = {};
+      const params = {
+        ...buildParams(),
+        page,
+      };
 
-      if (activeFilter === "Done") {
-        params.status = "done";
-      }
-
-      // --------------------------------------------------
-      // FILTER ORDER TYPE
-      // --------------------------------------------------
-      else if (activeFilter === "Dine-In") {
-        params.order_type = "dine-in";
-      }
-
-      else if (activeFilter === "Take Away") {
-        params.order_type = "takeaway";
-      }
-
-      // --------------------------------------------------
-      // FILTER DATE
-      // --------------------------------------------------
-      if (startDate) {
-        params.start_date = startDate;
-      }
-
-      if (endDate) {
-        params.end_date = endDate;
-      }
-
-      console.log("ORDER FETCH PARAMS:", params);
-
-      const response = await api.get(
-        "admin/orders",
-        {
-          params,
-        }
+      console.log(
+        "ORDER FETCH PARAMS:",
+        params
       );
+
+      const response =
+        await api.get(
+          "admin/orders",
+          {
+            params,
+          }
+        );
 
       console.log(
         "Response orders:",
         response.data
       );
 
-      const apiOrders =
-        response.data?.data?.data || [];
+      // =====================================================
+      // PAGINATED DATA
+      // =====================================================
 
-      // ======================================
-      // MAPPING DATA BACKEND → FORMAT FE
-      // ======================================
+      const pagination =
+        response.data?.data || {};
+
+      const apiOrders =
+        Array.isArray(
+          pagination?.data
+        )
+          ? pagination.data
+          : [];
+
+      // =====================================================
+      // MAP DATA
+      // =====================================================
 
       const mappedOrders =
-        apiOrders.map((order) => ({
-          ...order,
-
-          // Backend:
-          // dine-in
-          // takeaway
-          //
-          // FE:
-          // Dine-In
-          // Take Away
-          type:
-            order.order_type === "dine-in"
-              ? "Dine-In"
-              : "Take Away",
-
-          // Date untuk kebutuhan filter/local UI
-          dateValue:
-            order.created_at
-              ? order.created_at.slice(
-                  0,
-                  10
-                )
-              : "",
-
-          // Customer
-          customerName:
-            order.customer_name,
-
-          // Nomor order
-          orderNumber:
-            order.order_number,
-
-          // Payment
-          paymentMethod:
-            order.payment_method,
-
-          paymentStatus:
-            order.payment_status,
-
-          // STATUS BACKEND
-          status:
-            order.status,
-        }));
+        apiOrders.map(
+          mapOrder
+        );
 
       console.log(
-        "Mapped orders:",
+        `Mapped orders page ${page}:`,
         mappedOrders
       );
 
+      // =====================================================
+      // SET ORDERS
+      // =====================================================
+
       setOrders(
-        mappedOrders
+        (current) => {
+          if (!append) {
+            return mappedOrders;
+          }
+
+          // Hindari duplicate order
+          const existingIds =
+            new Set(
+              current.map(
+                (order) =>
+                  Number(order.id)
+              )
+            );
+
+          const newOrders =
+            mappedOrders.filter(
+              (order) =>
+                !existingIds.has(
+                  Number(order.id)
+                )
+            );
+
+          return [
+            ...current,
+            ...newOrders,
+          ];
+        }
+      );
+
+      // =====================================================
+      // PAGINATION META
+      // =====================================================
+
+      const current =
+        Number(
+          pagination?.current_page ??
+          page
+        );
+
+      const last =
+        Number(
+          pagination?.last_page ??
+          page
+        );
+
+      setCurrentPage(
+        current
+      );
+
+      setLastPage(
+        last
       );
 
     } catch (err) {
@@ -161,65 +298,121 @@ export default function OrderPage() {
         "Gagal mengambil data pesanan."
       );
     } finally {
-      setLoading(false);
+      if (append) {
+        setLoadingMore(
+          false
+        );
+      } else {
+        setLoading(false);
+      }
     }
   };
 
-  // ==========================================
+  // =========================================================
   // INITIAL / FILTER FETCH
-  // ==========================================
+  // =========================================================
+  //
+  // Setiap filter berubah:
+  // kembali ke page 1.
+  //
+  // =========================================================
+
   useEffect(() => {
-    fetchOrders();
+    setCurrentPage(1);
+    setLastPage(1);
+    setOpenOrder(null);
+
+    fetchOrders(
+      1,
+      false
+    );
   }, [
     activeFilter,
     startDate,
     endDate,
   ]);
 
-  // ==========================================
-  // SET DATE RANGE
-  // ==========================================
+  // =========================================================
+  // LOAD MORE
+  // =========================================================
+
+  const handleLoadMore =
+    async () => {
+      if (loadingMore) {
+        return;
+      }
+
+      if (
+        currentPage >=
+        lastPage
+      ) {
+        return;
+      }
+
+      const nextPage =
+        currentPage + 1;
+
+      await fetchOrders(
+        nextPage,
+        true
+      );
+    };
+
+  // =========================================================
+  // DATE RANGE
+  // =========================================================
+
   const setDateRange = (
     start,
     end
   ) => {
-    setStartDate(start);
-    setEndDate(end);
+    setStartDate(
+      start
+    );
+
+    setEndDate(
+      end
+    );
   };
 
-  // ==========================================
-  // FILTER PESANAN DI FRONTEND
-  // ==========================================
+  // =========================================================
+  // FRONTEND FILTER
+  // =========================================================
   //
   // Backend sudah melakukan filter utama.
-  // FE tetap filter ulang supaya aman.
+  // FE tetap filter ulang sebagai pengaman.
   //
-  // ==========================================
+  // =========================================================
 
   const filteredOrders =
     useMemo(() => {
-      let result = [...orders];
+      let result = [
+        ...orders,
+      ];
 
-      // ------------------------------------------
+      // -----------------------------------------------------
       // DONE
-      // ------------------------------------------
+      // -----------------------------------------------------
 
       if (
-        activeFilter === "Done"
+        activeFilter ===
+        "Done"
       ) {
         result =
           result.filter(
             (order) =>
-              order.status === "done"
+              order.status ===
+              "done"
           );
       }
 
-      // ------------------------------------------
+      // -----------------------------------------------------
       // DINE-IN
-      // ------------------------------------------
+      // -----------------------------------------------------
 
       else if (
-        activeFilter === "Dine-In"
+        activeFilter ===
+        "Dine-In"
       ) {
         result =
           result.filter(
@@ -231,9 +424,9 @@ export default function OrderPage() {
           );
       }
 
-      // ------------------------------------------
+      // -----------------------------------------------------
       // TAKE AWAY
-      // ------------------------------------------
+      // -----------------------------------------------------
 
       else if (
         activeFilter ===
@@ -249,9 +442,9 @@ export default function OrderPage() {
           );
       }
 
-      // ------------------------------------------
+      // -----------------------------------------------------
       // SEMUA
-      // ------------------------------------------
+      // -----------------------------------------------------
 
       else if (
         activeFilter ===
@@ -265,9 +458,9 @@ export default function OrderPage() {
           );
       }
 
-      // ------------------------------------------
-      // RANGE TANGGAL
-      // ------------------------------------------
+      // -----------------------------------------------------
+      // DATE RANGE
+      // -----------------------------------------------------
 
       if (
         startDate ||
@@ -330,9 +523,10 @@ export default function OrderPage() {
       endDate,
     ]);
 
-  // ==========================================
-  // BUKA / TUTUP DETAIL
-  // ==========================================
+  // =========================================================
+  // TOGGLE ORDER
+  // =========================================================
+
   const toggleOrder = (
     id
   ) => {
@@ -344,9 +538,10 @@ export default function OrderPage() {
     );
   };
 
-  // ==========================================
-  // SELESAIKAN PESANAN
-  // ==========================================
+  // =========================================================
+  // DONE ORDER
+  // =========================================================
+
   const handleDoneOrder =
     async (id) => {
       try {
@@ -355,9 +550,9 @@ export default function OrderPage() {
           id
         );
 
-        // ========================================
+        // ===================================================
         // UPDATE BACKEND
-        // ========================================
+        // ===================================================
 
         const response =
           await api.patch(
@@ -372,9 +567,9 @@ export default function OrderPage() {
           response.data
         );
 
-        // ========================================
+        // ===================================================
         // UPDATE STATE LOKAL
-        // ========================================
+        // ===================================================
 
         setOrders(
           (prev) =>
@@ -393,25 +588,23 @@ export default function OrderPage() {
             )
         );
 
-        // ========================================
-        // TUTUP DETAIL
-        // ========================================
+        // ===================================================
+        // CLOSE DETAIL
+        // ===================================================
 
-        setOpenOrder(
-          null
-        );
+        setOpenOrder(null);
 
-        // ========================================
+        // ===================================================
         // MASUK TAB DONE
-        // ========================================
+        // ===================================================
 
         setActiveFilter(
           "Done"
         );
 
-        // ========================================
-        // RESET DATE FILTER
-        // ========================================
+        // ===================================================
+        // RESET DATE
+        // ===================================================
 
         setDateRange(
           "",
@@ -437,9 +630,18 @@ export default function OrderPage() {
       }
     };
 
-  // ==========================================
+  // =========================================================
+  // HAS MORE
+  // =========================================================
+
+  const hasMore =
+    currentPage <
+    lastPage;
+
+  // =========================================================
   // LOADING
-  // ==========================================
+  // =========================================================
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F6F3ED]">
@@ -479,9 +681,10 @@ export default function OrderPage() {
     );
   }
 
-  // ==========================================
+  // =========================================================
   // ERROR
-  // ==========================================
+  // =========================================================
+
   if (error) {
     return (
       <div className="min-h-screen bg-[#F6F3ED]">
@@ -495,7 +698,8 @@ export default function OrderPage() {
             <div
               className="
                 rounded-2xl
-                border border-[#E7E1D5]
+                border
+                border-[#E7E1D5]
                 bg-[#FFFCF4]
                 p-10
                 text-center
@@ -512,13 +716,18 @@ export default function OrderPage() {
 
               <button
                 type="button"
-                onClick={fetchOrders}
+                onClick={() =>
+                  fetchOrders(
+                    1,
+                    false
+                  )
+                }
                 className="
                   mt-3
                   text-xs
                   font-bold
-                  underline
                   text-[#292825]
+                  underline
                 "
               >
                 Coba lagi
@@ -536,28 +745,30 @@ export default function OrderPage() {
     );
   }
 
-  // ==========================================
+  // =========================================================
   // PAGE
-  // ==========================================
+  // =========================================================
 
   return (
     <div className="min-h-screen bg-[#F6F3ED]">
 
-      {/* ===================================== */}
-      {/* NAVBAR */}
-      {/* ===================================== */}
+      {/* =====================================================
+          NAVBAR
+      ===================================================== */}
 
       <Navbar />
 
-      {/* ===================================== */}
-      {/* CONTENT */}
-      {/* ===================================== */}
+      {/* =====================================================
+          CONTENT
+      ===================================================== */}
 
       <main className="px-5 pb-28 pt-7 md:px-8 lg:px-10">
 
         <div className="mx-auto max-w-[1100px]">
 
-          {/* TITLE */}
+          {/* =================================================
+              TITLE
+          ================================================= */}
 
           <div className="mb-4">
 
@@ -573,12 +784,14 @@ export default function OrderPage() {
             </h1>
 
             <p className="mt-0.5 text-[14px] text-[#A3A09A]">
-              {filteredOrders.length} pesanan ditemukan
+              {filteredOrders.length} pesanan ditampilkan
             </p>
 
           </div>
 
-          {/* FILTER */}
+          {/* =================================================
+              FILTER
+          ================================================= */}
 
           <div className="mb-4">
 
@@ -602,7 +815,9 @@ export default function OrderPage() {
 
           </div>
 
-          {/* LIST */}
+          {/* =================================================
+              LIST
+          ================================================= */}
 
           <div className="space-y-3">
 
@@ -611,7 +826,6 @@ export default function OrderPage() {
 
               filteredOrders.map(
                 (order) => (
-
                   <OrderCard
                     key={order.id}
                     order={order}
@@ -632,7 +846,6 @@ export default function OrderPage() {
                       "done"
                     }
                   />
-
                 )
               )
 
@@ -641,7 +854,8 @@ export default function OrderPage() {
               <div
                 className="
                   rounded-2xl
-                  border border-[#E7E1D5]
+                  border
+                  border-[#E7E1D5]
                   bg-[#FFFCF4]
                   p-10
                   text-center
@@ -662,17 +876,81 @@ export default function OrderPage() {
 
           </div>
 
+          {/* =================================================
+              LOAD MORE
+          ================================================= */}
+
+          {hasMore && (
+            <div
+              className="
+                mt-6
+                flex
+                justify-center
+              "
+            >
+
+              <button
+                type="button"
+                onClick={
+                  handleLoadMore
+                }
+                disabled={
+                  loadingMore
+                }
+                className="
+                  rounded-xl
+                  bg-[#292825]
+                  px-6
+                  py-3
+                  text-[12px]
+                  font-bold
+                  text-white
+                  transition
+                  hover:bg-[#1f1e1c]
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
+                "
+              >
+
+                {loadingMore
+                  ? "Memuat..."
+                  : "Muat Lebih Banyak"}
+
+              </button>
+
+            </div>
+          )}
+
+          {/* =================================================
+              PAGINATION INFO
+          ================================================= */}
+
+          {orders.length > 0 && (
+            <div
+              className="
+                mt-3
+                text-center
+                text-[10px]
+                text-[#AAA69F]
+              "
+            >
+              Halaman{" "}
+              {currentPage}{" "}
+              dari{" "}
+              {lastPage}
+            </div>
+          )}
+
         </div>
 
       </main>
 
-      {/* ===================================== */}
-      {/* BOTTOM NAVIGATION */}
-      {/* ===================================== */}
+      {/* =====================================================
+          BOTTOM NAVIGATION
+      ===================================================== */}
 
       <BottomNavigation />
 
     </div>
   );
 }
-
