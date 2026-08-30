@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Banknote, QrCode, ArrowRight, Store, ShoppingBag } from 'lucide-react';
 import { useCart } from '../context/CartContext'; 
+import axios from 'axios';
 
 export default function OrderDetailPage() {
   const navigate = useNavigate();
@@ -10,25 +11,59 @@ export default function OrderDetailPage() {
   const [customerName, setCustomerName] = useState('');
   const [orderType, setOrderType] = useState(''); 
   const [paymentMethod, setPaymentMethod] = useState(''); 
+  const [isLoading, setIsLoading] = useState(false);
 
   const isFormValid = customerName.trim() !== '' && orderType !== '' && paymentMethod !== '';
 
-  const handleProceed = () => {
+  const handleProceed = async () => {
     if (!isFormValid) return; 
 
-    // Buat format waktu saat ini (Contoh: 29 Agt 2026, 20:30)
-    const orderTime = new Date().toLocaleString('id-ID', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    setIsLoading(true);
 
-    if (paymentMethod === 'cash') {
-      navigate('/cash-payment', { state: { customerName, orderType, orderTime } });
-    } else if (paymentMethod === 'qris') {
-      navigate('/qris-payment', { state: { customerName, orderType, orderTime } });
+    try {
+      // 1. Format item keranjang sesuai validasi backend Laravel (menu_item_id, quantity)
+      const formattedItems = cart.map((item) => ({
+        menu_item_id: item.id,
+        quantity: item.quantity,
+        notes: item.note || null, 
+      }));
+
+      // 2. Sesuaikan format tipe pesanan agar cocok dengan standar penulisan database
+      const mappedOrderType = orderType === 'take-away' ? 'takeaway' : 'dine-in';
+
+      // 3. Susun Payload
+      const payload = {
+        customer_name: customerName,
+        order_type: mappedOrderType,
+        payment_method: paymentMethod,
+        items: formattedItems,
+      };
+
+      // 4. Tembak API Laravel (Ubah URL jika port backend Anda bukan 8000)
+      const response = await axios.post('http://localhost:8000/api/v1/customer/orders', payload);
+
+      // 5. Jika sukses masuk ke database, arahkan ke halaman pembayaran
+      if (response.status === 200 || response.status === 201) {
+        // Mengambil data balasan dari Laravel (termasuk nomor order yang baru digenerate)
+        const createdOrder = response.data.data; 
+
+        if (paymentMethod === 'cash') {
+          navigate('/cash-payment', { state: { orderData: createdOrder } });
+        } else if (paymentMethod === 'qris') {
+          navigate('/qris-payment', { state: { orderData: createdOrder } });
+        }
+      }
+    } catch (error) {
+      console.error("Gagal membuat pesanan:", error);
+      
+      // Tangkap pesan error validasi (422) dari Laravel
+      if (error.response && error.response.status === 422) {
+        alert("Validasi Gagal:\n" + JSON.stringify(error.response.data.errors, null, 2));
+      } else {
+        alert("Terjadi kesalahan sistem saat memproses pesanan. Pastikan server backend menyala.");
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -50,6 +85,7 @@ export default function OrderDetailPage() {
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
             placeholder="Enter your name"
+            disabled={isLoading}
             className="w-full bg-gray-50 dark:bg-[#2d2d2d] border border-gray-200 dark:border-[#444444] rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white font-medium focus:outline-none focus:border-zinc-800 dark:focus:border-white transition-colors duration-300 dark:placeholder:text-[#888888]"
           />
         </div>
@@ -76,7 +112,7 @@ export default function OrderDetailPage() {
                 <div key={item.id} className="py-3.5 first:pt-0 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     
-                    {/* GAMBAR MAKANAN KEMBALI NORMAL - Tanpa Invert */}
+                    {/* GAMBAR MAKANAN */}
                     <img
                       src={item.image || item.img}
                       alt={item.name}
@@ -118,10 +154,10 @@ export default function OrderDetailPage() {
           <div className="space-y-3">
             {/* Dine In Option */}
             <div
-              onClick={() => setOrderType('dine-in')}
+              onClick={() => !isLoading && setOrderType('dine-in')}
               className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-center gap-3 bg-white dark:bg-[#1e1e1e] ${
                 orderType === 'dine-in' ? 'border-zinc-900 dark:border-white' : 'border-gray-200 dark:border-[#333333]'
-              }`}
+              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
                 orderType === 'dine-in' ? 'border-zinc-900 dark:border-white' : 'border-gray-300 dark:border-[#444444]'
@@ -136,10 +172,10 @@ export default function OrderDetailPage() {
 
             {/* Take Away Option */}
             <div
-              onClick={() => setOrderType('take-away')}
+              onClick={() => !isLoading && setOrderType('take-away')}
               className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-center gap-3 bg-white dark:bg-[#1e1e1e] ${
                 orderType === 'take-away' ? 'border-zinc-900 dark:border-white' : 'border-gray-200 dark:border-[#333333]'
-              }`}
+              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
                 orderType === 'take-away' ? 'border-zinc-900 dark:border-white' : 'border-gray-300 dark:border-[#444444]'
@@ -162,10 +198,10 @@ export default function OrderDetailPage() {
           <div className="space-y-3">
             {/* Cash */}
             <div
-              onClick={() => setPaymentMethod('cash')}
+              onClick={() => !isLoading && setPaymentMethod('cash')}
               className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-start gap-3 bg-white dark:bg-[#1e1e1e] ${
                 paymentMethod === 'cash' ? 'border-zinc-900 dark:border-white' : 'border-gray-200 dark:border-[#333333]'
-              }`}
+              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <div className="mt-0.5">
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
@@ -187,10 +223,10 @@ export default function OrderDetailPage() {
 
             {/* QRIS */}
             <div
-              onClick={() => setPaymentMethod('qris')}
+              onClick={() => !isLoading && setPaymentMethod('qris')}
               className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-start gap-3 bg-white dark:bg-[#1e1e1e] ${
                 paymentMethod === 'qris' ? 'border-zinc-900 dark:border-white' : 'border-gray-200 dark:border-[#333333]'
-              }`}
+              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <div className="mt-0.5">
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
@@ -217,14 +253,14 @@ export default function OrderDetailPage() {
       <div className="p-4 pt-0">
         <button 
           onClick={handleProceed}
-          disabled={!isFormValid}
+          disabled={!isFormValid || isLoading}
           className={`w-full font-bold tracking-wider rounded-2xl py-4 px-6 flex items-center justify-between transition-colors duration-300 shadow-lg uppercase text-sm ${
-            isFormValid 
+            isFormValid && !isLoading
               ? 'bg-zinc-900 dark:bg-white text-white dark:text-[#111] hover:bg-black dark:hover:bg-gray-200 cursor-pointer' 
               : 'bg-[#CFCFCF] dark:bg-[#333333] text-white dark:text-[#777] cursor-not-allowed'
           }`}
         >
-          <span>PROCEED TO PAYMENT</span>
+          <span>{isLoading ? 'MEMPROSES...' : 'PROCEED TO PAYMENT'}</span>
           <ArrowRight size={20} />
         </button>
       </div>
