@@ -37,9 +37,13 @@ function normalizePaymentMethod(method) {
 // =========================================================
 
 function getPaymentLabel(method) {
-  const value = normalizePaymentMethod(method);
+  const value =
+    normalizePaymentMethod(method);
 
-  if (value === "cash" || value === "tunai") {
+  if (
+    value === "cash" ||
+    value === "tunai"
+  ) {
     return "Cash";
   }
 
@@ -68,7 +72,9 @@ function getPaymentLabel(method) {
     return "Kartu";
   }
 
-  return String(method || "Payment");
+  return String(
+    method || "Payment"
+  );
 }
 
 // =========================================================
@@ -76,7 +82,8 @@ function getPaymentLabel(method) {
 // =========================================================
 
 function getPaymentIcon(method) {
-  const value = normalizePaymentMethod(method);
+  const value =
+    normalizePaymentMethod(method);
 
   if (
     value === "cash" ||
@@ -147,7 +154,8 @@ export default function OrderCard({
   // =========================================================
 
   const isTakeAway =
-    order.order_type === "takeaway";
+    order.order_type ===
+    "takeaway";
 
   const orderType =
     isTakeAway
@@ -156,20 +164,6 @@ export default function OrderCard({
 
   // =========================================================
   // TABLE
-  // =========================================================
-  //
-  // Backend:
-  //
-  // order.table.table_number
-  //
-  // Contoh:
-  // {
-  //   table: {
-  //      id: 1,
-  //      table_number: "1"
-  //   }
-  // }
-  //
   // =========================================================
 
   const tableNumber =
@@ -192,20 +186,13 @@ export default function OrderCard({
     );
 
   const isCash =
-    normalizedPaymentMethod === "cash" ||
-    normalizedPaymentMethod === "tunai";
+    normalizedPaymentMethod ===
+      "cash" ||
+    normalizedPaymentMethod ===
+      "tunai";
 
   // =========================================================
   // TOTAL
-  // =========================================================
-  //
-  // Backend sudah mengirim:
-  // order.total_amount
-  //
-  // Jadi gunakan itu terlebih dahulu.
-  //
-  // Fallback:
-  // subtotal + tax + service charge
   // =========================================================
 
   const subtotal =
@@ -235,30 +222,33 @@ export default function OrderCard({
   // DATE & TIME
   // =========================================================
 
-  const createdAt = order.created_at
-    ? new Date(order.created_at)
-    : null;
+  const createdAt =
+    order.created_at
+      ? new Date(order.created_at)
+      : null;
 
-  const date = createdAt
-    ? createdAt.toLocaleDateString(
-        "id-ID",
-        {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        }
-      )
-    : "-";
+  const date =
+    createdAt
+      ? createdAt.toLocaleDateString(
+          "id-ID",
+          {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          }
+        )
+      : "-";
 
-  const time = createdAt
-    ? createdAt.toLocaleTimeString(
-        "id-ID",
-        {
-          hour: "2-digit",
-          minute: "2-digit",
-        }
-      )
-    : "-";
+  const time =
+    createdAt
+      ? createdAt.toLocaleTimeString(
+          "id-ID",
+          {
+            hour: "2-digit",
+            minute: "2-digit",
+          }
+        )
+      : "-";
 
   // =========================================================
   // STATUS
@@ -281,6 +271,17 @@ export default function OrderCard({
     closedByBackend;
 
   // =========================================================
+  // GLOBAL ORDER NOTE
+  // =========================================================
+
+  const hasOrderNote =
+    Boolean(
+      String(
+        order.notes || ""
+      ).trim()
+    );
+
+  // =========================================================
   // RENDER
   // =========================================================
 
@@ -296,9 +297,9 @@ export default function OrderCard({
       "
     >
 
-      {/* ===================================================== */}
-      {/* HEADER */}
-      {/* ===================================================== */}
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
 
       <button
         type="button"
@@ -316,9 +317,9 @@ export default function OrderCard({
         "
       >
 
-        {/* =================================================== */}
-        {/* LEFT */}
-        {/* =================================================== */}
+        {/* ===================================================
+            LEFT
+        =================================================== */}
 
         <div
           className="
@@ -329,9 +330,7 @@ export default function OrderCard({
           "
         >
 
-          {/* =================================================
-              TABLE NUMBER
-          ================================================= */}
+          {/* TABLE */}
 
           <div
             className="
@@ -353,17 +352,13 @@ export default function OrderCard({
               : "TA"}
           </div>
 
-          {/* =================================================
-              CUSTOMER
-          ================================================= */}
+          {/* CUSTOMER */}
 
           <div
             className="
               min-w-0
             "
           >
-
-            {/* CUSTOMER + ORDER TYPE */}
 
             <div
               className="
@@ -392,7 +387,6 @@ export default function OrderCard({
                   py-1
                   text-[10px]
                   font-semibold
-
                   ${
                     isTakeAway
                       ? "bg-[#FFE8D3] text-[#F39A52]"
@@ -405,9 +399,7 @@ export default function OrderCard({
 
             </div>
 
-            {/* =================================================
-                INFO
-            ================================================= */}
+            {/* INFO */}
 
             <div
               className="
@@ -421,8 +413,6 @@ export default function OrderCard({
               "
             >
 
-              {/* ORDER NUMBER */}
-
               <span>
                 {order.order_number ||
                   "-"}
@@ -432,8 +422,6 @@ export default function OrderCard({
                 •
               </span>
 
-              {/* DATE */}
-
               <span>
                 {date}, {time}
               </span>
@@ -442,15 +430,12 @@ export default function OrderCard({
                 •
               </span>
 
-              {/* PAYMENT */}
-
               <span
                 className={`
                   flex
                   items-center
                   gap-1
                   font-semibold
-
                   ${
                     isCash
                       ? "text-[#F3A34E]"
@@ -458,24 +443,21 @@ export default function OrderCard({
                   }
                 `}
               >
-
                 {getPaymentIcon(
                   order.payment_method
                 )}
 
                 {paymentMethod}
-
               </span>
 
             </div>
 
           </div>
-
         </div>
 
-        {/* =================================================== */}
-        {/* RIGHT */}
-        {/* =================================================== */}
+        {/* ===================================================
+            RIGHT
+        =================================================== */}
 
         <div
           className="
@@ -515,9 +497,9 @@ export default function OrderCard({
 
       </button>
 
-      {/* ===================================================== */}
-      {/* DETAIL */}
-      {/* ===================================================== */}
+      {/* =====================================================
+          DETAIL
+      ===================================================== */}
 
       {open && (
         <div
@@ -596,7 +578,7 @@ export default function OrderCard({
 
             <div
               className="
-                space-y-2
+                space-y-4
               "
             >
 
@@ -629,6 +611,17 @@ export default function OrderCard({
                       unitPrice *
                         quantity;
 
+                    // =================================================
+                    // ADDONS
+                    // =================================================
+
+                    const addons =
+                      Array.isArray(
+                        item.addons
+                      )
+                        ? item.addons
+                        : [];
+
                     return (
                       <div
                         key={
@@ -636,33 +629,43 @@ export default function OrderCard({
                           `${itemName}-${index}`
                         }
                         className="
-                          flex
-                          items-start
-                          justify-between
-                          gap-4
+                          rounded-xl
+                          bg-[#F9F6EF]
+                          px-3
+                          py-3
                         "
                       >
 
+                        {/* ================================
+                            ITEM HEADER
+                        ================================= */}
+
                         <div
                           className="
-                            min-w-0
+                            flex
+                            items-start
+                            justify-between
+                            gap-4
                           "
                         >
 
-                          <p
+                          <div
                             className="
-                              text-[14px]
-                              font-medium
-                              text-[#32302C]
+                              min-w-0
                             "
                           >
-                            {itemName} ×
-                            {quantity}
-                          </p>
 
-                          {/* ITEM NOTE */}
+                            <p
+                              className="
+                                text-[14px]
+                                font-semibold
+                                text-[#32302C]
+                              "
+                            >
+                              {itemName} ×
+                              {quantity}
+                            </p>
 
-                          {item.notes && (
                             <p
                               className="
                                 mt-0.5
@@ -670,25 +673,168 @@ export default function OrderCard({
                                 text-[#A7A39B]
                               "
                             >
-                              Note:{" "}
-                              {item.notes}
+                              {formatRupiah(
+                                unitPrice
+                              )} / item
                             </p>
-                          )}
+
+                          </div>
+
+                          <p
+                            className="
+                              shrink-0
+                              text-[14px]
+                              font-semibold
+                              text-[#32302C]
+                            "
+                          >
+                            {formatRupiah(
+                              itemSubtotal
+                            )}
+                          </p>
 
                         </div>
 
-                        <p
-                          className="
-                            shrink-0
-                            text-[14px]
-                            font-semibold
-                            text-[#32302C]
-                          "
-                        >
-                          {formatRupiah(
-                            itemSubtotal
-                          )}
-                        </p>
+                        {/* ================================
+                            ADDONS
+                        ================================= */}
+
+                        {addons.length > 0 && (
+                          <div
+                            className="
+                              mt-3
+                              border-t
+                              border-[#E8E2D7]
+                              pt-3
+                            "
+                          >
+
+                            <p
+                              className="
+                                mb-2
+                                text-[9px]
+                                font-bold
+                                uppercase
+                                tracking-[0.12em]
+                                text-[#A7A39B]
+                              "
+                            >
+                              Add On
+                            </p>
+
+                            <div
+                              className="
+                                space-y-1.5
+                              "
+                            >
+
+                              {addons.map(
+                                (
+                                  addon,
+                                  addonIndex
+                                ) => {
+
+                                  const addonName =
+                                    addon.addon_name ||
+                                    addon.addon?.name ||
+                                    "Add On";
+
+                                  const addonPrice =
+                                    Number(
+                                      addon.addon_price ??
+                                      addon.addon?.price ??
+                                      0
+                                    );
+
+                                  return (
+                                    <div
+                                      key={
+                                        addon.id ??
+                                        `${item.id}-addon-${addonIndex}`
+                                      }
+                                      className="
+                                        flex
+                                        items-center
+                                        justify-between
+                                        gap-3
+                                        text-[11px]
+                                      "
+                                    >
+
+                                      <span
+                                        className="
+                                          min-w-0
+                                          text-[#6E6A63]
+                                        "
+                                      >
+                                        +{" "}
+                                        {addonName}
+                                      </span>
+
+                                      <span
+                                        className="
+                                          shrink-0
+                                          font-medium
+                                          text-[#8D8981]
+                                        "
+                                      >
+                                        {formatRupiah(
+                                          addonPrice
+                                        )}
+                                      </span>
+
+                                    </div>
+                                  );
+                                }
+                              )}
+
+                            </div>
+
+                          </div>
+                        )}
+
+                        {/* ================================
+                            ITEM NOTE
+                        ================================= */}
+
+                        {String(
+                          item.notes || ""
+                        ).trim() && (
+                          <div
+                            className="
+                              mt-3
+                              rounded-lg
+                              bg-[#F1ECE2]
+                              px-3
+                              py-2.5
+                            "
+                          >
+
+                            <p
+                              className="
+                                text-[9px]
+                                font-bold
+                                uppercase
+                                tracking-[0.12em]
+                                text-[#A7A39B]
+                              "
+                            >
+                              Catatan
+                            </p>
+
+                            <p
+                              className="
+                                mt-1
+                                text-[11px]
+                                leading-relaxed
+                                text-[#5F5B54]
+                              "
+                            >
+                              {item.notes}
+                            </p>
+
+                          </div>
+                        )}
 
                       </div>
                     );
@@ -709,6 +855,49 @@ export default function OrderCard({
               )}
 
             </div>
+
+            {/* =================================================
+                GLOBAL ORDER NOTE
+            ================================================= */}
+
+            {hasOrderNote && (
+              <div
+                className="
+                  mt-4
+                  rounded-xl
+                  border
+                  border-[#E5D8C5]
+                  bg-[#FFF5E7]
+                  px-3
+                  py-3
+                "
+              >
+
+                <p
+                  className="
+                    text-[9px]
+                    font-bold
+                    uppercase
+                    tracking-[0.12em]
+                    text-[#C08345]
+                  "
+                >
+                  Catatan Pesanan
+                </p>
+
+                <p
+                  className="
+                    mt-1
+                    text-[12px]
+                    leading-relaxed
+                    text-[#5F574E]
+                  "
+                >
+                  {order.notes}
+                </p>
+
+              </div>
+            )}
 
             {/* =================================================
                 PRICE BREAKDOWN
@@ -894,9 +1083,7 @@ export default function OrderCard({
                   onClick={(e) => {
                     e.stopPropagation();
 
-                    if (
-                      onDone
-                    ) {
+                    if (onDone) {
                       onDone(
                         order.id
                       );
@@ -931,3 +1118,4 @@ export default function OrderCard({
     </div>
   );
 }
+
