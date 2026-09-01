@@ -1,7 +1,11 @@
+
 import { ImagePlus, X } from "lucide-react";
 
 import SettingSection from "./SettingSection";
+
 import SaveButton from "./SaveButton";
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export default function CustomerBanner({
   data,
@@ -40,18 +44,18 @@ export default function CustomerBanner({
     // Path dari Laravel storage:
     // /storage/banners/xxx.png
     if (url.startsWith("/storage/")) {
-      return `http://10.174.91.209:8000/${url}`;
+      return `${BACKEND_URL}${url}`;
     }
 
     // Path:
     // storage/banners/xxx.png
     if (url.startsWith("storage/")) {
-      return `http://10.174.91.209:8000/${url}`;
+      return `${BACKEND_URL}/${url}`;
     }
 
     // Path database:
     // banners/xxx.png
-    return `http://10.174.91.209:8000/storage/${url.replace(
+    return `${BACKEND_URL}/storage/${url.replace(
       /^\/+/,
       ""
     )}`;
@@ -110,12 +114,9 @@ export default function CustomerBanner({
 
     setData((prev) => ({
       ...prev,
-
       business: {
         ...prev.business,
-
         bannerImage: file,
-
         bannerImageUrl: previewUrl,
       },
     }));
@@ -128,12 +129,9 @@ export default function CustomerBanner({
   const handleRemove = () => {
     setData((prev) => ({
       ...prev,
-
       business: {
         ...prev.business,
-
         bannerImage: null,
-
         bannerImageUrl: "",
       },
     }));
@@ -222,6 +220,7 @@ export default function CustomerBanner({
               >
                 <X size={13} />
               </button>
+
             </div>
           ) : (
             <div
@@ -312,3 +311,4 @@ export default function CustomerBanner({
     </SettingSection>
   );
 }
+

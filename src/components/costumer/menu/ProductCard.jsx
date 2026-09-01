@@ -22,8 +22,7 @@ export default function ProductCard({
         cursor-pointer
         overflow-hidden
         rounded-[17px]
-        border
-        border-[#d8d5cf]
+        
         bg-[#f8f8f8]
         shadow-[0_1px_0_rgba(0,0,0,0.02)]
       "

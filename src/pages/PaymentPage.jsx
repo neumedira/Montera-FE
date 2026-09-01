@@ -31,8 +31,7 @@ import axios from "axios";
 // BACKEND URL
 // =========================================================
 
-const BACKEND_URL =
-  "http://10.174.91.209:8000";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 // =========================================================
 // IMAGE HELPER

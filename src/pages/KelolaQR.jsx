@@ -33,12 +33,11 @@ import {
 // =========================================================
 // FRONTEND URL
 // =========================================================
-// Untuk testing dari HP.
-// Nanti kalau sudah deploy, bisa diganti via .env.
+// Diambil dari file .env:
+// VITE_FRONTEND_URL=http://10.174.91.209:5173
 
 const FRONTEND_URL =
-  import.meta.env.VITE_FRONTEND_URL ||
-  "http://10.174.91.209:5173";
+  import.meta.env.VITE_FRONTEND_URL;
 
 // =========================================================
 // FORMAT DATE
@@ -1003,4 +1002,3 @@ export default function KelolaQR() {
     </div>
   );
 }
-

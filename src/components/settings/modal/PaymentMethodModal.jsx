@@ -29,6 +29,13 @@ export default function PaymentMethodModal({
   const [preview, setPreview] = useState(null);
 
   // =========================================================
+  // BACKEND URL DARI ENV
+  // =========================================================
+
+  const BACKEND_URL =
+    import.meta.env.VITE_BACKEND_URL || "";
+
+  // =========================================================
   // QR IMAGE URL
   // =========================================================
 
@@ -48,8 +55,12 @@ export default function PaymentMethodModal({
     // qris/abc123.jpg
     //
     // Maka arahkan ke Laravel public storage:
-    // http://localhost:8000/storage/qris/abc123.jpg
-    return `http://10.174.91.209:8000/storage/${url}`;
+    // ${VITE_BACKEND_URL}/storage/qris/abc123.jpg
+
+    return `${BACKEND_URL}/storage/${url.replace(
+      /^\/+/,
+      ""
+    )}`;
   };
 
   // =========================================================
@@ -542,15 +553,6 @@ export default function PaymentMethodModal({
               {methods.map((item) => {
                 const Icon = item.icon;
 
-                // Saat edit:
-                // ewallet_dana
-                // ewallet_gopay
-                // tf_bank_bni
-                // tf_bank_bca
-                //
-                // tetap menampilkan kategori
-                // yang sesuai sebagai aktif.
-
                 const active =
                   form.method === item.value ||
                   form.method.startsWith(
@@ -891,3 +893,4 @@ export default function PaymentMethodModal({
     </div>
   );
 }
+

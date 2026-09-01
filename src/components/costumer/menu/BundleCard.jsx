@@ -1,3 +1,4 @@
+
 import { Plus } from "lucide-react";
 
 function formatPrice(price) {
@@ -21,13 +22,10 @@ export default function BundleCard({
         cursor-pointer
         overflow-hidden
         rounded-[17px]
-        border
-        border-[#d8d5cf]
         bg-[#f8f8f8]
         shadow-[0_1px_0_rgba(0,0,0,0.02)]
       "
     >
-
       {/* =====================================================
           IMAGE
       ===================================================== */}
@@ -40,10 +38,10 @@ export default function BundleCard({
           items-center
           justify-center
           overflow-hidden
+          rounded-t-[17px]
           bg-[#f5f5f5]
         "
       >
-
         {/* CHECKERBOARD */}
         <div
           className="
@@ -130,7 +128,6 @@ export default function BundleCard({
             No Image
           </div>
         )}
-
       </div>
 
       {/* =====================================================
@@ -147,7 +144,6 @@ export default function BundleCard({
           text-white
         "
       >
-
         {/* NAME */}
         <h3
           className="
@@ -169,9 +165,7 @@ export default function BundleCard({
             justify-between
           "
         >
-
           <div className="flex flex-col">
-
             {/* NORMAL PRICE */}
             {Number(bundle.normalPrice) >
               Number(bundle.bundlePrice) &&
@@ -185,9 +179,7 @@ export default function BundleCard({
                     line-through
                   "
                 >
-                  {formatPrice(
-                    bundle.normalPrice
-                  )}
+                  {formatPrice(bundle.normalPrice)}
                 </span>
               )}
 
@@ -200,11 +192,8 @@ export default function BundleCard({
                 text-white/90
               "
             >
-              {formatPrice(
-                bundle.bundlePrice
-              )}
+              {formatPrice(bundle.bundlePrice)}
             </span>
-
           </div>
 
           {/* ADD */}
@@ -235,11 +224,8 @@ export default function BundleCard({
               strokeWidth={2.4}
             />
           </button>
-
         </div>
-
       </div>
-
     </div>
   );
 }
