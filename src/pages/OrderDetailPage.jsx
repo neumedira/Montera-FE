@@ -1,4 +1,3 @@
-
 import React, {
   useEffect,
   useMemo,
@@ -98,7 +97,7 @@ export default function OrderDetailPage() {
   } = useCart();
 
   // =========================================================
-  // FORM
+  // FORM & ERROR STATE
   // =========================================================
 
   const [
@@ -120,6 +119,12 @@ export default function OrderDetailPage() {
     isLoading,
     setIsLoading,
   ] = useState(false);
+
+  // STATE BARU UNTUK ERROR NOTIFIKASI
+  const [
+    errorMessage,
+    setErrorMessage,
+  ] = useState("");
 
   // =========================================================
   // PAYMENT SETTINGS
@@ -565,356 +570,305 @@ export default function OrderDetailPage() {
   // SUBMIT ORDER
   // =========================================================
 
-  const handleProceed =
-    async () => {
+  const handleProceed = async () => {
+    if (!isFormValid) {
+      setErrorMessage("Harap lengkapi Nama Customer, Tipe Pesanan, dan Metode Pembayaran!");
+      
+      // Menghilangkan pesan error secara otomatis setelah 3 detik
+      setTimeout(() => {
+        setErrorMessage("");
+      }, 3000);
+      
+      return;
+    }
 
-      if (!isFormValid) {
-        return;
-      }
+    setErrorMessage(""); // Bersihkan error jika form valid
+    setIsLoading(true);
 
-      setIsLoading(true);
+    try {
+      // ===================================================
+      // FORMAT ITEM CART → BACKEND
+      // ===================================================
 
-      try {
-        // ===================================================
-        // FORMAT ITEM CART → BACKEND
-        // ===================================================
+      const formattedItems =
+        cart.flatMap(
+          (item) => {
 
-        const formattedItems =
-          cart.flatMap(
-            (item) => {
+            // =============================================
+            // PRODUCT BIASA
+            // =============================================
 
-              // =============================================
-              // PRODUCT BIASA
-              // =============================================
+            if (
+              item.type !== "bundle"
+            ) {
+              const addonIds =
+                Array.isArray(
+                  item.addons
+                )
+                  ? item.addons
+                      .map(
+                        (addon) =>
+                          addon?.id
+                      )
+                      .filter(
+                        (id) =>
+                          id !== null &&
+                          id !== undefined
+                      )
+                  : [];
 
-              if (
-                item.type !== "bundle"
-              ) {
-                const addonIds =
-                  Array.isArray(
-                    item.addons
-                  )
-                    ? item.addons
+              return [
+                {
+                  menu_item_id:
+                    item.id,
+
+                  // Menu biasa tidak berasal dari bundle
+                  bundle_id:
+                    null,
+
+                  quantity:
+                    Number(
+                      item.quantity ?? 1
+                    ),
+
+                  addon_ids:
+                    addonIds,
+
+                  notes:
+                    item.notes?.trim() ||
+                    null,
+                },
+              ];
+            }
+
+            // =============================================
+            // BUNDLE
+            // =============================================
+
+            if (
+              item.type ===
+                "bundle" &&
+              Array.isArray(
+                item.items
+              )
+            ) {
+              return item.items
+                .filter(
+                  (bundleItem) =>
+                    bundleItem?.menu_item?.id
+                )
+                .map(
+                  (bundleItem) => {
+
+                    const menu =
+                      bundleItem.menu_item;
+
+                    // ===================================
+                    // ADDON DARI MENU DALAM BUNDLE
+                    // ===================================
+
+                    const selectedAddons =
+                      Array.isArray(
+                        item.addons
+                      )
+                        ? item.addons.filter(
+                            (addon) =>
+                              Number(
+                                addon.menu_item_id
+                              ) ===
+                              Number(
+                                menu.id
+                              )
+                          )
+                        : [];
+
+                    const addonIds =
+                      selectedAddons
                         .map(
                           (addon) =>
-                            addon?.id
+                            addon.id
                         )
                         .filter(
                           (id) =>
                             id !== null &&
                             id !== undefined
-                        )
-                    : [];
+                        );
 
-                return [
-                  {
-                    menu_item_id:
-                      item.id,
+                    return {
+                      menu_item_id:
+                        menu.id,
 
-                    // Menu biasa tidak berasal dari bundle
-                    bundle_id:
-                      null,
+                      bundle_id:
+                        item.bundleId ??
+                        null,
 
-                    quantity:
-                      Number(
-                        item.quantity ?? 1
-                      ),
+                      quantity:
+                        Number(
+                          bundleItem.quantity ??
+                            1
+                        ) *
+                        Number(
+                          item.quantity ??
+                            1
+                        ),
 
-                    addon_ids:
-                      addonIds,
+                      addon_ids:
+                        addonIds,
 
-                    notes:
-                      item.notes?.trim() ||
-                      null,
-                  },
-                ];
-              }
-
-              // =============================================
-              // BUNDLE
-              // =============================================
-
-              if (
-                item.type ===
-                  "bundle" &&
-                Array.isArray(
-                  item.items
-                )
-              ) {
-                return item.items
-                  .filter(
-                    (bundleItem) =>
-                      bundleItem?.menu_item?.id
-                  )
-                  .map(
-                    (bundleItem) => {
-
-                      const menu =
-                        bundleItem.menu_item;
-
-                      // ===================================
-                      // ADDON DARI MENU DALAM BUNDLE
-                      // ===================================
-
-                      const selectedAddons =
-                        Array.isArray(
-                          item.addons
-                        )
-                          ? item.addons.filter(
-                              (addon) =>
-                                Number(
-                                  addon.menu_item_id
-                                ) ===
-                                Number(
-                                  menu.id
-                                )
-                            )
-                          : [];
-
-                      const addonIds =
-                        selectedAddons
-                          .map(
-                            (addon) =>
-                              addon.id
-                          )
-                          .filter(
-                            (id) =>
-                              id !== null &&
-                              id !== undefined
-                          );
-
-                      return {
-                        menu_item_id:
-                          menu.id,
-
-                        // =================================
-                        // INI YANG BARU
-                        // =================================
-                        //
-                        // item.bundleId berasal dari:
-                        //
-                        // formatBundleItem()
-                        //
-                        // bundleId: item.id
-                        //
-                        // Jadi backend bisa tahu
-                        // item ini bagian dari bundle mana.
-                        //
-                        bundle_id:
-                          item.bundleId ??
-                          null,
-
-                        quantity:
-                          Number(
-                            bundleItem.quantity ??
-                              1
-                          ) *
-                          Number(
-                            item.quantity ??
-                              1
-                          ),
-
-                        addon_ids:
-                          addonIds,
-
-                        notes:
-                          item.notes?.trim() ||
-                          null,
-                      };
-                    }
-                  );
-              }
-
-              return [];
+                      notes:
+                        item.notes?.trim() ||
+                        null,
+                    };
+                  }
+                );
             }
-          );
 
-        // ===================================================
-        // VALIDASI ITEM
-        // ===================================================
-
-        if (
-          formattedItems.length ===
-          0
-        ) {
-          alert(
-            "Tidak ada item yang dapat diproses."
-          );
-
-          setIsLoading(false);
-
-          return;
-        }
-
-        // ===================================================
-        // TYPE ORDER
-        // ===================================================
-
-        const mappedOrderType =
-          orderType ===
-          "take-away"
-            ? "takeaway"
-            : "dine-in";
-
-        // ===================================================
-        // PAYMENT METHOD
-        // ===================================================
-
-        const backendPaymentMethod =
-          paymentMethod ===
-          "cash"
-            ? "tunai"
-            : paymentMethod;
-
-        // ===================================================
-        // PAYLOAD
-        // ===================================================
-
-        const payload = {
-          // =================================================
-          // TABLE DARI QR
-          // =================================================
-
-          table_id:
-            tableId,
-
-          customer_name:
-            customerName.trim(),
-
-          order_type:
-            mappedOrderType,
-
-          payment_method:
-            backendPaymentMethod,
-
-          // =================================================
-          // ITEMS
-          // =================================================
-
-          items:
-            formattedItems,
-
-          // =================================================
-          // GLOBAL NOTES
-          // =================================================
-
-          notes:
-            orderNote.trim() ||
-            null,
-        };
-
-        // ===================================================
-        // DEBUG
-        // ===================================================
-
-        console.log(
-          "CUSTOMER TABLE ID:",
-          tableId
+            return [];
+          }
         );
 
-        console.log(
-          "CUSTOMER TABLE NUMBER:",
-          tableNumber
+      // ===================================================
+      // VALIDASI ITEM
+      // ===================================================
+
+      if (
+        formattedItems.length ===
+        0
+      ) {
+        alert(
+          "Tidak ada item yang dapat diproses."
         );
 
-        console.log(
-          "ORDER ITEMS:",
-          formattedItems
-        );
+        setIsLoading(false);
 
-        console.log(
-          "ORDER PAYLOAD:",
+        return;
+      }
+
+      // ===================================================
+      // TYPE ORDER
+      // ===================================================
+
+      const mappedOrderType =
+        orderType ===
+        "take-away"
+          ? "takeaway"
+          : "dine-in";
+
+      // ===================================================
+      // PAYMENT METHOD
+      // ===================================================
+
+      const backendPaymentMethod =
+        paymentMethod ===
+        "cash"
+          ? "tunai"
+          : paymentMethod;
+
+      // ===================================================
+      // PAYLOAD
+      // ===================================================
+
+      const payload = {
+        // =================================================
+        // TABLE DARI QR
+        // =================================================
+
+        table_id:
+          tableId,
+
+        customer_name:
+          customerName.trim(),
+
+        order_type:
+          mappedOrderType,
+
+        payment_method:
+          backendPaymentMethod,
+
+        // =================================================
+        // ITEMS
+        // =================================================
+
+        items:
+          formattedItems,
+
+        // =================================================
+        // GLOBAL NOTES
+        // =================================================
+
+        notes:
+          orderNote.trim() ||
+          null,
+      };
+
+      // ===================================================
+      // POST API
+      // ===================================================
+
+      const response =
+        await axios.post(
+          `${BACKEND_URL}/api/v1/customer/orders`,
           payload
         );
 
-        // ===================================================
-        // POST API
-        // ===================================================
+      // ===================================================
+      // SUCCESS
+      // ===================================================
 
-        const response =
-          await axios.post(
-            `${BACKEND_URL}/api/v1/customer/orders`,
-            payload
-          );
+      if (
+        response.status === 200 ||
+        response.status === 201
+      ) {
 
-        console.log(
-          "ORDER RESPONSE:",
-          response.data
+        const createdOrder =
+          response.data?.data;
+
+        navigate(
+          "/payment",
+          {
+            state: {
+              orderData:
+                createdOrder,
+            },
+          }
         );
-
-        // ===================================================
-        // SUCCESS
-        // ===================================================
-
-        if (
-          response.status === 200 ||
-          response.status === 201
-        ) {
-
-          const createdOrder =
-            response.data?.data;
-
-          console.log(
-            "CREATED ORDER:",
-            createdOrder
-          );
-
-          navigate(
-            "/payment",
-            {
-              state: {
-                orderData:
-                  createdOrder,
-              },
-            }
-          );
-        }
-
-      } catch (error) {
-
-        console.error(
-          "Gagal membuat pesanan:",
-          error
-        );
-
-        console.error(
-          "Response error:",
-          error.response?.data
-        );
-
-        // ===================================================
-        // VALIDATION ERROR
-        // ===================================================
-
-        if (
-          error.response?.status ===
-          422
-        ) {
-
-          alert(
-            "Validasi Gagal:\n" +
-              JSON.stringify(
-                error.response
-                  .data?.errors ||
-                  error.response
-                    .data?.message,
-                null,
-                2
-              )
-          );
-
-        } else {
-
-          alert(
-            "Terjadi kesalahan sistem saat memproses pesanan. Pastikan server backend menyala."
-          );
-        }
-
-      } finally {
-
-        setIsLoading(false);
       }
-    };
+
+    } catch (error) {
+      console.error(
+        "Gagal membuat pesanan:",
+        error
+      );
+
+      // ===================================================
+      // VALIDATION ERROR
+      // ===================================================
+
+      if (
+        error.response?.status ===
+        422
+      ) {
+        alert(
+          "Validasi Gagal:\n" +
+            JSON.stringify(
+              error.response
+                .data?.errors ||
+                error.response
+                  .data?.message,
+              null,
+              2
+            )
+        );
+      } else {
+        alert(
+          "Terjadi kesalahan sistem saat memproses pesanan. Pastikan server backend menyala."
+        );
+      }
+
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // =========================================================
   // RENDER
@@ -955,68 +909,6 @@ export default function OrderDetailPage() {
         >
           ORDER DETAILS
         </h1>
-
-        {/* CUSTOMER NAME */}
-
-        <div
-          className="
-            mb-6
-            rounded-2xl
-            border
-            border-gray-100
-            bg-white
-            p-5
-            shadow-sm
-            dark:border-[#333333]
-            dark:bg-[#1e1e1e]
-          "
-        >
-
-          <label
-            className="
-              mb-2
-              block
-              text-xs
-              font-bold
-              text-gray-800
-              dark:text-gray-200
-            "
-          >
-            Customer Name
-          </label>
-
-          <input
-            type="text"
-            value={customerName}
-            onChange={(e) =>
-              setCustomerName(
-                e.target.value
-              )
-            }
-            placeholder="Enter your name"
-            disabled={isLoading}
-            className="
-              w-full
-              rounded-xl
-              border
-              border-gray-200
-              bg-gray-50
-              px-4
-              py-3
-              text-sm
-              font-medium
-              text-gray-900
-              outline-none
-              focus:border-zinc-800
-              dark:border-[#444444]
-              dark:bg-[#2d2d2d]
-              dark:text-white
-              dark:placeholder:text-[#888888]
-              dark:focus:border-white
-            "
-          />
-
-        </div>
 
       </div>
 
@@ -1954,7 +1846,81 @@ export default function OrderDetailPage() {
 
         </div>
 
+        {/* ===================================================
+            CUSTOMER NAME (DIPINDAH KE BAWAH PAYMENT)
+        =================================================== */}
+
+        <div
+          className="
+            mb-6
+            rounded-2xl
+            border
+            border-gray-100
+            bg-white
+            p-5
+            shadow-sm
+            dark:border-[#333333]
+            dark:bg-[#1e1e1e]
+          "
+        >
+          <label
+            className="
+              mb-2
+              block
+              text-xs
+              font-bold
+              text-gray-800
+              dark:text-gray-200
+            "
+          >
+            Customer Name
+          </label>
+
+          <input
+            type="text"
+            value={customerName}
+            onChange={(e) =>
+              setCustomerName(e.target.value)
+            }
+            placeholder="Enter your name"
+            disabled={isLoading}
+            className="
+              w-full
+              rounded-xl
+              border
+              border-gray-200
+              bg-gray-50
+              px-4
+              py-3
+              text-sm
+              font-medium
+              text-gray-900
+              outline-none
+              focus:border-zinc-800
+              dark:border-[#444444]
+              dark:bg-[#2d2d2d]
+              dark:text-white
+              dark:placeholder:text-[#888888]
+              dark:focus:border-white
+            "
+          />
+        </div>
+
       </div>
+
+      {/* =====================================================
+          ERROR NOTIFICATION (KOTAK MERAH DALAM LAYAR)
+      ===================================================== */}
+      
+      {errorMessage && (
+        <div className="px-4 mb-4">
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 shadow-sm dark:border-red-900/50 dark:bg-red-900/20">
+            <p className="text-center text-sm font-bold text-red-600 dark:text-red-400">
+              {errorMessage}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* =====================================================
           PROCEED BUTTON
@@ -1966,13 +1932,11 @@ export default function OrderDetailPage() {
           type="button"
           onClick={handleProceed}
           disabled={
-            !isFormValid ||
             isLoading ||
             paymentLoading ||
             availablePayments.length === 0
           }
           className={`flex w-full items-center justify-between rounded-2xl px-6 py-4 text-sm font-bold uppercase tracking-wider shadow-lg transition-colors ${
-            isFormValid &&
             !isLoading &&
             !paymentLoading &&
             availablePayments.length > 0
@@ -1996,4 +1960,3 @@ export default function OrderDetailPage() {
     </div>
   );
 }
-

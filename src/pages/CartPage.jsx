@@ -518,30 +518,26 @@ export default function CartPage() {
             />
           </div>
 
-          {/* ADD MORE BUTTON */}
+       {/* ADD MORE BUTTON */}
 
           <button
             type="button"
             onClick={handleAddMore}
             className="
-              bg-zinc-900
-              dark:bg-white
+              bg-red-600
               text-white
-              dark:text-[#111]
               font-bold
               text-xs
               px-5
               py-3
               rounded-full
-              hover:bg-black
-              dark:hover:bg-gray-200
+              hover:bg-red-700
               transition-all
               shadow-md
             "
           >
             Do you want to add anything else?
           </button>
-
         </div>
 
         {/* =========================================================
