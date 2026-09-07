@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -11,8 +10,6 @@ import { useCart } from "../context/CartContext";
 
 export default function CartPage() {
   const navigate = useNavigate();
-
-  const [note, setNote] = useState("");
 
   const {
     cart,
@@ -36,15 +33,11 @@ export default function CartPage() {
   };
 
   // =========================================================
-  // CHECKOUT
+  // CHECKOUT (Tanpa mengirim orderNote global)
   // =========================================================
 
   const handleCheckout = () => {
-    navigate("/order-details", {
-      state: {
-        orderNote: note,
-      },
-    });
+    navigate("/order-details");
   };
 
   // =========================================================
@@ -396,7 +389,7 @@ export default function CartPage() {
                   )}
 
                   {/* =================================================
-                      ITEM NOTE
+                      ITEM NOTE (Catatan per menu tetap dipertahankan)
                   ================================================= */}
 
                   {item.notes && (
@@ -448,7 +441,7 @@ export default function CartPage() {
         ) : (
 
           /* =====================================================
-             EMPTY CART
+              EMPTY CART
           ===================================================== */
 
           <div
@@ -518,7 +511,7 @@ export default function CartPage() {
             />
           </div>
 
-       {/* ADD MORE BUTTON */}
+          {/* ADD MORE BUTTON */}
 
           <button
             type="button"
@@ -538,60 +531,6 @@ export default function CartPage() {
           >
             Do you want to add anything else?
           </button>
-        </div>
-
-        {/* =========================================================
-            ORDER NOTES
-        ========================================================= */}
-
-        <div className="mb-6">
-
-          <label
-            className="
-              block
-              text-xs
-              font-bold
-              text-gray-900
-              dark:text-white
-              tracking-wider
-              uppercase
-              mb-2
-            "
-          >
-            NOTES (OPTIONAL)
-          </label>
-
-          <input
-            type="text"
-            value={note}
-            onChange={(e) =>
-              setNote(e.target.value)
-            }
-            placeholder="Add a note to your order?"
-            className="
-              w-full
-              bg-white
-              dark:bg-[#1e1e1e]
-              border
-              border-gray-200
-              dark:border-[#444444]
-              rounded-2xl
-              px-4
-              py-3.5
-              text-sm
-              text-gray-900
-              dark:text-white
-              font-medium
-              focus:outline-none
-              focus:border-zinc-800
-              dark:focus:border-white
-              dark:placeholder:text-[#888888]
-              shadow-sm
-              transition-colors
-              duration-300
-            "
-          />
-
         </div>
 
         {/* =========================================================

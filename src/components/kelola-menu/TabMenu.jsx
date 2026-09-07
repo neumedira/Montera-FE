@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Edit2, Trash2 } from "lucide-react";
 
@@ -14,12 +13,19 @@ export default function TabMenu({ items, onEdit, onDelete }) {
   return (
     <div className="space-y-3">
       {items.map((item) => {
-        // Ambil URL gambar dari beberapa kemungkinan field
-        const imageUrl =
+        // Ambil path atau URL mentah dari berbagai kemungkinan field
+        const rawPath =
           item.photo_url ||
           item.gambarUrl ||
           item.photo ||
           "";
+
+        // Cek apakah path sudah berupa URL lengkap (misal diawali http) atau belum
+        const imageUrl = rawPath.startsWith("http")
+          ? rawPath
+          : rawPath
+          ? `${import.meta.env.VITE_BACKEND_URL || "http://192.168.1.115:8000"}/storage/${rawPath}`
+          : "";
 
         return (
           <div
@@ -110,4 +116,3 @@ export default function TabMenu({ items, onEdit, onDelete }) {
     </div>
   );
 }
-

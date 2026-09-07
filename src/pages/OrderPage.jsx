@@ -139,6 +139,10 @@ export default function OrderPage() {
     orderNumber:
       order.order_number,
 
+      // TAMBAHKAN BARIS INI UNTUK MENANGKAP NAMA/NOMOR MEJA:
+    tableName: 
+      order.table_number || order.table?.table_number || "-",
+      
     // Payment
     paymentMethod:
       order.payment_method,

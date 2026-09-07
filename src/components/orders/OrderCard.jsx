@@ -352,7 +352,7 @@ export default function OrderCard({
               : "TA"}
           </div>
 
-          {/* CUSTOMER */}
+         {/* CUSTOMER */}
 
           <div
             className="
@@ -397,8 +397,17 @@ export default function OrderCard({
                 {orderType}
               </span>
 
-            </div>
+              {/* =========================================
+                  TAMBAHKAN LABEL NAMA/NOMOR MEJA DI SINI
+              ========================================= */}
+              {order.tableName && (
+                <span className="rounded-full bg-[#EFECE6] px-2.5 py-1 text-[10px] font-bold text-[#57544F]">
+                  {order.tableName}
+                </span>
+              )}
 
+            </div>
+            
             {/* INFO */}
 
             <div
@@ -531,11 +540,11 @@ export default function OrderCard({
               Detail Pesanan
             </p>
 
-            {/* =================================================
+       {/* =================================================
                 TABLE INFO
             ================================================= */}
 
-            {tableNumber && (
+            {(tableNumber || order.tableName) && (
               <div
                 className="
                   mb-4
@@ -556,7 +565,7 @@ export default function OrderCard({
                     text-[#8F8A80]
                   "
                 >
-                  Nomor Meja
+                  Informasi Meja
                 </span>
 
                 <span
@@ -566,7 +575,7 @@ export default function OrderCard({
                     text-[#292825]
                   "
                 >
-                  Meja {tableNumber}
+                  {order.tableName || `Meja ${tableNumber}`}
                 </span>
 
               </div>

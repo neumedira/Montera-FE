@@ -1596,29 +1596,28 @@ export default function MenuPage() {
 
                 <div className="flex w-max gap-4">
 
-                  {group.items.map(
-                    (product) => (
-                      <ProductCard
-                        key={
-                          product.id
-                        }
-                        product={
-                          product
-                        }
-                        onAdd={() =>
-                          handleAddToCart(
-                            product
-                          )
-                        }
-                        onClick={() =>
-                          handleProductClick(
-                            product
-                          )
-                        }
-                      />
-                    )
-                  )}
-
+             {group.items.map(
+  (product) => (
+    <ProductCard
+      key={
+        product.id
+      }
+      product={
+        product
+      }
+      onAdd={() =>
+        handleProductClick( // <--- Ubah baris ini
+          product
+        )
+      }
+      onClick={() =>
+        handleProductClick(
+          product
+        )
+      }
+    />
+  )
+)}
                 </div>
 
               </div>
@@ -1662,31 +1661,33 @@ export default function MenuPage() {
 
               <div className="mt-[6px] px-4">
 
-                {group.items.map(
-                  (product) => (
-                    <ProductListItem
-                      key={
-                        product.id
-                      }
-                      product={{
-                        ...product,
+         {group.items.map(
+  (product) => (
+    <ProductListItem
+      key={
+        product.id
+      }
+      product={{
+        ...product,
 
-                        label: null,
+        label: null,
 
-                        bestseller:
-                          false,
-                      }}
-                      onAdd={
-                        handleAddToCart
-                      }
-                      onClick={() =>
-                        handleProductClick(
-                          product
-                        )
-                      }
-                    />
-                  )
-                )}
+        bestseller:
+          false,
+      }}
+      onAdd={() =>
+        handleProductClick( // <--- Ubah baris ini
+          product
+        )
+      }
+      onClick={() =>
+        handleProductClick(
+          product
+        )
+      }
+    />
+  )
+)}
 
               </div>
 
